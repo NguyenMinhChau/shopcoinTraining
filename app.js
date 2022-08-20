@@ -4,6 +4,7 @@ const Users = require('./routes/User')
 const Coins = require('./routes/Coins')
 const mongoose = require('mongoose')
 const session = require('express-session')
+const cors = require('cors')
 
 const app = expres()
 
@@ -13,7 +14,7 @@ app.use(session({
 }))
 app.use(expres.json())
 app.use(expres.urlencoded({extended: false}))
-
+app.use(cors())
 switch(process.env.TYPE){
     case 'product':
         // for product
