@@ -3,9 +3,14 @@ const expres = require('express')
 const Users = require('./routes/User')
 const Coins = require('./routes/Coins')
 const mongoose = require('mongoose')
+const session = require('express-session')
 
 const app = expres()
 
+app.use(session({
+  secret: 'keyboard cat',
+  cookie: { secure: true, maxAge: 60 * 60 * 1000},
+}))
 app.use(expres.json())
 app.use(expres.urlencoded({extended: false}))
 

@@ -1,8 +1,8 @@
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt')
 const {validationResult} = require('express-validator')
 const User = require('../models/User')
 const Coins = require('../models/Coins')
+const jwt = require('jsonwebtoken');
 
 class UsersController{
     // [POST] /users/register
@@ -77,10 +77,18 @@ class UsersController{
                 if(!user){
                     return res.json({code: 2, message: "User is not exist"})
                 }
-                bcrypt.compare(password, user.password)
+                bcrypt.compare(password, user.payment.password)
                 .then(match => {
                     if(match){
-                        return res.json({code: 1, userInfo: user})
+                        const token = jwt.sign(
+                            { user_id: user._id, email },
+                            process.env.JWT_SECRET,
+                            {
+                            expiresIn: "1h",
+                            }
+                        )
+                        req.session.jwt = token
+                        return res.json({code: 1, userInfo: user, token: req.session.jwt})
                     }else{
                         return res.json({code: 2, message: "Passowrd is wrong"})
                     }
@@ -98,7 +106,7 @@ class UsersController{
     }
 
     logout(req, res){
-
+        req.session.destroy();
     }
     // [POST] /users/buyCoin
     buyCoin(req, res){
