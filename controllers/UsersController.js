@@ -10,14 +10,14 @@ class UsersController{
         let result = validationResult(req)
         if(result.errors.length === 0){
             const {email, password, username} = req.body
-            User.findOne({email: email}, (err, user) => {
+            User.findOne({'payment.email': email}, (err, user) => {
                 if(err){
                     return res.json({code: 1, message: err.message})
                 }
                 else if(user){
                     return res.json({code: 2, message: "Email is exists"})
                 }else{
-                    User.findOne({username: username}, (e, u) => {
+                    User.findOne({'payment.username': username}, (e, u) => {
                         if(e){
                             return res.json({code: 1, message: e.message})
                         }
