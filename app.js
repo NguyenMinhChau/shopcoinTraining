@@ -17,12 +17,14 @@ app.use(expres.urlencoded({extended: false}))
 switch(process.env.TYPE){
     case 'product':
         // for product
-        mongoose.connect(process.env.MONGO_PRODUCT)
+        mongoose.connect('mongodb://shopcoin:shopcoin123@139.59.97.145:27017/shopcoin?authSource=admin')
+        break
     case 'development':
         // for dev
         mongoose.connect(process.env.MONGO_DEV)
+        break
 }
-
+// mongoose.connect('mongodb://shopcoin:shopcoin123@139.59.97.145:27017/shopcoin?authSource=admin')
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error: "));
 db.once("open", function () {
