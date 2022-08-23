@@ -8,7 +8,7 @@ class CoinsController{
         let file1 = req.file
         let name1 = file1.originalname
         let destination = file1.destination
-        let newPath1 = path.join(destination, name1)
+        let newPath1 = path.join(destination, Date.now() + "-" + name1)
 
         let typeFile = file1.mimetype.split('/')[0]
 
