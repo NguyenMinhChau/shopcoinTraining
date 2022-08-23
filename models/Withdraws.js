@@ -2,9 +2,9 @@ const mongoose = require('mongoose')
 
 const withdraw = new mongoose.Schema({
     status: {type: String, default: "On hold"},
+    code: {type: String, default: ""},
     amount: {type: Number, default: 1},
     method: {
-        code: {type: String, default: ""},
         methodName: {type: String, default: ""},
         accountName: {type: String, default: ""},
         accountNumber: {type: String, default: ""},

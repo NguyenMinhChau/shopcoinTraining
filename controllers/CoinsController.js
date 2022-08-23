@@ -16,8 +16,10 @@ class CoinsController{
 
             fs.renameSync(file1.path, newPath1)
             let logoCoin = path.join('./uploads/images', Date.now() + "-" + name1)
-    
-            // console.log(req.body)
+            
+            let rawListUnshow = req.body.unshow
+            let newList = rawListUnshow.replace('[', '').replace(']', '').split(', ')
+            
             const {name, symbol, fullname} = req.body
             const coin = Coins({
                 logo: logoCoin,
@@ -26,9 +28,10 @@ class CoinsController{
                 fullName: fullname,
                 unshow: [],
             })
-            coin.unshow.push("test1@gmail.com")
-            coin.unshow.push("test2@gmail.com")
-            coin.unshow.push("test3@gmail.com")
+            newList.forEach(element => {
+                // console.log(element)
+                coin.unshow.push(element)
+            });
             // return res.json(coin)
             coin.save()
             .then(coin => {

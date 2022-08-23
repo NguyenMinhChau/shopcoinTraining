@@ -4,6 +4,7 @@ const payment = new mongoose.Schema({
     code: {type: String, default: ""},
     methodName: {type: String, default: ""},
     accountName: {type: String, default: ""},
+    accountNumber: {type: String, default: ""},
     transform: {type: Number, default: 0},
     createAt: {type: String, default: new Date().toUTCString()},
     updateAt: {type: String, default: new Date().toUTCString()},
