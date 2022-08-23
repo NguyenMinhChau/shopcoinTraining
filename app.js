@@ -1,20 +1,23 @@
 require('dotenv').config()
-const expres = require('express')
+const express = require('express')
 const Users = require('./routes/User')
 const Coins = require('./routes/Coins')
 const mongoose = require('mongoose')
 const session = require('express-session')
 const cors = require('cors')
+const path = require('path')
 
-const app = expres()
+const app = express()
 
 app.use(session({
   secret: 'keyboard cat',
   cookie: { secure: true, maxAge: 60 * 60 * 1000},
 }))
-app.use(expres.json())
-app.use(expres.urlencoded({extended: false}))
+app.use(express.json())
+app.use(express.urlencoded({extended: false}))
 app.use(cors())
+app.use(express.static(path.resolve('./uploads')));
+
 switch(process.env.TYPE){
     case 'product':
         // for product
