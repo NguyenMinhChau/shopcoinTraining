@@ -214,13 +214,14 @@ class UsersController{
         if(result.errors.length === 0){
 
             const codePayment = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
-            const {methodName, accountName, accountNumber, transform} = req.body
+            const {methodName, accountName, accountNumber, rateDeposit, rateWithdraw} = req.body
             const newPayment = new Payments({
                 code: codePayment,
                 methodName: methodName,
                 accountName: accountName,
                 accountNumber: accountNumber,
-                transform: transform,
+                rateDeposit: rateDeposit,
+                rateWithdraw: rateWithdraw,
             })
 
             newPayment.save()

@@ -5,7 +5,8 @@ const payment = new mongoose.Schema({
     methodName: {type: String, default: ""},
     accountName: {type: String, default: ""},
     accountNumber: {type: String, default: ""},
-    transform: {type: Number, default: 0},
+    rateDeposit: {type: Number, default: 0},
+    rateWithdraw: {type: Number, default: 0},
     createAt: {type: String, default: new Date().toUTCString()},
     updateAt: {type: String, default: new Date().toUTCString()},
 })

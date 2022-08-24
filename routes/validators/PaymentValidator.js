@@ -13,7 +13,11 @@ module.exports = [
     .exists().withMessage('Vui lòng nhập accountNumber')
     .notEmpty().withMessage('accountNumber không được để trống'),
 
-    check('transform')
-    .exists().withMessage('Vui lòng nhập transform')
-    .notEmpty().withMessage('transform không được để trống'),
+    check('rateDeposit')
+    .exists().withMessage('Vui lòng nhập rateDeposit')
+    .notEmpty().withMessage('rateDeposit không được để trống'),
+
+    check('rateWithdraw')
+    .exists().withMessage('Vui lòng nhập rateWithdraw')
+    .notEmpty().withMessage('rateWithdraw không được để trống'),
 ]
