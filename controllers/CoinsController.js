@@ -17,7 +17,7 @@ class CoinsController{
             fs.renameSync(file1.path, newPath1)
             let logoCoin = path.join('./uploads/images', Date.now() + "-" + name1)
             
-            let rawListUnshow = req.body.unshow
+            let rawListUnshow = req.body.unshow || ""
             let newList = rawListUnshow.replace('[', '').replace(']', '').split(', ')
             
             const {name, symbol, fullname} = req.body
@@ -41,6 +41,21 @@ class CoinsController{
         }else{
             return res.json({code: 2, message: "Please upload image"})
         }
+    }
+
+    // [GET] /coins/getAllCoin
+    getAllCoins(req, res){
+        Coins.find({}, (err, coins) => {
+            if(err){
+                return res.json({code: 1, message: err.message})
+            }
+
+            if(coins){
+                return res.json({code: 0, data: coins})
+            }else{
+                return res.json({code: 2, message: "No coin"})
+            }
+        })
     }
 }
 

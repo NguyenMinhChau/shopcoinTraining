@@ -14,6 +14,80 @@ const Coins = require('../models/Coins')
 const Payments = require('../models/Payments')
 const Withdraws = require('../models/Withdraws')
 const Deposits = require('../models/Deposits')
+const Bills = require('../models/Bills')
+
+// support function
+function buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user){
+    if(rank == "Demo"){
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+    else if(rank == "Standard"){
+        const newBill = new Bills({
+            fee: fee,
+            buyer: {
+                gmailUSer: gmailUser,
+            },
+            amount: amount,
+            amountUsdt: amountUsdt,
+            symbol: symbol,
+            price: price,
+            type: type,
+        });
+        // return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+        return res.json({code: 1, infoBill: newBill})
+    }
+    else if(rank == "Pro"){
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+    else{ // for rank VIP
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+}
+
+function sellCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user){
+    if(rank == "Demo"){
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+    else if(rank == "Standard"){
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+    else if(rank == "Pro"){
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+    else{ // for rank VIP
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+}
+
+function addCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user){
+    if(rank == "Demo"){
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+    else if(rank == "Standard"){
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+    else if(rank == "Pro"){
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+    else{ // for rank VIP
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+}
+
+function subCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user){
+    if(rank == "Demo"){
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+    else if(rank == "Standard"){
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+    else if(rank == "Pro"){
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+    else{ // for rank VIP
+        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+    }
+}
 
 class UsersController{
     // [POST] /users/register
@@ -57,7 +131,7 @@ class UsersController{
                                 // newUser.token = token;
                                 newUser.save()
                                 .then(person => {
-                                    return res.json({code: 1, token: token, account: person})
+                                    return res.json({code: 0, token: token, account: person})
                                 })
                                 .catch(err => console.log(err.message))
                             })
@@ -99,7 +173,7 @@ class UsersController{
                             }
                         )
                         req.session.jwt = token
-                        return res.json({code: 1, userInfo: user, token: req.session.jwt})
+                        return res.json({code: 0, userInfo: user, token: req.session.jwt})
                     }else{
                         return res.json({code: 2, message: "Passowrd is wrong"})
                     }
@@ -121,6 +195,20 @@ class UsersController{
     }
 
     // ---------------------------------------------services-------------------------------------------------
+
+    // [GET] /users/getAllUser
+    getAllUser(req, res){
+        User.find({}, (err, users) => {
+            if(err){
+                return res.json({code: 1, message: err.message})
+            }
+            if(users){
+                return res.json({code: 0, data: users})
+            }else{
+                return res.json({code: 2, message: "No user"})
+            }
+        }).sort({createAt: 1, updateAt: 1})
+    }
 
     // [POST] /users/buyCoin
     buyCoin(req, res){
@@ -190,7 +278,7 @@ class UsersController{
 
             newWithdraw.save()
             .then(withdraw => {
-                return res.json({code: 1, data: withdraw})
+                return res.json({code: 0, data: withdraw})
             })
             .catch(err => {
                 return res.json({code: 2, message: err.message})
@@ -226,7 +314,7 @@ class UsersController{
 
             newPayment.save()
             .then(payment => {
-                return res.json({code: 1, data: payment})
+                return res.json({code: 0, data: payment})
             })
             .catch(err => {
                 return res.json({code: 2, message: err.message})
@@ -279,7 +367,7 @@ class UsersController{
 
             newDeposit.save()
             .then(deposit => {
-                return res.json({code: 1, data: deposit})
+                return res.json({code: 0, data: deposit})
             })
             .catch(err => {
                 return res.json({code: 2, message: err.message})
@@ -289,6 +377,68 @@ class UsersController{
         }   
         
     }
+
+    // [POST] /users/servicesCoin
+    servicesCoin(req, res){
+        let result = validationResult(req)
+        if(result.errors.length === 0){
+            const {fee, gmailUser, amount, amountUsdt, symbol, price, type} = req.body
+            User.findOne({'payment.email': gmailUser}, (err, user) => {
+                if(err){
+                    return res.json({code: 2, message: err.message})
+                }
+                if(!user || user == ""){
+                    return res.json({code: 2, message: "Người dùng không tồn tại"})
+                }
+
+                // return res.json({code: 1, message: "OK", data: user})
+                const typeUser = user.payment.rule,
+                rank = user.rank,
+                coins = user.coins
+                
+
+                if(type == "BuyCoin"){
+                    buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user)
+                }
+                else if(type == "SellCoin"){
+                    sellCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user)
+                }
+                else if(type == "AddCoin"){
+                    addCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user)
+                }
+                else if(type == "SubCoin"){
+                    subCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user)
+                }
+            })
+            // const newBill = new Bills({
+            //     fee: fee,
+            //     buyer: {
+            //         gmailUSer: gmailUser,
+            //     },
+            //     amount: amount,
+            //     amountUsdt: amountUsdt,
+            //     symbol: symbol,
+            //     price: price,
+            //     type: type,
+            // });
+            // return res.json({code: 1, infoBill: newBill})
+            // newBill.save()
+            // .then(bill => {
+            //     return res.json({code: 1, infoBill: bill})
+            // })
+            // .catch(err => {
+            //     return res.json({code: 2, message: err.message})
+            // })
+        }else{
+            let messages = result.mapped()
+            let message = ''
+            for(let m in messages){
+                message = messages[m]
+                break
+            }
+            return res.json({code: 1, message: message.msg})
+        }
+    }  
 
     // ---------------------------------------------services-------------------------------------------------
 }

@@ -8,8 +8,10 @@ const upload = multer({ dest: 'uploads/images' })
 // import validator
 
 
-
-// [GET] /add
+// [POST] /coins/add
 router.post('/add', upload.single('logo'), CoinsController.addCoin)
+
+// [GET] /coins/getAllCoin
+router.get('/getAllCoin', CoinsController.getAllCoins)
 
 module.exports = router
