@@ -210,6 +210,20 @@ class UsersController{
         }).sort({createAt: 1, updateAt: 1})
     }
 
+    // [GET] /users/getAllPayments
+    getAllPayments(req, res){
+        Payments.find({}, (err, payments) => {
+            if(err){
+                return res.json({code: 1, message: err.message})
+            }
+            if(payments){
+                return res.json({code: 0, data: payments})
+            }else{
+                return res.json({code: 2, message: "No payments"})
+            }
+        }).sort({createAt: 1, updateAt: 1})
+    }
+
     // [POST] /users/buyCoin
     buyCoin(req, res){
         const {symbols, amount, email} = req.body

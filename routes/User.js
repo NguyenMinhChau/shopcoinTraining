@@ -24,6 +24,9 @@ router.post('/register', checkRegister, UsersController.register)
 // [GET] /users/getAllUser
 router.get('/getAllUser', UsersController.getAllUser)
 
+// [GET] /users/getAllPayments
+router.get('/getAllPayments', UsersController.getAllPayments)
+
 // [POST] /users/login
 router.post('/login', LoginValidator, UsersController.login)
 
