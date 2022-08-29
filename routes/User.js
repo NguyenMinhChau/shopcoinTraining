@@ -11,6 +11,8 @@ const LoginValidator = require('./validators/LoginValidator')
 const PaymentValidator = require('./validators/PaymentValidator')
 const WithdrawValidator = require('./validators/WithdrawValidator')
 const servicesCoinValidator = require('./validators/servicesCoinValidator')
+const updatePaymentValidator = require('./validators/updatePaymentValidator')
+const additionBankInfoValidator = require('./validators/addtionBankInfoValidator')
 
 // import auth
 const checkAuth = require('../auth/auth')
@@ -43,16 +45,16 @@ router.post('/deposit', checkAuth, upload.single('statement'), UsersController.d
 router.post('/servicesCoin', servicesCoinValidator, UsersController.servicesCoin)
 
 // [PUT] /users/updatePayment
-router.put('/updatePayment/:id', UsersController.updatePayment)
+router.put('/updatePayment/:id', updatePaymentValidator, UsersController.updatePayment)
 
 // [DELETE] /users/deletePayment/:id
 router.delete('/deletePayment/:id', UsersController.deletePayment)
 
 // [PUT] /users/changePWD/:id
-router.put('/changePWD/:id', UsersController.changePWD)
+router.put('/changePWD/:id', checkAuth, UsersController.changePWD)
 
 // [PUT] /users/additionBankInfo/:id
-router.put('/additionBankInfo/:id', UsersController.additionBankInfo)
+router.put('/additionBankInfo/:id', checkAuth, additionBankInfoValidator, UsersController.additionBankInfo)
 
 
 module.exports = router

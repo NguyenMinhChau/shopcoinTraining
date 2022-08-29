@@ -361,35 +361,48 @@ class UsersController{
 
     // [PUT] /users/additionBankInfo/:id
     additionBankInfo(req, res){
-        const {bankName, nameAccount, accountNumber} = req.body
-        const id = req.params.id
-        
-        User.findById(id, (err, user) => {
-            if(err){
-                return res.json({code: 1, message: err.message})
-            }
+        let result = validationResult(req)
+        if(result.errors.length === 0){
+            const {bankName, nameAccount, accountNumber} = req.body
+            const id = req.params.id
+            
+            User.findById(id, (err, user) => {
+                if(err){
+                    return res.json({code: 1, message: err.message})
+                }
 
-            if(user){
-                let infoBank = user.payment.bank
-                infoBank.bankName = bankName
-                infoBank.name = nameAccount
-                infoBank.account = accountNumber
-                user.updateAt = new Date().toUTCString()
-                user.save()
-                .then(u => {
-                    if(u){
-                        return res.json({code: 0, message: "Add bank information successfully with id = " + id})
-                    }else{
-                        return res.json({code: 4, message: "Can not add information of bank"})    
-                    }
-                })
-                .catch(err => {
-                    return res.json({code: 3, message: err.message})
-                })
-            }else{
-                return res.json({code: 2, message: "User is not valid !!!"})
+                if(user){
+                    let infoBank = user.payment.bank
+                    infoBank.bankName = bankName
+                    infoBank.name = nameAccount
+                    infoBank.account = accountNumber
+                    user.updateAt = new Date().toUTCString()
+                    user.save()
+                    .then(u => {
+                        if(u){
+                            return res.json({code: 0, message: "Add bank information successfully with id = " + id})
+                        }else{
+                            return res.json({code: 4, message: "Can not add information of bank"})    
+                        }
+                    })
+                    .catch(err => {
+                        return res.json({code: 3, message: err.message})
+                    })
+                }else{
+                    return res.json({code: 2, message: "User is not valid !!!"})
+                }
+            })
+        }else{
+            let messages = result.mapped()
+            let message = ''
+            for(let m in messages){
+                message = messages[m]
+                break
             }
-        })
+            return res.json({code: 1, message: message.msg})
+        }
+
+        
     }
 
     // [GET] /users/getAllPayments
@@ -415,35 +428,48 @@ class UsersController{
 
 	// [PUT] /users/updatePayment/:id
 	updatePayment(req, res){
-		const {method, name, idMethod, rateWithdraw, rateDeposit} = req.body
-        const id = req.params.id
-		Payments.findById(id, (err, payment) => {
-            if(err){
-                return res.json({code: 1, message: err.message})
-            }
+        let result = validationResult(req)
+        if(result.errors.length === 0){
+            const {method, name, idMethod, rateWithdraw, rateDeposit} = req.body
+            const id = req.params.id
+            Payments.findById(id, (err, payment) => {
+                if(err){
+                    return res.json({code: 1, message: err.message})
+                }
 
-            if(payment){
-                payment.methodName = method
-                payment.accountName = name
-                payment.accountNumber = idMethod
-                payment.rateDeposit = rateDeposit
-                payment.rateWithdraw = rateWithdraw
-                payment.updateAt = new Date().toUTCString()
-                payment.save()
-                .then(p => {
-                    if(p){
-                        return res.json({code: 0, message: "Update successfully with id = " + id})
-                    }else{
-                        return res.json({code: 5, message: "Update failed with id = " + id})
-                    }
-                })
-                .catch(err => {
-                    return res.json({code: 4, message: err.message})
-                })
-            }else{
-                return res.json({code: 2, message: "The payment is not valid !!"})
+                if(payment){
+                    payment.methodName = method
+                    payment.accountName = name
+                    payment.accountNumber = idMethod
+                    payment.rateDeposit = rateDeposit
+                    payment.rateWithdraw = rateWithdraw
+                    payment.updateAt = new Date().toUTCString()
+                    payment.save()
+                    .then(p => {
+                        if(p){
+                            return res.json({code: 0, message: "Update successfully with id = " + id})
+                        }else{
+                            return res.json({code: 5, message: "Update failed with id = " + id})
+                        }
+                    })
+                    .catch(err => {
+                        return res.json({code: 4, message: err.message})
+                    })
+                }else{
+                    return res.json({code: 2, message: "The payment is not valid !!"})
+                }
+            })
+        }else{
+            let messages = result.mapped()
+            let message = ''
+            for(let m in messages){
+                message = messages[m]
+                break
             }
-        })
+            return res.json({code: 1, message: message.msg})
+        }
+
+		
 	}
 
 	// [DELETE] /users/deletePayment/:id
