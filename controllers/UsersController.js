@@ -17,25 +17,106 @@ const Deposits = require('../models/Deposits')
 const Bills = require('../models/Bills')
 
 // support function
+
+//function support for add coin to accont
+function addCoinSupport(req, res, symbols, amount, email, bill){
+	User.findOne({'payment.email': email}, (err, user) => {
+		if(err){
+			return res.json({code: 1, message: err.message})
+		}
+		if(!user){
+			return res.json({})
+		}
+		Coins.findOne({symbols: symbols}, (error, coin) => {
+			if(error){
+				return res.json({code: 1, message: err.message})
+			}
+
+			let tmp = ""
+			let positionTEMP = 0
+			for(let i = 0; i < user.coins.length; i++){
+				if(coin._id.equals(user.coins[i]._id)){
+					tmp = coin._id
+					positionTEMP = i
+				}
+			}
+			if(tmp != ""){
+				user.coins[positionTEMP].amount = parseInt(user.coins[positionTEMP].amount) + parseInt(amount)
+				user.save()
+				.then(ok => {
+					return res.json({code: 0, infoBill: bill, coins: ok.coins})
+				})
+				.catch(err => {
+					return res.json({code: 2, message: err.message})
+				})
+			}else{
+				user.coins.push({
+					amount: amount,
+					_id: coin._id,
+					name: coin.fullName,
+				})
+				user.save()
+				.then(ok => {
+					return res.json({code: 0, infoBill: bill, coins: ok.coins})
+				})
+				.catch(err => {
+					return res.json({code: 2, message: err.message})
+				})
+			}
+
+
+		})
+	})
+
+}
+
+// check balance is good for paying
+function checkWallet(balance, payment){
+	return balance > payment
+}
+
 function buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user){
+	const balance = user.Wallet.balance
     if(rank == "Demo"){
         return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
     }
     else if(rank == "Standard"){
-        const newBill = new Bills({
-            fee: fee,
-            buyer: {
-                gmailUSer: gmailUser,
-            },
-            amount: amount,
-            amountUsdt: amountUsdt,
-            symbol: symbol,
-            price: price,
-            type: type,
-        });
-        // return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
-        return res.json({code: 1, infoBill: newBill})
-    }
+		if(checkWallet(balance, amount*price)){
+			const newBill = new Bills({
+			fee: fee,
+				buyer: {
+					gmailUSer: gmailUser,
+				},
+				amount: amount,
+				amountUsdt: amountUsdt,
+				symbol: symbol,
+				price: price,
+				type: type,
+			});
+
+			newBill.save()
+			.then(bill => {
+				user.Wallet.balance = user.Wallet.balance - amount*price
+				user.save()
+					.then((user) => {
+						if(user){
+							addCoinSupport(req, res, symbol, amount, gmailUser, bill)
+						}else{
+							return res.json({code: 3, message: "Không thể thực hiện việc trừ tiền tài khoản của user"})
+						}
+					})
+					.catch(err => {
+						return res.json({code: 2, message: err.message})
+					})
+			})
+			.catch(err => {
+				return res.json({code: 1, message: err.message})
+			})
+
+		}else{
+			return res.json({code: 3, message: "Số tiền trong tài khoản của bạn hiện tại không đủ để thực hiện việc mua coin, vui lonfg nạp thêm vào !!!"})
+		}
+   }
     else if(rank == "Pro"){
         return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
     }
@@ -49,7 +130,31 @@ function sellCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, t
         return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
     }
     else if(rank == "Standard"){
-        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+		const balance = user.Wallet.balance
+		const newBill = new Bills({
+		fee: fee,
+			buyer: {
+				gmailUSer: gmailUser,
+			},
+			amount: amount,
+			amountUsdt: amountUsdt,
+			symbol: symbol,
+			price: price,
+			type: type,
+		});
+
+		newBill.save()
+		.then(bill => {
+			user.Wallet.balance = user.Wallet.balance + amount*price
+			user.save()
+				.catch(err => {
+					return res.json({code: 2, message: err.message})
+				})
+			return res.json({code: 0, infoBill: bill})
+		})
+		.catch(err => {
+			return res.json({code: 1, message: err.message})
+		})
     }
     else if(rank == "Pro"){
         return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
@@ -138,7 +243,7 @@ class UsersController{
                         }
                     })
                 }
-        
+
             })
         }else{
             let messages = result.mapped()
@@ -198,82 +303,170 @@ class UsersController{
 
     // [GET] /users/getAllUser
     getAllUser(req, res){
+		const pages = req.query.page || 1
+		const typeShow = req.query.show || 10
+        const step = parseInt(pages - 1) * parseInt(typeShow)
+
         User.find({}, (err, users) => {
             if(err){
                 return res.json({code: 1, message: err.message})
             }
-            if(users){
-                return res.json({code: 0, data: users})
-            }else{
+
+			if(users){
+				return res.json({code: 0, dataUser: users, page: pages, typeShow: typeShow})
+			}else{
                 return res.json({code: 2, message: "No user"})
             }
-        }).sort({createAt: 1, updateAt: 1})
+        })
+        .sort({createAt: -1, updateAt: -1})
+        .limit(typeShow)
+        .skip(step)
+    }
+
+    // [PUT] /users/changePWD/:id
+	changePWD(req, res){
+        const {pwd} = req.body
+        const id = req.params.id
+        
+        User.findById(id, (err, user) => {
+            if(err){
+                return res.json({code: 1, message: err.message})
+            }
+
+            if(user){
+                bcrypt.hash(pwd, 10)
+                .then(hashed => {
+                    user.payment.password = hashed
+                    user.save()
+                    .then(u => {
+                        if(u){
+                            return res.json({code: 0, message: "Change password successfully with id = " + id})
+                        }else{
+                            return res.json({code: 4, message: "Can not change password"})    
+                        }
+                    })
+                    .catch(err => {
+                        return res.json({code: 3, message: err.message})
+                    })
+                })
+                .catch(err => {
+                    return res.json({code: 101, message: err.message})
+                })
+                
+            }else{
+                return res.json({code: 2, message: "User is not valid !!!"})
+            }
+        })
+	}
+
+    // [PUT] /users/additionBankInfo/:id
+    additionBankInfo(req, res){
+        const {bankName, nameAccount, accountNumber} = req.body
+        const id = req.params.id
+        
+        User.findById(id, (err, user) => {
+            if(err){
+                return res.json({code: 1, message: err.message})
+            }
+
+            if(user){
+                let infoBank = user.payment.bank
+                infoBank.bankName = bankName
+                infoBank.name = nameAccount
+                infoBank.account = accountNumber
+                user.updateAt = new Date().toUTCString()
+                user.save()
+                .then(u => {
+                    if(u){
+                        return res.json({code: 0, message: "Add bank information successfully with id = " + id})
+                    }else{
+                        return res.json({code: 4, message: "Can not add information of bank"})    
+                    }
+                })
+                .catch(err => {
+                    return res.json({code: 3, message: err.message})
+                })
+            }else{
+                return res.json({code: 2, message: "User is not valid !!!"})
+            }
+        })
     }
 
     // [GET] /users/getAllPayments
     getAllPayments(req, res){
+		const pages = req.query.page || 1
+		const typeShow = req.query.show || 10
+		const step = parseInt(pages - 1) * parseInt(typeShow)
+
         Payments.find({}, (err, payments) => {
             if(err){
                 return res.json({code: 1, message: err.message})
             }
             if(payments){
-                return res.json({code: 0, data: payments})
+				return res.json({code: 0, dataUser: payments, page: pages, typeShow: typeShow})
             }else{
                 return res.json({code: 2, message: "No payments"})
             }
-        }).sort({createAt: 1, updateAt: 1})
+        })
+        .sort({createAt: -1, updateAt: -1})
+        .limit(typeShow)
+        .skip(step)
     }
 
-    // [POST] /users/buyCoin
-    buyCoin(req, res){
-        const {symbols, amount, email} = req.body
-        User.findOne({'payment.email': email}, (err, user) => {
+	// [PUT] /users/updatePayment/:id
+	updatePayment(req, res){
+		const {method, name, idMethod, rateWithdraw, rateDeposit} = req.body
+        const id = req.params.id
+		Payments.findById(id, (err, payment) => {
             if(err){
                 return res.json({code: 1, message: err.message})
             }
-            if(!user){
-                return res.json({})
-            }
-            Coins.findOne({symbols: symbols}, (error, coin) => {
-                if(error){
-                    return res.json({code: 1, message: err.message})
-                }
-                let tmp = ""
-                let positionTEMP = 0
-                for(let i = 0; i < user.coins.length; i++){
-                    if(coin._id.equals(user.coins[i]._id)){
-                        tmp = coin._id
-                        positionTEMP = i
-                    }
-                }
-                if(tmp != ""){
-                    user.coins[positionTEMP].amount = parseInt(user.coins[positionTEMP].amount) + parseInt(amount)
-                    user.save()
-                    .then(ok => {
-                        return res.json({code: 1, coins: ok.coins})
-                    })
-                    .catch(err => {
-                        return res.json({code: 2, message: err.message})
-                    })
-                }else{
-                    user.coins.push({
-                        amount: amount,
-                        _id: coin._id,
-                        name: coin.coinName,
-                    })
-                    user.save()
-                    .then(ok => {
-                        return res.json({code: 1, coins: ok.coins})
-                    })
-                    .catch(err => {
-                        return res.json({code: 2, message: err.message})
-                    })
-                }
-            })
-        })
-    }
 
-    // [POST] /users/withdraw
+            if(payment){
+                payment.methodName = method
+                payment.accountName = name
+                payment.accountNumber = idMethod
+                payment.rateDeposit = rateDeposit
+                payment.rateWithdraw = rateWithdraw
+                payment.updateAt = new Date().toUTCString()
+                payment.save()
+                .then(p => {
+                    if(p){
+                        return res.json({code: 0, message: "Update successfully with id = " + id})
+                    }else{
+                        return res.json({code: 5, message: "Update failed with id = " + id})
+                    }
+                })
+                .catch(err => {
+                    return res.json({code: 4, message: err.message})
+                })
+            }else{
+                return res.json({code: 2, message: "The payment is not valid !!"})
+            }
+        })
+	}
+
+	// [DELETE] /users/deletePayment/:id
+	deletePayment(req, res){
+		const {id} = req.params
+		Payments.findById(id, (err, payment) => {
+			if(err){
+				return res.json({code: 1, message: err.message})
+			}
+			if(payment){
+				Payments.deleteOne({_id: id}, (err) => {
+					if(err) return res.json({code: 3, message: err.message})
+					return res.json({code: 0, message: "Delete payment success with id = " + id})
+
+				})
+			}else{
+				return res.json({code: 2, message: "No payment is valid !!!"})
+			}
+		})
+	}
+
+
+	// [POST] /users/withdraw
     withdraw(req, res){
         let result = validationResult(req)
         if(result.errors.length === 0){
@@ -307,7 +500,7 @@ class UsersController{
             }
             return res.json({code: 1, message: message.msg})
         }
-        
+
     }
 
     // [POST] /users/payment
@@ -343,7 +536,7 @@ class UsersController{
             }
             return res.json({code: 1, message: message.msg})
         }
-        
+
     }
 
     // [POST] /users/deposit
@@ -352,7 +545,7 @@ class UsersController{
         const codeDeposit = otpGenerator.generate(10, { upperCaseAlphabets: false, specialChars: false });
         const {amount, user, amountUsd, amountVnd, symbol} = req.body
 
-        if(amount == "" || user == "" || amountUsd == "" || amountVnd == "" || symbol == "" || 
+        if(amount == "" || user == "" || amountUsd == "" || amountVnd == "" || symbol == "" ||
         !amount || !user || !amountUsd || !amountVnd || !symbol || !req.file){
             return res.json({code: 2, message: "Please enter fields"})
         }
@@ -368,7 +561,7 @@ class UsersController{
 
             fs.renameSync(file1.path, newPath1)
             let statement = path.join('./uploads/images', Date.now() + "-" + name1)
-            
+
             const newDeposit = new Deposits({
                 code: codeDeposit,
                 amount: amount,
@@ -388,8 +581,8 @@ class UsersController{
             })
         }else{
             return res.json({code: 2, message: "Please upload image"})
-        }   
-        
+        }
+
     }
 
     // [POST] /users/servicesCoin
@@ -409,7 +602,7 @@ class UsersController{
                 const typeUser = user.payment.rule,
                 rank = user.rank,
                 coins = user.coins
-                
+
 
                 if(type == "BuyCoin"){
                     buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user)
@@ -452,7 +645,7 @@ class UsersController{
             }
             return res.json({code: 1, message: message.msg})
         }
-    }  
+    }
 
     // ---------------------------------------------services-------------------------------------------------
 }

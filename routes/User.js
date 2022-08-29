@@ -42,5 +42,17 @@ router.post('/deposit', checkAuth, upload.single('statement'), UsersController.d
 // [POST] /users/servicesCoin
 router.post('/servicesCoin', servicesCoinValidator, UsersController.servicesCoin)
 
+// [PUT] /users/updatePayment
+router.put('/updatePayment/:id', UsersController.updatePayment)
+
+// [DELETE] /users/deletePayment/:id
+router.delete('/deletePayment/:id', UsersController.deletePayment)
+
+// [PUT] /users/changePWD/:id
+router.put('/changePWD/:id', UsersController.changePWD)
+
+// [PUT] /users/additionBankInfo/:id
+router.put('/additionBankInfo/:id', UsersController.additionBankInfo)
+
 
 module.exports = router
