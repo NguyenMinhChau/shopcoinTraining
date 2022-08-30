@@ -15,16 +15,10 @@ app.use(session({
   cookie: { secure: true, maxAge: 60 * 60 * 1000},
 }))
 
-const corsOptions = {
-  //To allow requests from client
-  origin: true,
-  credentials: true,
-};
-
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
 app.use(cookieParser())
-app.use(cors(corsOptions))
+app.use(cors())
 app.use(express.static(path.resolve('./uploads')));
 
 switch(process.env.TYPE){
