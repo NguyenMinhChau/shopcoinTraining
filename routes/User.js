@@ -17,6 +17,11 @@ const additionBankInfoValidator = require('./validators/addtionBankInfoValidator
 // import auth
 const checkAuth = require('../auth/auth')
 
+//[POST] /users/refreshToken
+router.post('/refreshToken', UsersController.refreshToken)
+
+// [POST] /users/register
+router.post('/register', checkRegister, UsersController.register)
 // [POST] /users/register
 router.post('/register', checkRegister, UsersController.register)
 
@@ -31,7 +36,8 @@ router.get('/getAllPayments', UsersController.getAllPayments)
 
 // [POST] /users/login
 router.post('/login', LoginValidator, UsersController.login)
-
+//[POST] /users/logout
+router.get('/logout', UsersController.logout)
 // [POST] /users/payment
 router.post('/payment', checkAuth, PaymentValidator, UsersController.payment)
 

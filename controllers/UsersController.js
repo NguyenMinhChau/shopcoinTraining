@@ -277,6 +277,21 @@ class UsersController{
                             expiresIn: "1h",
                             }
                         )
+						const refreshToken = jwt.sign(
+							{user_id: user._id},
+							process.env.JWT_SECRET,
+							{
+								expiresIn: "1d",
+							}
+						)
+
+						res.cookie('jwt', refreshToken, {
+							httpOnly: true,
+							sameSite: 'strict',
+							secure: true,
+							maxAge: 24*60*60*1000
+						})
+
                         req.session.jwt = token
                         return res.json({code: 0, userInfo: user, token: req.session.jwt})
                     }else{
@@ -295,8 +310,36 @@ class UsersController{
         }
     }
 
+	// [POST] /users/refreshToken
+	refreshToken(req, res){
+		if(req.cookies?.jwt){
+			const refreshToken = req.cookies.jwt
+			const {id, email} = req.body
+			jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) =>{
+				if(err){
+					return res.status(406).json({code: 1, message: err.message})
+				}else{
+					const newAccessToken = jwt.sign({
+						user_id: id, email
+					},
+					process.env.JWT_SECRET,
+						{
+							expiresIn: '30m'
+						})
+					return res.json({token: newAccessToken})
+				}
+			})
+
+		}else{
+			return res.status(406).json({message: Unauthorized})
+		}
+	}
+
     logout(req, res){
-        req.session.destroy();
+		// req.session.destroy();
+		res.clearCookie('jwt')
+		return res.json({code: 0, message: "Logout"})
+
     }
 
     // ---------------------------------------------services-------------------------------------------------
@@ -325,34 +368,41 @@ class UsersController{
 
     // [PUT] /users/changePWD/:id
 	changePWD(req, res){
-        const {pwd} = req.body
+        const {oldPWD, newPWD} = req.body
         const id = req.params.id
-        
+
         User.findById(id, (err, user) => {
             if(err){
                 return res.json({code: 1, message: err.message})
             }
 
             if(user){
-                bcrypt.hash(pwd, 10)
-                .then(hashed => {
-                    user.payment.password = hashed
-                    user.save()
-                    .then(u => {
-                        if(u){
-                            return res.json({code: 0, message: "Change password successfully with id = " + id})
-                        }else{
-                            return res.json({code: 4, message: "Can not change password"})    
-                        }
-                    })
-                    .catch(err => {
-                        return res.json({code: 3, message: err.message})
-                    })
-                })
-                .catch(err => {
-                    return res.json({code: 101, message: err.message})
-                })
-                
+				bcrypt.compare(oldPWD, user.payment.password)
+					.then(result => {
+						if(result){
+							 bcrypt.hash(newPWD, 10)
+							.then(hashed => {
+								user.payment.password = hashed
+								user.save()
+								.then(u => {
+									if(u){
+										return res.json({code: 0, message: "Change password successfully with id = " + id})
+									}else{
+										return res.json({code: 4, message: "Can not change password"})
+									}
+								})
+								.catch(err => {
+									return res.json({code: 3, message: err.message})
+								})
+							})
+							.catch(err => {
+								return res.json({code: 101, message: err.message})
+							})
+						}else{
+							return res.status(404).json({code: 5, message: "Password old is not match"})
+						}
+					})
+
             }else{
                 return res.json({code: 2, message: "User is not valid !!!"})
             }
@@ -365,7 +415,7 @@ class UsersController{
         if(result.errors.length === 0){
             const {bankName, nameAccount, accountNumber} = req.body
             const id = req.params.id
-            
+
             User.findById(id, (err, user) => {
                 if(err){
                     return res.json({code: 1, message: err.message})
@@ -382,7 +432,7 @@ class UsersController{
                         if(u){
                             return res.json({code: 0, message: "Add bank information successfully with id = " + id})
                         }else{
-                            return res.json({code: 4, message: "Can not add information of bank"})    
+                            return res.json({code: 4, message: "Can not add information of bank"})
                         }
                     })
                     .catch(err => {
@@ -402,7 +452,7 @@ class UsersController{
             return res.json({code: 1, message: message.msg})
         }
 
-        
+
     }
 
     // [GET] /users/getAllPayments
@@ -416,7 +466,16 @@ class UsersController{
                 return res.json({code: 1, message: err.message})
             }
             if(payments){
-				return res.json({code: 0, dataUser: payments, page: pages, typeShow: typeShow})
+
+				Payments.find({}, (err, ps) => {
+					if(err){
+						return res.status(404).json({code: 3, message: err.message})
+					}
+
+					return res.json({code: 0, dataUser: payments, page: pages, typeShow: typeShow, total: ps.length})
+
+				})
+
             }else{
                 return res.json({code: 2, message: "No payments"})
             }
@@ -469,7 +528,7 @@ class UsersController{
             return res.json({code: 1, message: message.msg})
         }
 
-		
+
 	}
 
 	// [DELETE] /users/deletePayment/:id

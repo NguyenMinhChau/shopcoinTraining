@@ -6,6 +6,7 @@ const mongoose = require('mongoose')
 const session = require('express-session')
 const cors = require('cors')
 const path = require('path')
+const cookieparser = require('cookie-parser');
 
 const app = express()
 
@@ -15,6 +16,7 @@ app.use(session({
 }))
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
+app.use(cookieparser());
 app.use(cors())
 app.use(express.static(path.resolve('./uploads')));
 
