@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const otpGenerator = require('otp-generator')
 const path = require('path')
 const fs = require('fs')
+const jwt_decoded = require('jwt-decode')
 
 // import model
 
@@ -169,7 +170,25 @@ function addCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
         return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
     }
     else if(rank == "Standard"){
-        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+        const newBill = new Bills({
+			fee: fee,
+				buyer: {
+					gmailUSer: gmailUser,
+				},
+				amount: amount,
+				amountUsdt: amountUsdt,
+				symbol: symbol,
+				price: price,
+				type: type,
+			});
+
+			newBill.save()
+			.then(bill => {
+				addCoinSupport(req, res, symbol, amount, gmailUser, bill)
+			})
+			.catch(err => {
+				return res.json({code: 1, message: err.message})
+			})
     }
     else if(rank == "Pro"){
         return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
@@ -184,7 +203,31 @@ function subCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
         return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
     }
     else if(rank == "Standard"){
-        return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
+        const balance = user.Wallet.balance
+		const newBill = new Bills({
+		fee: fee,
+			buyer: {
+				gmailUSer: gmailUser,
+			},
+			amount: amount,
+			amountUsdt: amountUsdt,
+			symbol: symbol,
+			price: price,
+			type: type,
+		});
+
+		newBill.save()
+		.then(bill => {
+			user.Wallet.balance = user.Wallet.balance + amount*price
+			user.save()
+				.catch(err => {
+					return res.json({code: 2, message: err.message})
+				})
+			return res.json({code: 0, infoBill: bill})
+		})
+		.catch(err => {
+			return res.json({code: 1, message: err.message})
+		})
     }
     else if(rank == "Pro"){
         return res.json({fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins})
@@ -274,26 +317,25 @@ class UsersController{
                             { user_id: user._id, email },
                             process.env.JWT_SECRET,
                             {
-                            expiresIn: "1h",
+                            expiresIn: "30s",
                             }
                         )
-						const refreshToken = jwt.sign(
-							{user_id: user._id},
-							process.env.JWT_SECRET,
-							{
-								expiresIn: "1d",
-							}
-						)
+						// const refreshToken = jwt.sign(
+						// 	{user_id: user._id},
+						// 	process.env.JWT_SECRET,
+						// 	{
+						// 		expiresIn: "1d",
+						// 	}
+						// )    
 
-						res.cookie('jwt', refreshToken, {
-							httpOnly: true,
-							sameSite: 'strict',
-							secure: true,
-							maxAge: 24*60*60*1000
-						})
+						// res.cookie('jwt', token, {
+						// 	httpOnly: true,
+						// 	sameSite: 'strict',
+						// 	secure: true,
+						// 	maxAge: 60*1000*60,
+						// })
 
-                        req.session.jwt = token
-                        return res.json({code: 0, userInfo: user, token: req.session.jwt})
+                        return res.json({code: 0, userInfo: user, token: token})
                     }else{
                         return res.json({code: 2, message: "Passowrd is wrong"})
                     }
@@ -312,26 +354,39 @@ class UsersController{
 
 	// [POST] /users/refreshToken
 	refreshToken(req, res){
-		if(req.cookies?.jwt){
-			const refreshToken = req.cookies.jwt
-			const {id, email} = req.body
+		if(req.headers['token']){
+			const refreshToken = req.headers['token']
+			// const {id, email} = req.body
 			jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) =>{
 				if(err){
-					return res.status(406).json({code: 1, message: err.message})
+					// return res.status(406).json({code: 1, message: err.message})
+                    const paramaters = jwt_decoded(refreshToken)
+                    const {user_id, email} = paramaters
+
+                    jwt.sign(
+                        {user_id: user_id, email},
+                        process.env.JWT_SECRET,
+                        {
+                            expiresIn: "1d",
+                        },
+                        (err, refreshToken) => {
+                            res.cookie('jwt', refreshToken, {
+                                httpOnly: true,
+                                sameSite: 'strict',
+                                secure: true,
+                                maxAge: 60*1000*60,
+                            })
+                            
+                            return res.json({token: refreshToken})                            
+                        }
+                    )
 				}else{
-					const newAccessToken = jwt.sign({
-						user_id: id, email
-					},
-					process.env.JWT_SECRET,
-						{
-							expiresIn: '30m'
-						})
-					return res.json({token: newAccessToken})
+                    return res.json("Expried")
 				}
 			})
 
 		}else{
-			return res.status(406).json({message: Unauthorized})
+			return res.json("No jwt")
 		}
 	}
 
@@ -906,25 +961,6 @@ class UsersController{
                     subCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user)
                 }
             })
-            // const newBill = new Bills({
-            //     fee: fee,
-            //     buyer: {
-            //         gmailUSer: gmailUser,
-            //     },
-            //     amount: amount,
-            //     amountUsdt: amountUsdt,
-            //     symbol: symbol,
-            //     price: price,
-            //     type: type,
-            // });
-            // return res.json({code: 1, infoBill: newBill})
-            // newBill.save()
-            // .then(bill => {
-            //     return res.json({code: 1, infoBill: bill})
-            // })
-            // .catch(err => {
-            //     return res.json({code: 2, message: err.message})
-            // })
         }else{
             let messages = result.mapped()
             let message = ''
