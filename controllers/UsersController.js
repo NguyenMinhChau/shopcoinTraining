@@ -356,7 +356,13 @@ class UsersController{
             }
 
 			if(users){
-				return res.json({code: 0, dataUser: users, page: pages, typeShow: typeShow})
+				User.find({}, (err, uss) => {
+					if(err){
+						return res.status(404).json({code: 1, message: err.message})
+					}
+
+					return res.json({code: 0, dataUser: users, page: pages, typeShow: typeShow, total: uss.length})
+				})
 			}else{
                 return res.json({code: 2, message: "No user"})
             }
