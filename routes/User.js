@@ -13,6 +13,7 @@ const WithdrawValidator = require('./validators/WithdrawValidator')
 const servicesCoinValidator = require('./validators/servicesCoinValidator')
 const updatePaymentValidator = require('./validators/updatePaymentValidator')
 const additionBankInfoValidator = require('./validators/addtionBankInfoValidator')
+const updateWithdrawValidator = require('./validators/updateWithdrawValidator')
 
 // import auth
 const checkAuth = require('../auth/auth')
@@ -34,10 +35,18 @@ router.get('/getAllUser', UsersController.getAllUser)
 // [GET] /users/getAllPayments
 router.get('/getAllPayments', UsersController.getAllPayments)
 
+// [GET] /users/getAllWithdraw
+router.get('/getAllWithdraw', UsersController.getAllWithdraw)
+
+// [GET] /users/getAllDeposit
+router.get('/getAllDeposit', UsersController.getAllDeposit)
+
 // [POST] /users/login
 router.post('/login', LoginValidator, UsersController.login)
+
 //[POST] /users/logout
 router.get('/logout', UsersController.logout)
+
 // [POST] /users/payment
 router.post('/payment', checkAuth, PaymentValidator, UsersController.payment)
 
@@ -55,6 +64,18 @@ router.put('/updatePayment/:id', updatePaymentValidator, UsersController.updateP
 
 // [DELETE] /users/deletePayment/:id
 router.delete('/deletePayment/:id', UsersController.deletePayment)
+
+// [PUT] /users/updateWithdraw/:id
+router.put('/updateWithdraw/:id', updateWithdrawValidator, UsersController.updateWithdraw)
+
+// [DELETE] /users/deleteWithdraw/:id
+router.delete('/deleteWithdraw/:id', UsersController.deleteWithdraw)
+
+// [PUT] /users/updateDeposit/:id
+router.put('/updateDeposit/:id', UsersController.updateDeposit)
+
+// [DELETE] /users/deleteDeposit/:id
+router.delete('/deleteDeposit/:id', UsersController.deleteDeposit)
 
 // [PUT] /users/changePWD/:id
 router.put('/changePWD/:id', checkAuth, UsersController.changePWD)

@@ -491,6 +491,66 @@ class UsersController{
         .skip(step)
     }
 
+    // [GET] /users/getAllWithdraw
+    getAllWithdraw(req, res){
+        const pages = req.query.page || 1
+		const typeShow = req.query.show || 10
+		const step = parseInt(pages - 1) * parseInt(typeShow)
+
+        Withdraws.find({}, (err, withdraws) => {
+            if(err){
+                return res.json({code: 1, message: err.message})
+            }
+            if(withdraws){
+
+				Withdraws.find({}, (err, wds) => {
+					if(err){
+						return res.status(404).json({code: 3, message: err.message})
+					}
+
+					return res.json({code: 0, dataWithdraw: withdraws, page: pages, typeShow: typeShow, total: wds.length})
+
+				})
+
+            }else{
+                return res.json({code: 2, message: "No withdraws"})
+            }
+        })
+        .sort({createAt: -1, updateAt: -1})
+        .limit(typeShow)
+        .skip(step)
+    }
+
+    // [GET] /users/getAllDeposit
+    getAllDeposit(req, res){
+        const pages = req.query.page || 1
+		const typeShow = req.query.show || 10
+		const step = parseInt(pages - 1) * parseInt(typeShow)
+
+        Deposits.find({}, (err, deposits) => {
+            if(err){
+                return res.json({code: 1, message: err.message})
+            }
+            if(deposits){
+
+				Deposits.find({}, (err, wds) => {
+					if(err){
+						return res.status(404).json({code: 3, message: err.message})
+					}
+
+					return res.json({code: 0, dataDeposit: deposits, page: pages, typeShow: typeShow, total: wds.length})
+
+				})
+
+            }else{
+                return res.json({code: 2, message: "No deposits"})
+            }
+        })
+        .sort({createAt: -1, updateAt: -1})
+        .limit(typeShow)
+        .skip(step)
+    }
+
 	// [PUT] /users/updatePayment/:id
 	updatePayment(req, res){
         let result = validationResult(req)
@@ -556,6 +616,144 @@ class UsersController{
 		})
 	}
 
+    // [PUT] /users/updateWithdraw/:id
+	updateWithdraw(req, res){
+        let result = validationResult(req)
+        if(result.errors.length === 0){
+            const {status,  amount, methodName, accountName, accountNumber, transform, amountUsd, amountVnd, symbol} = req.body
+            const id = req.params.id
+            Withdraws.findById(id, (err, withdraw) => {
+                if(err){
+                    return res.json({code: 1, message: err.message})
+                }
+
+                if(withdraw){
+                    withdraw.status = status
+                    withdraw.amount = amount
+                    withdraw.method.methodName = methodName
+                    withdraw.method.accountName = accountName
+                    withdraw.method.accountNumber = accountNumber
+                    withdraw.method.transform = transform
+                    withdraw.amountUsd = amountUsd
+                    withdraw.amountVnd = amountVnd
+                    withdraw.symbol = symbol
+                    withdraw.updateAt = new Date().toUTCString()
+                    withdraw.save()
+                    .then(p => {
+                        if(p){
+                            return res.json({code: 0, message: "Update successfully with id = " + id})
+                        }else{
+                            return res.json({code: 5, message: "Update failed with id = " + id})
+                        }
+                    })
+                    .catch(err => {
+                        return res.json({code: 4, message: err.message})
+                    })
+                }else{
+                    return res.json({code: 2, message: "The withdraw is not valid !!"})
+                }
+            })
+        }else{
+            let messages = result.mapped()
+            let message = ''
+            for(let m in messages){
+                message = messages[m]
+                break
+            }
+            return res.json({code: 1, message: message.msg})
+        }
+
+
+	}
+
+	// [DELETE] /users/deleteWithdraw/:id
+	deleteWithdraw(req, res){
+		const {id} = req.params
+		Withdraws.findById(id, (err, withdraw) => {
+			if(err){
+				return res.json({code: 1, message: err.message})
+			}
+			if(withdraw){
+				Withdraws.deleteOne({_id: id}, (err) => {
+					if(err) return res.json({code: 3, message: err.message})
+					return res.json({code: 0, message: "Delete withdraw success with id = " + id})
+
+				})
+			}else{
+				return res.json({code: 2, message: "No withdraw is valid !!!"})
+			}
+		})
+	}
+
+    // [PUT] /users/updateDeposit/:id
+	updateDeposit(req, res){
+        let result = validationResult(req)
+        if(result.errors.length === 0){
+            const {status,  amount, methodName, accountName, accountNumber, transform, amountUsd, amountVnd, symbol} = req.body
+            const id = req.params.id
+            Deposits.findById(id, (err, deposit) => {
+                if(err){
+                    return res.json({code: 1, message: err.message})
+                }
+
+                if(deposit){
+                    deposit.status = status
+                    deposit.amount = amount
+                    deposit.method.methodName = methodName
+                    deposit.method.accountName = accountName
+                    deposit.method.accountNumber = accountNumber
+                    deposit.method.transform = transform
+                    deposit.amountUsd = amountUsd
+                    deposit.amountVnd = amountVnd
+                    deposit.symbol = symbol
+                    deposit.updateAt = new Date().toUTCString()
+                    deposit.save()
+                    .then(p => {
+                        if(p){
+                            return res.json({code: 0, message: "Update successfully with id = " + id})
+                        }else{
+                            return res.json({code: 5, message: "Update failed with id = " + id})
+                        }
+                    })
+                    .catch(err => {
+                        return res.json({code: 4, message: err.message})
+                    })
+                }else{
+                    return res.json({code: 2, message: "The deposit is not valid !!"})
+                }
+            })
+        }else{
+            let messages = result.mapped()
+            let message = ''
+            for(let m in messages){
+                message = messages[m]
+                break
+            }
+            return res.json({code: 1, message: message.msg})
+        }
+
+
+	}
+
+	// [DELETE] /users/deleteDeposit/:id
+	deleteDeposit(req, res){
+		const {id} = req.params
+		Deposits.findById(id, (err, deposit) => {
+			if(err){
+				return res.json({code: 1, message: err.message})
+			}
+			if(deposit){
+				Deposits.deleteOne({_id: id}, (err) => {
+					if(err) return res.json({code: 3, message: err.message})
+					return res.json({code: 0, message: "Delete deposit success with id = " + id})
+
+				})
+			}else{
+				return res.json({code: 2, message: "No deposit is valid !!!"})
+			}
+		})
+	}
+
 
 	// [POST] /users/withdraw
     withdraw(req, res){
@@ -566,7 +764,7 @@ class UsersController{
 
             const {amount, amountUsd, amountVnd, symbol} = req.body
 
-            const newWithdraw = new Withdraws({
+            const newWithdraw = new Deposits({
                 code: codeWithdraw,
                 amount: amount,
                 amountUsd: amountUsd,
