@@ -14,6 +14,7 @@ const servicesCoinValidator = require('./validators/servicesCoinValidator')
 const updatePaymentValidator = require('./validators/updatePaymentValidator')
 const additionBankInfoValidator = require('./validators/addtionBankInfoValidator')
 const updateWithdrawValidator = require('./validators/updateWithdrawValidator')
+const updateDepositValidator = require('./validators/updateDepositValidator')
 
 // import auth
 const checkAuth = require('../auth/auth')
@@ -72,7 +73,7 @@ router.put('/updateWithdraw/:id', updateWithdrawValidator, UsersController.updat
 router.delete('/deleteWithdraw/:id', UsersController.deleteWithdraw)
 
 // [PUT] /users/updateDeposit/:id
-router.put('/updateDeposit/:id', UsersController.updateDeposit)
+router.put('/updateDeposit/:id', updateDepositValidator, UsersController.updateDeposit)
 
 // [DELETE] /users/deleteDeposit/:id
 router.delete('/deleteDeposit/:id', UsersController.deleteDeposit)
