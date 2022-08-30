@@ -6,7 +6,7 @@ const mongoose = require('mongoose')
 const session = require('express-session')
 const cors = require('cors')
 const path = require('path')
-const cookieparser = require('cookie-parser');
+const cookieParser = require('cookie-parser');
 
 const app = express()
 
@@ -17,18 +17,13 @@ app.use(session({
 
 const corsOptions = {
   //To allow requests from client
-  origin: [
-    "http://localhost:3000",
-    "http://127.0.0.1",
-    "http://104.142.122.231",
-  ],
+  origin: true,
   credentials: true,
-  exposedHeaders: ["set-cookie"],
 };
 
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
-app.use(cookieparser());
+app.use(cookieParser())
 app.use(cors(corsOptions))
 app.use(express.static(path.resolve('./uploads')));
 

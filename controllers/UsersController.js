@@ -320,20 +320,20 @@ class UsersController{
                             expiresIn: "30s",
                             }
                         )
-						// const refreshToken = jwt.sign(
-						// 	{user_id: user._id},
-						// 	process.env.JWT_SECRET,
-						// 	{
-						// 		expiresIn: "1d",
-						// 	}
-						// )    
+						const refreshToken = jwt.sign(
+							{user_id: user._id, email},
+							process.env.JWT_SECRET,
+							{
+								expiresIn: "1d",
+							}
+						)    
 
-						// res.cookie('jwt', token, {
-						// 	httpOnly: true,
-						// 	sameSite: 'strict',
-						// 	secure: true,
-						// 	maxAge: 60*1000*60,
-						// })
+						res.cookie('jwt', refreshToken, {
+							httpOnly: true,
+							sameSite: 'strict',
+							secure: false,
+							maxAge: 60*1000*60,
+						})
 
                         return res.json({code: 0, userInfo: user, token: token})
                     }else{
@@ -354,34 +354,38 @@ class UsersController{
 
 	// [POST] /users/refreshToken
 	refreshToken(req, res){
-		if(req.headers['token']){
-			const refreshToken = req.headers['token']
+        const refreshToken = req.cookies.jwt
+		if(refreshToken){
 			// const {id, email} = req.body
 			jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) =>{
 				if(err){
-					// return res.status(406).json({code: 1, message: err.message})
-                    const paramaters = jwt_decoded(refreshToken)
-                    const {user_id, email} = paramaters
-
-                    jwt.sign(
-                        {user_id: user_id, email},
+                    return res.json("Error refreshToken")
+				}else{
+                    const token = jwt.sign(
+                        { id: decoded.id, email: decoded.email },
+                        process.env.JWT_SECRET,
+                        {
+                        expiresIn: "30s",
+                        }
+                    )
+                    const refreshToken = jwt.sign(
+                        {id: decoded.id, email: decoded.email},
                         process.env.JWT_SECRET,
                         {
                             expiresIn: "1d",
-                        },
-                        (err, refreshToken) => {
-                            res.cookie('jwt', refreshToken, {
-                                httpOnly: true,
-                                sameSite: 'strict',
-                                secure: true,
-                                maxAge: 60*1000*60,
-                            })
-                            
-                            return res.json({token: refreshToken})                            
                         }
-                    )
-				}else{
-                    return res.json("Expried")
+                    )    
+
+                    res.cookie('jwt', refreshToken, {
+                        httpOnly: true,
+                        sameSite: 'strict',
+                        secure: false,
+                        maxAge: 60*1000*60,
+                    })
+
+                    return res.json({code: 0, newtoken: token})
+                    // console.log(decoded)
+                    // return res.json("OK")
 				}
 			})
 
