@@ -24,8 +24,7 @@ router.post('/refreshToken', UsersController.refreshToken)
 
 // [POST] /users/register
 router.post('/register', checkRegister, UsersController.register)
-// [POST] /users/register
-router.post('/register', checkRegister, UsersController.register)
+
 
 // [POST] /users/buyCoin
 // router.post('/buyCoin', checkAuth, checkRegister, UsersController.buyCoin)
@@ -46,7 +45,7 @@ router.get('/getAllDeposit', UsersController.getAllDeposit)
 router.post('/login', LoginValidator, UsersController.login)
 
 //[POST] /users/logout
-router.get('/logout', UsersController.logout)
+router.post('/logout', UsersController.logout)
 
 // [POST] /users/payment
 router.post('/payment', checkAuth, PaymentValidator, UsersController.payment)

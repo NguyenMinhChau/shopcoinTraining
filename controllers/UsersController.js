@@ -237,6 +237,130 @@ function subCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
     }
 }
 
+function confirmBuyCoin(req, res, gmail, idBill, fee, amount, price){
+    User.findOne({'payment.gmail': gmail}, (err, user) => {
+        if(err){
+            return res.json(404).json({code: 1, message: "Error about find information of user"})
+        }
+        if(user){
+            let fee = user.fee
+            user.Wallet.balance = parseFloat(user.Wallet.balance) - parseFloat(amount*price*( 1 + fee ))
+            user.save()
+            .then(u => {
+                return res.json({code: 0, message: "Confirmed with id = " + idBill})
+            })
+            .catch(err => {
+                return res.status(404).json({code: 3, message: err.message})
+            })
+        }else{
+            return res.json(404).json({code: 2, message: "User is not valid !!"})
+        }
+    })
+}
+
+function cancelBuyCoin(req, res, gmail, idBill, fee, amount, price){
+    User.findOne({'payment.gmail': gmail}, (err, user) => {
+        if(err){
+            return res.json(404).json({code: 1, message: "Error about find information of user"})
+        }
+        if(user){
+            let fee = user.fee
+            user.Wallet.balance = parseFloat(user.Wallet.balance) + parseFloat(amount*price*(1 + fee))
+            user.save()
+            .then(u => {
+                return res.json({code: 0, message: "Confirmed with id = " + idBill})
+            })
+            .catch(err => {
+                return res.status(404).json({code: 3, message: err.message})
+            })
+        }else{
+            return res.json(404).json({code: 2, message: "User is not valid !!"})
+        }
+    })
+}
+
+function confirmSellCoin(req, res, gmail, idBill, fee, amount, price){
+    User.findOne({'payment.gmail': gmail}, (err, user) => {
+        if(err){
+            return res.json(404).json({code: 1, message: "Error about find information of user"})
+        }
+        if(user){
+            user.Wallet.balance = parseFloat(user.Wallet.balance) - parseFloat(amount*price)
+            user.save()
+            .then(u => {
+                let query = {
+                    _id: id,
+                    type: "SellCoin"
+                }
+                Bills.findOne(query, (err, bill) => {
+                    if(err){
+                        return res.json(404).json({code: 1, message: "Error about find information of bill toward to bill sell coin"})
+                    }
+                    if(bill){
+                        bill.status = "Confirmed"
+                        bill.save()
+                        .then(b => {
+                            return res.json({code: 0, message: "Confirmed bill", billInfo: b})
+                        })
+                        .catch(err => {
+                            return res.json(404).json({code: 1, message: err.message})
+                        })
+                    }else{
+                        return res.json(404).json({code: 1, message: "Bill is not valid !!"})
+                    }
+                })
+
+            })
+            .catch(err => {
+                return res.status(404).json({code: 3, message: err.message})
+            })
+        }else{
+            return res.json(404).json({code: 2, message: "User is not valid !!"})
+        }
+    })
+}
+
+function cancelSellCoin(req, res, gmail, idBill, fee, amount, price){
+    User.findOne({'payment.gmail': gmail}, (err, user) => {
+        if(err){
+            return res.json(404).json({code: 1, message: "Error about find information of user"})
+        }
+        if(user){
+            let fee = user.fee
+            user.Wallet.balance = parseFloat(user.Wallet.balance) + parseFloat(amount*price)
+            user.save()
+            .then(u => {
+                let query = {
+                    _id: id,
+                    type: "SellCoin"
+                }
+                Bills.findOne(query, (err, bill) => {
+                    if(err){
+                        return res.json(404).json({code: 1, message: "Error about find information of bill toward to bill sell coin"})
+                    }
+                    if(bill){
+                        bill.status = "Canceled"
+                        bill.save()
+                        .then(b => {
+                            return res.json({code: 0, message: "Canceled bill", billInfo: b})
+                        })
+                        .catch(err => {
+                            return res.json(404).json({code: 1, message: err.message})
+                        })
+                    }else{
+                        return res.json(404).json({code: 1, message: "Bill is not valid !!"})
+                    }
+                })
+            })
+            .catch(err => {
+                return res.status(404).json({code: 3, message: err.message})
+            })
+        }else{
+            return res.json(404).json({code: 2, message: "User is not valid !!"})
+        }
+    })
+}
+
 class UsersController{
     // [POST] /users/register
     register(req, res){
@@ -299,6 +423,7 @@ class UsersController{
         }
     }
 
+    // [POST] /users/login
     login(req, res){
         let result = validationResult(req)
         if(result.errors.length === 0){
@@ -314,14 +439,14 @@ class UsersController{
                 .then(match => {
                     if(match){
                         const token = jwt.sign(
-                            { user_id: user._id, email },
+                            { id: user._id, email },
                             process.env.JWT_SECRET,
                             {
                             expiresIn: "30s",
                             }
                         )
 						const refreshToken = jwt.sign(
-							{user_id: user._id, email},
+							{ id: user._id, email },
 							process.env.JWT_SECRET,
 							{
 								expiresIn: "1d",
@@ -976,6 +1101,11 @@ class UsersController{
         }
     }
 
+    // [POST] /users/handleBuyCoin/:id
+    handleBuyCoin(req, res){
+        const {id} = req.params
+        const {status} = req.body
+    }
     // ---------------------------------------------services-------------------------------------------------
 }
 

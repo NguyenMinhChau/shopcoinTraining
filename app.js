@@ -15,10 +15,15 @@ app.use(session({
   cookie: { secure: true, maxAge: 60 * 60 * 1000},
 }))
 
+const corOptions = {
+  origin: true,
+  credentials: true
+}
+
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
 app.use(cookieParser())
-app.use(cors())
+app.use(cors(corOptions))
 app.use(express.static(path.resolve('./uploads')));
 
 switch(process.env.TYPE){
