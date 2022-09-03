@@ -5,20 +5,21 @@ class CoinsController{
     // [POST] /coins/add
     addCoin(req, res){
         // console.log(req.file);
+        let date = Date.now()
         let file1 = req.file
         let name1 = file1.originalname
         let destination = file1.destination
-        let newPath1 = path.join(destination, Date.now() + "-" + name1)
+        let newPath1 = path.join(destination, date + "-" + name1)
 
         let typeFile = file1.mimetype.split('/')[0]
 
         if(typeFile == "image"){
 
             fs.renameSync(file1.path, newPath1)
-            let logoCoin = path.join('./uploads/images', Date.now() + "-" + name1)
+            let logoCoin = path.join('./uploads/images', date + "-" + name1)
             
             let rawListUnshow = req.body.unshow || ""
-            let newList = rawListUnshow.replace('[', '').replace(']', '').split(', ')
+            let newList = rawListUnshow.split(',')
             
             const {name, symbol, fullname} = req.body
             const coin = Coins({

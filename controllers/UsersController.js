@@ -20,7 +20,7 @@ const Bills = require('../models/Bills')
 // support function
 
 //function support for add coin to accont
-function addCoinSupport(req, res, symbols, amount, email, bill){
+function addCoinSupport(req, res, symbols, amount, email, idBill){
 	User.findOne({'payment.email': email}, (err, user) => {
 		if(err){
 			return res.json({code: 1, message: err.message})
@@ -45,7 +45,7 @@ function addCoinSupport(req, res, symbols, amount, email, bill){
 				user.coins[positionTEMP].amount = parseInt(user.coins[positionTEMP].amount) + parseInt(amount)
 				user.save()
 				.then(ok => {
-					return res.json({code: 0, infoBill: bill, coins: ok.coins})
+					return res.json({code: 0, coins: ok.coins})
 				})
 				.catch(err => {
 					return res.json({code: 2, message: err.message})
@@ -58,7 +58,7 @@ function addCoinSupport(req, res, symbols, amount, email, bill){
 				})
 				user.save()
 				.then(ok => {
-					return res.json({code: 0, infoBill: bill, coins: ok.coins})
+					return res.json({code: 0, coins: ok.coins})
 				})
 				.catch(err => {
 					return res.json({code: 2, message: err.message})
@@ -84,7 +84,7 @@ function buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
     else if(rank == "Standard"){
 		if(checkWallet(balance, amount*price)){
 			const newBill = new Bills({
-			fee: fee,
+				fee: fee,
 				buyer: {
 					gmailUSer: gmailUser,
 				},
@@ -97,7 +97,7 @@ function buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
 
 			newBill.save()
 			.then(bill => {
-				user.Wallet.balance = user.Wallet.balance - amount*price
+			/*	user.Wallet.balance = user.Wallet.balance - amount*price
 				user.save()
 					.then((user) => {
 						if(user){
@@ -108,12 +108,13 @@ function buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
 					})
 					.catch(err => {
 						return res.json({code: 2, message: err.message})
-					})
+					})*/
+
+				return res.json({code: 0, message: "Đã mua coin thành công đợi chờ xét duyệt", billInfo: bill})
 			})
 			.catch(err => {
 				return res.json({code: 1, message: err.message})
 			})
-
 		}else{
 			return res.json({code: 3, message: "Số tiền trong tài khoản của bạn hiện tại không đủ để thực hiện việc mua coin, vui lonfg nạp thêm vào !!!"})
 		}
@@ -237,21 +238,29 @@ function subCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
     }
 }
 
-function confirmBuyCoin(req, res, gmail, idBill, fee, amount, price){
+function confirmBuyCoin(req, res, gmail, idBill, fee, amount, price, symbol){
     User.findOne({'payment.gmail': gmail}, (err, user) => {
         if(err){
             return res.json(404).json({code: 1, message: "Error about find information of user"})
         }
         if(user){
-            let fee = user.fee
-            user.Wallet.balance = parseFloat(user.Wallet.balance) - parseFloat(amount*price*( 1 + fee ))
+            let balance = parseFloat(user.Wallet.balance) - parseFloat(amount*price*( 1 + fee ))
+            user.Wallet.balance = balance
             user.save()
             .then(u => {
-                return res.json({code: 0, message: "Confirmed with id = " + idBill})
+				if(u){
+                    let email = u.payment.email
+					addCoinSupport(req, res, symbol, amount, email, idBill)
+                    // return res.json({symbol, amount, email, idBill})
+                    // return res.json(u)
+				}else{
+					return res.json({code: 3, message: "Không thể thực hiện việc trừ tiền tài khoản của user"})
+				}
             })
             .catch(err => {
                 return res.status(404).json({code: 3, message: err.message})
             })
+            // return res.json({user, balance})
         }else{
             return res.json(404).json({code: 2, message: "User is not valid !!"})
         }
@@ -264,7 +273,6 @@ function cancelBuyCoin(req, res, gmail, idBill, fee, amount, price){
             return res.json(404).json({code: 1, message: "Error about find information of user"})
         }
         if(user){
-            let fee = user.fee
             user.Wallet.balance = parseFloat(user.Wallet.balance) + parseFloat(amount*price*(1 + fee))
             user.save()
             .then(u => {
@@ -451,7 +459,7 @@ class UsersController{
 							{
 								expiresIn: "1d",
 							}
-						)    
+						)
 
 						res.cookie('jwt', refreshToken, {
 							httpOnly: true,
@@ -499,7 +507,7 @@ class UsersController{
                         {
                             expiresIn: "1d",
                         }
-                    )    
+                    )
 
                     res.cookie('jwt', refreshToken, {
                         httpOnly: true,
@@ -1105,6 +1113,48 @@ class UsersController{
     handleBuyCoin(req, res){
         const {id} = req.params
         const {status} = req.body
+
+        const query = {
+            _id: id,
+            status: "On hold"
+        }
+
+		Bills.findOne(query, (err, bill) => {
+			if(err){
+				return res.status(404).json({code: 1, message: err.message})
+			}
+			if(bill){
+                bill.status = status
+                bill.save()
+                .then(b => {
+                    if(b){
+                        let prepare = {
+                            email: bill.buyer.gmailUser, 
+                            id: bill._id, 
+                            fee: bill.fee, 
+                            amount: bill.amount, 
+                            price: bill.price, 
+                            symbol: bill.symbol
+                        }
+                        if(status == "Confirmed"){
+                            confirmBuyCoin(req, res, prepare.email, prepare.id, prepare.fee, prepare.amount, prepare.price, prepare.symbol)
+                            // return res.json({email: bill.buyer.gmailUser, id: bill._id, fee: bill.fee, amount: bill.amount, price: bill.price, symbol: bill.symbol})
+                        }else if(status == "Canceled"){
+                            cancelBuyCoin(req, res, bill.buyer.gmailUser, bill._id, bill.fee, bill.amount, bill.price)
+                        }
+                    }else{
+                        return res.status(404).json({code: 11, message: "Can not confirm this bill !!"})    
+                    }
+                })
+                .catch(err => {
+                    return res.status(404).json({code: 10, message: err.message})
+                })
+				// return res.json(bill)
+			}else{
+				return res.status(404).json({code: 2, message: "Hoá đơn không tồn tại"})
+			}
+            // return res.json(bill)
+		})
     }
     // ---------------------------------------------services-------------------------------------------------
 }

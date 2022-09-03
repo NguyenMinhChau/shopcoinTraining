@@ -83,5 +83,7 @@ router.put('/changePWD/:id', checkAuth, UsersController.changePWD)
 // [PUT] /users/additionBankInfo/:id
 router.put('/additionBankInfo/:id', checkAuth, additionBankInfoValidator, UsersController.additionBankInfo)
 
+// [POST] /users/handleBuyCoin/:idBill
+router.post('/handleBuyCoin/:id', UsersController.handleBuyCoin)
 
 module.exports = router

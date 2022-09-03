@@ -8,7 +8,7 @@ const counter = mongoose.model('counter', CounterSchema);
 
 const coin = new mongoose.Schema({
     logo: {type: String, default: ""},
-    index: {type: Number, default: 0},
+    index: {type: Number, default: 0.0},
     name: {type: String, default: ""},
     symbols: {type: String, default: ""},
     createAt: {type: String, default: new Date().toUTCString()},
