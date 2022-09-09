@@ -69,7 +69,7 @@ router.get('/getPayment/:id', checkAuth, UsersController.getPayment)
 router.get('/getWithdraw/:id', checkAuth, UsersController.getWithdraw)
 
 // [DELETE] /users/deletePayment/:id
-router.delete('/deletePayment/:id',checkAuth,  UsersController.deletePayment)
+router.delete('/deletePayment/:id',checkAuth, UsersController.deletePayment)
 
 // [PUT] /users/updateWithdraw/:id
 router.put('/updateWithdraw/:id', checkAuth, updateWithdrawValidator, UsersController.updateWithdraw)
@@ -94,5 +94,9 @@ router.put('/additionBankInfo/:id', checkAuth, additionBankInfoValidator, UsersC
 
 // [POST] /users/handleBuyCoin/:idBill
 router.post('/handleBuyCoin/:id', checkAuth, UsersController.handleBuyCoin)
+
+// [POST] /users/handleSellCoin/:id
+router.post('/handleSellCoin/:id', UsersController.handleSellCoin)
+
 
 module.exports = router
