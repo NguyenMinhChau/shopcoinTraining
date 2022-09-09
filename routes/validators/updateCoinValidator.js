@@ -5,7 +5,7 @@ module.exports = [
     .exists().withMessage('Vui lòng nhập name')
     .notEmpty().withMessage('name không được để trống'),
 
-    check('symbol')
+    check('symbols')
     .exists().withMessage('Vui lòng nhập symbol')
     .notEmpty().withMessage('symbol không được để trống'),
 
