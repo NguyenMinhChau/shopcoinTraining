@@ -30,10 +30,10 @@ router.post('/register', checkRegister, UsersController.register)
 // router.post('/buyCoin', checkAuth, checkRegister, UsersController.buyCoin)
 
 // [GET] /users/getAllUser
-router.get('/getAllUser', checkAuth,UsersController.getAllUser)
+router.get('/getAllUser', checkAuth, UsersController.getAllUser)
 
 // [GET] /users/getAllPayments
-router.get('/getAllPayments', checkAuth,UsersController.getAllPayments)
+router.get('/getAllPayments', checkAuth, UsersController.getAllPayments)
 
 // [GET] /users/getAllWithdraw
 router.get('/getAllWithdraw', checkAuth, UsersController.getAllWithdraw)
