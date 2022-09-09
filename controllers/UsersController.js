@@ -519,7 +519,7 @@ class UsersController{
                         { id: decoded.id, email: decoded.email },
                         process.env.JWT_SECRET,
                         {
-                        expiresIn: "30s",
+                        expiresIn: "60s",
                         }
                     )
                     const refreshToken = jwt.sign(
