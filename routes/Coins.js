@@ -22,8 +22,6 @@ router.get('/getAllCoin', CoinsController.getAllCoins)
 // [GET] /coins/getCoin/:id
 router.get('/getCoin/:id', CoinsController.getCoin)
 
-// [PUT] /coins/updateImage/:id
-// router.put('/updateImage/:id', checkAuth, upload.single('logo'), updateCoinValidator, CoinsController.updateImage)
 
 // [PUT] /coins/updateCoin/:id
 router.put('/updateCoin/:id', checkAuth, upload.single('logo'), updateCoinValidator, CoinsController.updateCoin)
