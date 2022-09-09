@@ -30,16 +30,16 @@ router.post('/register', checkRegister, UsersController.register)
 // router.post('/buyCoin', checkAuth, checkRegister, UsersController.buyCoin)
 
 // [GET] /users/getAllUser
-router.get('/getAllUser', checkAuth, UsersController.getAllUser)
+router.get('/getAllUser', UsersController.getAllUser)
 
 // [GET] /users/getAllPayments
 router.get('/getAllPayments', checkAuth, UsersController.getAllPayments)
 
 // [GET] /users/getAllWithdraw
-router.get('/getAllWithdraw', checkAuth, UsersController.getAllWithdraw)
+router.get('/getAllWithdraw', UsersController.getAllWithdraw)
 
 // [GET] /users/getAllDeposit
-router.get('/getAllDeposit', checkAuth, UsersController.getAllDeposit)
+router.get('/getAllDeposit', UsersController.getAllDeposit)
 
 // [POST] /users/login
 router.post('/login', LoginValidator, UsersController.login)
@@ -63,10 +63,10 @@ router.post('/servicesCoin', checkAuth, servicesCoinValidator, UsersController.s
 router.put('/updatePayment/:id', checkAuth, updatePaymentValidator, UsersController.updatePayment)
 
 // [GET] /users/getPayment/:id
-router.get('/getPayment/:id', checkAuth, UsersController.getPayment)
+router.get('/getPayment/:id', UsersController.getPayment)
 
 // [GET] /users/getWithdraw/:id
-router.get('/getWithdraw/:id', checkAuth, UsersController.getWithdraw)
+router.get('/getWithdraw/:id', UsersController.getWithdraw)
 
 // [DELETE] /users/deletePayment/:id
 router.delete('/deletePayment/:id',checkAuth, UsersController.deletePayment)
@@ -78,7 +78,7 @@ router.put('/updateWithdraw/:id', checkAuth, updateWithdrawValidator, UsersContr
 router.delete('/deleteWithdraw/:id', checkAuth, UsersController.deleteWithdraw)
 
 // [GET] /users/getDeposit/:id
-router.get('/getDeposit/:id', checkAuth, UsersController.getDeposit)
+router.get('/getDeposit/:id', UsersController.getDeposit)
 
 // [PUT] /users/updateDeposit/:id
 router.put('/updateDeposit/:id', checkAuth, updateDepositValidator, UsersController.updateDeposit)
