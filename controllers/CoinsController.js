@@ -48,75 +48,64 @@ class CoinsController{
         }
     }
 
-	// [POST] /coins/updateImage/:id
-	updateImage(req, res){
-		let {id} = req.params
-		let date = Date.now()
-        let file = req.file
-        let name = file.originalname
-        let destination = file.destination
-        let newPath = path.join(destination, date + "-" + name)
+	// [PUT] /coins/updateImage/:id
+	// updateImage(req, res){
+		
+		
+	// }
 
-        let typeFile = file.mimetype.split('/')[0]
-		if(typeFile == "image"){
-            fs.renameSync(file.path, newPath)
-            let logoCoin = path.join('/images', date + "-" + name)
-			Coins.findById(id, (err, coin) => {
-				if(err){
-					return res.status(404).json({code: 1, message: err.message})
-				}
-
-				if(coin){
-					coin.logo = logoCoin
-					coin.save()
-					.then(c => {
-						if(c){
-							return res.json({code: 0, message: "Đổi hình đại diện coin thành công", data: c})
-						}else{
-							return res.status(404).json({code: 2, message: err.message})
-						}
-					})
-					.catch(err => {
-						return res.status(404).json({code: 1, message: err.message})
-					})
-				}else{
-					return res.status(404).json({code: 1, message: "Coin is not valid"})
-				}
-			})
-		}
-	}
-
-	// [POST] /coins/updateCoin/:id
+	// [PUT] /coins/updateCoin/:id
 	updateCoin(req, res){
 		let result = validationResult(req)
         if(result.errors.length === 0){
 			const {id} = req.params
 			const {name, symbol, fullName} = req.body
+			let date = Date.now()
+			let file = req.file
+			let nameFile = file.originalname
+			let destination = file.destination
+			let newPath = path.join(destination, date + "-" + nameFile)
 
-			Coins.findById(id, (err, coin) => {
-				if(err){
-					return res.status(404).json({code:1, message: err.message})
-				}
+			let typeFile = file.mimetype.split('/')[0]
+			if(typeFile == "image"){
+				fs.renameSync(file.path, newPath)
+				let logoCoin = path.join('/images', date + "-" + nameFile)
+				Coins.findById(id, (err, coin) => {
+					if(err){
+						return res.status(404).json({code: 1, message: err.message})
+					}
 
-				if(coin){
-					coin.name = name
-					coin.symbols = symbol
-					coin.fullName = fullName
-					coin.save()
+					if(coin){
+						coin.logo = logoCoin
+						coin.save()
 						.then(c => {
 							if(c){
-								return res.json({code: 0, message: "Update coin successfully !!", data: c})
-							}else{
-								return res.status(404).json({code: 4, message: "Can not execute command !"})
-							}
+								c.name = name
+								c.symbols = symbol
+								c.fullName = fullName
+								c.save()
+									.then(c => {
+										if(c){
+											return res.json({code: 0, message: "Update coin successfully !!", data: c})
+										}else{
+											return res.status(404).json({code: 4, message: "Can not execute command !"})
+										}
 						})
 						.catch(err => {
 							return res.status(404).json({code: 3, message: err.message})
 						})
-				}else{
-					return res.status(404).json({code: 2, message: err.message})
-				}
-			})	
+							}else{
+								return res.status(404).json({code: 2, message: err.message})
+							}
+						})
+						.catch(err => {
+							return res.status(404).json({code: 1, message: err.message})
+						})
+					}else{
+						return res.status(404).json({code: 1, message: "Coin is not valid"})
+					}
+				})
+			}
 
 		}else{
             let messages = result.mapped()

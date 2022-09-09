@@ -33,7 +33,7 @@ router.post('/register', checkRegister, UsersController.register)
 router.get('/getAllUser', UsersController.getAllUser)
 
 // [GET] /users/getAllPayments
-router.get('/getAllPayments', checkAuth, UsersController.getAllPayments)
+router.get('/getAllPayments', UsersController.getAllPayments)
 
 // [GET] /users/getAllWithdraw
 router.get('/getAllWithdraw', UsersController.getAllWithdraw)
@@ -45,7 +45,7 @@ router.get('/getAllDeposit', UsersController.getAllDeposit)
 router.post('/login', LoginValidator, UsersController.login)
 
 //[POST] /users/logout
-router.post('/logout', checkAuth, UsersController.logout)
+router.post('/logout', UsersController.logout)
 
 // [POST] /users/payment
 router.post('/payment', checkAuth, PaymentValidator, UsersController.payment)
