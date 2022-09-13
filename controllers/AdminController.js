@@ -460,15 +460,6 @@ function cancelSellCoin(req, res, gmail, idBill, fee, amount, price, symbol, sta
   })
 }
 
-// check status confirm or cancel for handle Buy/ Sell coin
-function check_confirm_cancel(status) {
-  if (status == "Confirmed") {
-    return true
-  } else {
-    return false
-  }
-}
-
 
 class AdminController {
 
@@ -1121,7 +1112,7 @@ class AdminController {
     const { id } = req.params
     const { status } = req.body
 
-    if (check_confirm_cancel(status)) {
+    if (status == "Confirmed") {
       const query = {
         _id: id,
         status: "On hold"
@@ -1158,7 +1149,7 @@ class AdminController {
         }
         // return res.json(bill)
       })
-    } else {
+    } else if(status == "Canceled") {
       const query = {
         _id: id,
         status: "Confirmed"
@@ -1195,6 +1186,27 @@ class AdminController {
         }
         // return res.json(bill)
       })
+    }else{
+      Bills.findById(id, (err, bill) => {
+        if(err) return res.json({code: 1, message: err.message})
+        if(bill){
+          bill.status = status
+          bill.updateAt = Date.now()
+          bill.save()
+          .then(b => {
+            if(b){
+              return res.json({code: 0, message: `Successfully !! Saved bill with id = ${id}`})
+            }else{
+              return res.json({code: 2, message: "Can not save bill information !!"})
+            }
+          })
+          .catch(err => {
+            return res.json({code: 1, message: err.message})
+          })
+        }else{
+          return res.json({code: 2, message: "Can not save bill information"})
+        }
+      })
     }
   }
 
@@ -1203,7 +1215,7 @@ class AdminController {
     const { id } = req.params
     const { status } = req.body
 
-    if (check_confirm_cancel(status)) {
+    if (status == "Confirmed") {
       const query = {
         _id: id,
         status: "On hold"
@@ -1230,7 +1242,7 @@ class AdminController {
           return res.status(404).json({ code: 2, message: "Bill of sell coin is not valid !!" })
         }
       })
-    } else {
+    } else if(status == "Canceled") {
       const query = { _id: id, status: "Confirmed" }
 
       Bills.findOne(query, (err, b) => {
@@ -1249,6 +1261,27 @@ class AdminController {
 
         } else {
           return res.status(404).json({ code: 2, message: "Bill of sell coin is not valid !!" })
+        }
+      })
+    }else{
+      Bills.findById(id, (err, bill) => {
+        if(err) return res.json({code: 1, message: err.message})
+        if(bill){
+          bill.status = status
+          bill.updateAt = Date.now()
+          bill.save()
+          .then(b => {
+            if(b){
+              return res.json({code: 0, message: `Successfully !! Saved bill with id = ${id}`})
+            }else{
+              return res.json({code: 2, message: "Can not save bill information !!"})
+            }
+          })
+          .catch(err => {
+            return res.json({code: 1, message: err.message})
+          })
+        }else{
+          return res.json({code: 2, message: "Can not save bill information"})
         }
       })
     }

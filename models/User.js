@@ -30,7 +30,7 @@ const user = new mongoose.Schema({
     updateAt: {type: String, default: new Date().toUTCString()},
     rank: {type: String, default: "Standard"},
     changeBalance: {type: Number, default: 0.0},
-    fee: {type: Number, default: 0.0},
+    fee: {type: Number, default: 0.15},
     uploadCCCDFont: {type: String, default: ""},
     uploadCCCDBeside: {type: String, default: ""},
     uploadLicenseFont: {type: String, default: ""},
