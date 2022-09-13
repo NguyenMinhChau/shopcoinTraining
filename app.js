@@ -1,7 +1,9 @@
 require('dotenv').config()
 const express = require('express')
-const Users = require('./routes/User')
+const Admin = require('./routes/Admin')
 const Coins = require('./routes/Coins')
+const Authen = require('./routes/Authen')
+const Users = require('./routes/Users')
 const mongoose = require('mongoose')
 const session = require('express-session')
 const cors = require('cors')
@@ -43,8 +45,10 @@ db.once("open", function () {
   console.log("Connected successfully");
 });
 
-app.use('/users', Users)
+app.use('/admin', Admin)
 app.use('/coins', Coins)
+app.use('/users', Users)
+app.use('/authen', Authen)
 
 let port = process.env.PORT || 3000
 app.listen(port, () => console.log("Running at port " + port))

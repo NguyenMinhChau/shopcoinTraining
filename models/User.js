@@ -31,6 +31,10 @@ const user = new mongoose.Schema({
     rank: {type: String, default: "Standard"},
     changeBalance: {type: Number, default: 0.0},
     fee: {type: Number, default: 0.0},
+    uploadCCCDFont: {type: String, default: ""},
+    uploadCCCDBeside: {type: String, default: ""},
+    uploadLicenseFont: {type: String, default: ""},
+    uploadLicenseFont: {type: String, default: ""},
 })
 
 const User = mongoose.model('User', user)

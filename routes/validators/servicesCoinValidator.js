@@ -1,9 +1,6 @@
 const {check} = require('express-validator')
 
 module.exports = [
-    check('fee')
-    .exists().withMessage('Vui lòng nhập fee')
-    .notEmpty().withMessage('fee không được để trống'),
 
     check('gmailUser')
     .exists().withMessage('Vui lòng nhập gmailUser')
