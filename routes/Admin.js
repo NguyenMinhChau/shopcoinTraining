@@ -19,12 +19,13 @@ const updateDepositValidator = require('./validators/updateDepositValidator')
 // import auth
 const checkAuth = require('../auth/auth')
 const checkAdmin = require('../auth/checkAmin')
+const { check } = require('express-validator')
 
 // [GET] /admin/getAllUser
 router.get('/getAllUser', AdminController.getAllUser)
 
 // [DELETE] /admin/deleteUser/:id
-router.delete('/deleteUser/:id', AdminController.deleteUser)
+router.delete('/deleteUser/:id', checkAuth, checkAdmin, AdminController.deleteUser)
 
 // [GET] /admin/getAllPayments
 router.get('/getAllPayments', AdminController.getAllPayments)
@@ -57,22 +58,22 @@ router.get('/getPayment/:id', AdminController.getPayment)
 router.get('/getWithdraw/:id', AdminController.getWithdraw)
 
 // [DELETE] /admin/deletePayment/:id
-router.delete('/deletePayment/:id',checkAuth, AdminController.deletePayment)
+router.delete('/deletePayment/:id',checkAuth, checkAdmin, AdminController.deletePayment)
 
 // [PUT] /admin/updateWithdraw/:id
-router.put('/updateWithdraw/:id', checkAuth, AdminController.updateWithdraw)
+router.put('/updateWithdraw/:id', checkAuth, checkAdmin, AdminController.updateWithdraw)
 
 // [DELETE] /admin/deleteWithdraw/:id
-router.delete('/deleteWithdraw/:id', checkAuth, AdminController.deleteWithdraw)
+router.delete('/deleteWithdraw/:id', checkAuth, checkAdmin, AdminController.deleteWithdraw)
 
 // [GET] /admin/getDeposit/:id
 router.get('/getDeposit/:id', AdminController.getDeposit)
 
 // [PUT] /admin/updateDeposit/:id
-router.put('/updateDeposit/:id', checkAuth, AdminController.updateDeposit)
+router.put('/updateDeposit/:id', checkAuth, checkAdmin, AdminController.updateDeposit)
 
 // [DELETE] /admin/deleteDeposit/:id
-router.delete('/deleteDeposit/:id', checkAuth, AdminController.deleteDeposit)
+router.delete('/deleteDeposit/:id', checkAuth, checkAdmin, AdminController.deleteDeposit)
 
 // [PUT] /admin/changePWD/:id
 router.put('/changePWD/:id', checkAuth, AdminController.changePWD)
@@ -93,18 +94,18 @@ router.get('/getSell/:id', AdminController.getSell)
 router.get('/getBuy/:id', AdminController.getBuy)
 
 // [POST] /admin/testHandleBuyCoin/:id
-router.put('/handleBuyCoin/:id', AdminController.handleBuyCoin)
+router.put('/handleBuyCoin/:id', checkAuth, checkAdmin, AdminController.handleBuyCoin)
 
 // [POST] /admin/testHandleSellCoin/:id
-router.put('/handleSellCoin/:id', AdminController.handleSellCoin)
+router.put('/handleSellCoin/:id', checkAuth, checkAdmin, AdminController.handleSellCoin)
 
 //[PUT] /admin/updateRankUser/:id
 router.put('/updateRankUser/:id', checkAuth, checkAdmin, AdminController.updateRankUser)
 
-// [DELETE] /admin/deleteBuy/:id
-router.delete('/deleteBuy/:id', AdminController.deleteBuy)
+// [DELETE] /admin/deleteBcheckAuth
+router.delete('/deleteBuy/:id', checkAuth, checkAdmin, AdminController.deleteBuy)
 
 // [DELETE] /admin/deleteSell/:id
-router.delete('/deleteSell/:id', AdminController.deleteSell)
+router.delete('/deleteSell/:id', checkAuth, checkAdmin, AdminController.deleteSell)
 
 module.exports = router
