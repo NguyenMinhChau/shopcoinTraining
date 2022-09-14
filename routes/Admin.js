@@ -18,7 +18,7 @@ const updateDepositValidator = require('./validators/updateDepositValidator')
 
 // import auth
 const checkAuth = require('../auth/auth')
-
+const checkAdmin = require('../auth/checkAmin')
 
 // [GET] /admin/getAllUser
 router.get('/getAllUser', AdminController.getAllUser)
@@ -48,7 +48,7 @@ router.post('/deposit', checkAuth, upload.single('statement'), AdminController.d
 
 
 // [PUT] /admin/updatePayment
-router.put('/updatePayment/:id', checkAuth, AdminController.updatePayment)
+router.put('/updatePayment/:id', checkAuth, checkAdmin, AdminController.updatePayment)
 
 // [GET] /admin/getPayment/:id
 router.get('/getPayment/:id', AdminController.getPayment)
@@ -93,8 +93,18 @@ router.get('/getSell/:id', AdminController.getSell)
 router.get('/getBuy/:id', AdminController.getBuy)
 
 // [POST] /admin/testHandleBuyCoin/:id
-router.post('/handleBuyCoin/:id', AdminController.handleBuyCoin)
+router.put('/handleBuyCoin/:id', AdminController.handleBuyCoin)
 
 // [POST] /admin/testHandleSellCoin/:id
-router.post('/handleSellCoin/:id', AdminController.handleSellCoin)
+router.put('/handleSellCoin/:id', AdminController.handleSellCoin)
+
+//[PUT] /admin/updateRankUser/:id
+router.put('/updateRankUser/:id', checkAuth, checkAdmin, AdminController.updateRankUser)
+
+// [DELETE] /admin/deleteBuy/:id
+router.delete('/deleteBuy/:id', AdminController.deleteBuy)
+
+// [DELETE] /admin/deleteSell/:id
+router.delete('/deleteSell/:id', AdminController.deleteSell)
+
 module.exports = router

@@ -17,7 +17,7 @@ const Withdraws = require('../models/Withdraws')
 const Deposits = require('../models/Deposits')
 const Bills = require('../models/Bills');
 const { parse } = require('path');
-
+const Rank = require('../models/Ranks')
 // support function
 // error
 function errCode1(res, err){
@@ -291,7 +291,7 @@ function subCoinNotDisappear(user, afterAmount, position) {
 
 }
 
-// handleBuyCoin
+// [PUT] handleBuyCoin
 
 function handleAddCoinAuto(symbol, amount, user) {
   let p = new Promise((resolve, reject) => {
@@ -1022,7 +1022,7 @@ class AdminController {
     })
   }
 
-  // [POST] /admin/handleBuyCoin/:id
+  // [PUT] /admin/handleBuyCoin/:id
   handleBuyCoin(req, res){
     const {id} = req.params
     const {status} = req.body
@@ -1174,7 +1174,7 @@ class AdminController {
     }
   }
 
-  // [POST] /admin/handleSellCoin/:id
+  // [PUT] /admin/handleSellCoin/:id
   handleSellCoin(req, res){
     const {id} = req.params
     const {status} = req.body
@@ -1327,7 +1327,125 @@ class AdminController {
     }
   }
 
+  // [DELETE] /admin/deleteBuy/:id
+  deleteBuy(req, res){
+    const {id} = req.params
+    const query = {
+      _id: id,
+      type: "BuyCoin"
+    }
+
+    Bills.findOne(query, (err, bill) => {
+      if(err) errCode1(res, err)
+
+      if(bill){
+        Bills.deleteOne()
+        .then(() => {
+          successCode(res, `Successfully! delete buy bill with id = ${id}`)
+        })
+        .catch(err => {
+          errCode1(res, err)
+        })
+      }else{
+        errCode2(res, `Bill is not valid with id = ${id}`)
+      }
+
+    })
+
+  }
+  // [DELETE] /admin/deleteSell/:id
+  deleteSell(req, res){
+    const {id} = req.params
+    const query = {
+      _id: id,
+      type: "SellCoin"
+    }
+
+    Bills.findOne(query, (err, bill) => {
+      if(err) errCode1(res, err)
+
+      if(bill){
+        Bills.deleteOne()
+        .then(() => {
+          successCode(res, `Successfully! delete sell bill with id = ${id}`)
+        })
+        .catch(err => {
+          errCode1(res, err)
+        })
+      }else{
+        errCode2(res, `Bill is not valid with id = ${id}`)
+      }
+
+    })
+
+  }
+
+
   // ---------------------------------------------services-------------------------------------------------
+  
+  // [PUT] /admin/updateRankUser/:id
+  updateRankUser(req, res){
+    const {id} = req.params
+    let date = new Date().toUTCString()  
+    User.findById(id, (err, user) => {
+      if(err) errCode1(res, err)
+      
+      if(user){
+
+        if(req.body.fee){
+          req.body.updateAt = date
+          user.updateOne({$set: req.body})
+          .then(u => {
+            if(u){
+              successCode(res, `Successfully! Update rank and fee of user`)
+            }else{
+              errCode2(res, `Can not save fee and rank of user with id = ${user._id}`)
+            }
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+        }else{
+          user.updateOne({$set: req.body})
+          .then(u => {
+            if(u){
+              Rank.findOne({ranks: req.body.rank}, (err, r) => {
+                if(err) errCode1(res, err)
+
+                if(r){
+                  user.updateAt = date
+                  user.fee = r.fee
+                  user.save()
+                  .then(v => {
+                    if(v){
+                      successCode(res, `Successfully !! Update fee and rank of user`)
+                    }else{
+                      errCode2(res, `Can not save fee of user with id = ${u._id}`)
+                    }
+                    
+                  })
+                  .catch(err => {
+                    errCode1(res, err)
+                  })
+
+                }else{
+                  errCode2(res, `Rank is not valid with rank = ${req.body.rank}`)
+                }
+              })   
+            }else{
+              errCode2(res, `Can not save information with user_id = ${user._id}`)
+            }
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+        }
+      }else{
+        errCode2(res, `User is not valid with id = ${id}`)
+      }
+    })
+
+  }
 }
 
 module.exports = new AdminController
