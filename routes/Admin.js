@@ -46,11 +46,9 @@ router.post('/withdraw', checkAuth, WithdrawValidator, AdminController.withdraw)
 // [POST] /admin/deposit
 router.post('/deposit', checkAuth, upload.single('statement'), AdminController.deposit)
 
-// [POST] /admin/servicesCoin
-router.post('/servicesCoin', checkAuth, servicesCoinValidator, AdminController.servicesCoin)
 
 // [PUT] /admin/updatePayment
-router.put('/updatePayment/:id', checkAuth, updatePaymentValidator, AdminController.updatePayment)
+router.put('/updatePayment/:id', checkAuth, AdminController.updatePayment)
 
 // [GET] /admin/getPayment/:id
 router.get('/getPayment/:id', AdminController.getPayment)
@@ -62,7 +60,7 @@ router.get('/getWithdraw/:id', AdminController.getWithdraw)
 router.delete('/deletePayment/:id',checkAuth, AdminController.deletePayment)
 
 // [PUT] /admin/updateWithdraw/:id
-router.put('/updateWithdraw/:id', checkAuth, updateWithdrawValidator, AdminController.updateWithdraw)
+router.put('/updateWithdraw/:id', checkAuth, AdminController.updateWithdraw)
 
 // [DELETE] /admin/deleteWithdraw/:id
 router.delete('/deleteWithdraw/:id', checkAuth, AdminController.deleteWithdraw)
@@ -71,7 +69,7 @@ router.delete('/deleteWithdraw/:id', checkAuth, AdminController.deleteWithdraw)
 router.get('/getDeposit/:id', AdminController.getDeposit)
 
 // [PUT] /admin/updateDeposit/:id
-router.put('/updateDeposit/:id', checkAuth, updateDepositValidator, AdminController.updateDeposit)
+router.put('/updateDeposit/:id', checkAuth, AdminController.updateDeposit)
 
 // [DELETE] /admin/deleteDeposit/:id
 router.delete('/deleteDeposit/:id', checkAuth, AdminController.deleteDeposit)
@@ -81,12 +79,6 @@ router.put('/changePWD/:id', checkAuth, AdminController.changePWD)
 
 // [PUT] /admin/additionBankInfo/:id
 router.put('/additionBankInfo/:id', checkAuth, additionBankInfoValidator, AdminController.additionBankInfo)
-
-// [POST] /admin/handleBuyCoin/:idBill
-router.post('/handleBuyCoin/:id', checkAuth, AdminController.handleBuyCoin)
-
-// [POST] /admin/handleSellCoin/:id
-router.post('/handleSellCoin/:id', AdminController.handleSellCoin)
 
 // [GET]/admin/getAllSell
 router.get('/getAllSell', AdminController.getAllSell)
@@ -100,4 +92,9 @@ router.get('/getSell/:id', AdminController.getSell)
 // [GET] /admin/getBuy  
 router.get('/getBuy/:id', AdminController.getBuy)
 
+// [POST] /admin/testHandleBuyCoin/:id
+router.post('/handleBuyCoin/:id', AdminController.handleBuyCoin)
+
+// [POST] /admin/testHandleSellCoin/:id
+router.post('/handleSellCoin/:id', AdminController.handleSellCoin)
 module.exports = router

@@ -19,193 +19,17 @@ const Bills = require('../models/Bills');
 const { parse } = require('path');
 
 // support function
-
-//function support for add coin to account
-function addCoinSupport(req, res, symbols, amount, email, idBill, status) {
-  let date = new Date().toUTCString()
-  User.findOne({ 'payment.email': email }, (err, user) => {
-    if (err) {
-      return res.json({ code: 1, message: err.message })
-    }
-    if (!user) {
-      return res.json({ code: 1, message: "User is not valid!" })
-    }
-    Coins.findOne({ symbols: symbols }, (error, coin) => {
-      if (error) {
-        return res.json({ code: 1, message: err.message })
-      }
-
-      let tmp = ""
-      let positionTEMP = 0
-      for (let i = 0; i < user.coins.length; i++) {
-        if (coin._id.equals(user.coins[i]._id)) {
-          tmp = coin._id
-          positionTEMP = i
-        }
-      }
-      if (tmp != "") {
-        user.coins[positionTEMP].amount = parseInt(user.coins[positionTEMP].amount) + parseInt(amount)
-        user.save()
-          .then(ok => {
-            if (ok) {
-              Bills.findById(idBill, (err, bill) => {
-                if (err) return res.status(404).json({ code: 1, message: err.message })
-                if (bill) {
-                  bill.status = status
-                  bill.updateAt = date
-                  bill.save()
-                    .then(oks => {
-                      if (oks) {
-                        return res.json({ code: 0, coins: ok.coins })
-                      } else {
-                        return res.status(404).json({ code: 2, message: "Can not save bill !!" })
-                      }
-                    })
-                } else {
-                  return res.status(404).json({ code: 2, message: "Bill is not valid !!" })
-                }
-              })
-            } else {
-              return res.status(404).json({ code: 2, message: "Can not save user !!" })
-            }
-          })
-          .catch(err => {
-            return res.json({ code: 2, message: err.message })
-          })
-      } else {
-        user.coins.push({
-          amount: amount,
-          _id: coin._id,
-          name: coin.fullName,
-        })
-        user.save()
-          .then(ok => {
-            if (ok) {
-              Bills.findById(idBill, (err, bill) => {
-                if (err) return res.status(404).json({ code: 1, message: err.message })
-                if (bill) {
-                  bill.status = status
-                  bill.updateAt = date
-                  bill.save()
-                    .then(oks => {
-                      if (oks) {
-                        return res.json({ code: 0, coins: ok.coins })
-                      } else {
-                        return res.status(404).json({ code: 2, message: "Can not save bill !!" })
-                      }
-                    })
-                } else {
-                  return res.status(404).json({ code: 2, message: "Bill is not valid !!" })
-                }
-              })
-            } else {
-              return res.status(404).json({ code: 2, message: "Can not save user !!" })
-            }
-          })
-          .catch(err => {
-            return res.json({ code: 2, message: err.message })
-          })
-      }
-    })
-  })
-
+// error
+function errCode1(res, err){
+  return res.status(404).json({code: 1, message: err.message})
 }
 
-function subCoinSupport(req, res, symbols, amount, email, user, price, fee, status, idBill) {
-  //return res.json({ symbols, amount, email, user, price, fee, status, idBill})
-  Coins.findOne({ symbols: symbols }, (error, coin) => {
-    if (error) {
-      return res.json({ code: 1, message: err.message })
-    }
+function errCode2(res, err){
+  return res.status(400).json({code: 2, message: err})
+}
 
-    let date = new Date().toUTCString()
-    let positionTEMP = 0
-    for (let i = 0; i < user.coins.length; i++) {
-      if (coin._id.equals(user.coins[i]._id)) {
-        positionTEMP = i
-      }
-    }
-
-    let currAmount = parseFloat(user.coins[positionTEMP].amount)
-    let subAmount = parseFloat(amount)
-    let afterAmount = parseFloat(currAmount - subAmount)
-    if (afterAmount > 0) {
-      // return res.json({currAmount, subAmount, afterAmount, coins_user: user.coins[positionTEMP]})
-      user.coins[positionTEMP].amount = afterAmount
-      let balance = parseFloat(user.Wallet.balance) + parseFloat(amount * price * (1 + fee))
-      user.Wallet.balance = balance
-      user.save()
-        .then(u => {
-          if (u) {
-            if (u) {
-              Bills.findById(idBill, (err, bill) => {
-                if (err) return res.status(404).json({ code: 1, message: err.message })
-                if (bill) {
-                  bill.status = status
-                  bill.updateAt = date
-                  bill.save()
-                    .then(oks => {
-                      if (oks) {
-                        return res.json({ code: 0, coins: u.coins })
-                      } else {
-                        return res.status(404).json({ code: 2, message: "Can not save bill !!" })
-                      }
-                    })
-                } else {
-                  return res.status(404).json({ code: 2, message: "Bill is not valid !!" })
-                }
-              })
-            } else {
-              return res.status(404).json({ code: 2, message: "Can not save user !!" })
-            }
-          } else {
-            return res.status(404).json({ code: 1, message: "Can not execute command" })
-          }
-        })
-        .catch(err => {
-          return res.status(404).json({ code: 404, message: err.message })
-        })
-      // return res.json({code: 0, coin: user.coins[positionTEMP], amount: afterAmount})
-    } else {
-      if (afterAmount == 0) {
-        const newCoins = user.coins.filter(object => {
-          return !coin._id.equals(object._id)
-        });
-        let balance = parseFloat(user.Wallet.balance) + parseFloat(amount * price * (1 + fee))
-        user.Wallet.balance = balance
-        user.coins = newCoins
-        user.save()
-          .then(u => {
-            if (u) {
-              Bills.findById(idBill, (err, bill) => {
-                if (err) return res.status(404).json({ code: 1, message: err.message })
-                if (bill) {
-                  bill.status = status
-                  bill.updateAt = date
-                  bill.save()
-                    .then(oks => {
-                      if (oks) {
-                        return res.json({ code: 0, coins: u.coins })
-                      } else {
-                        return res.status(404).json({ code: 2, message: "Can not save bill !!" })
-                      }
-                    })
-                } else {
-                  return res.status(404).json({ code: 2, message: "Bill is not valid !!" })
-                }
-              })
-            } else {
-              return res.status(404).json({ code: 1, message: "Can not execute command" })
-            }
-          })
-          .catch(err => {
-            return res.status(404).json({ code: 404, message: err.message })
-          })
-      } else {
-        return res.status(404).json({ code: 1, message: "The amount of coin want to sell is not true, own is:  " + currAmount + " and sell is: " + subAmount })
-      }
-    }
-  })
+function successCode(res, mess){
+  return res.json({code: 0, message: mess})
 }
 
 // check balance is good for paying
@@ -377,87 +201,189 @@ function subCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
   }
 }
 
-function confirmBuyCoin(req, res, gmail, idBill, fee, amount, price, symbol, status) {
-  // console.log(gmail)
-  User.findOne({ 'payment.email': gmail }, (err, user) => {
-    if (err) {
-      return res.json(404).json({ code: 1, message: "Error about find information of user" })
-    }
-    if (user) {
-      // console.log(user)
-      let balance = parseFloat(user.Wallet.balance) - parseFloat(amount * price * (1 + fee))
-      user.Wallet.balance = balance
-      user.save()
-        .then(u => {
-          if (u) {
-            let email = u.payment.email
-            addCoinSupport(req, res, symbol, amount, email, idBill, status)
-            // return res.json({symbol, amount, email, idBill})
-            // return res.json(u)
-          } else {
-            return res.json({ code: 3, message: "Không thể thực hiện việc trừ tiền tài khoản của user" })
+// function test
+
+// add coin is exist
+function addCoinExist(user, amount, position) {
+  let p = new Promise((resolve, reject) => {
+    user.coins[position].amount = parseFloat(user.coins[position].amount) + parseFloat(amount)
+    user.save()
+      .then(u => {
+        if (u) {
+          resolve({ code: 0, message: `Successfully !!! Saved information of user with id = ${user._id}` })
+        } else {
+          reject({ code: 2, message: `Can not save the information of user with id = ${user._id}` })
+        }
+      })
+      .catch(err => {
+        reject({ code: 1, message: err.message })
+      })
+  })
+  return p
+}
+
+// add coin is not exist
+function addCoinNotExist(user, coin, amount) {
+  let p = new Promise((resolve, reject) => {
+    user.coins.push({
+      amount: amount,
+      _id: coin._id,
+      name: coin.fullName,
+    })
+    user.save()
+    .then(u => {
+      if(u){
+        resolve({code: 0, message: `successfully, add new coin for user with id = ${user._id}`})
+      }else{
+        reject({code: 2, message: `User balance is not saved with id = ${user._id}`})
+      }
+    })
+    .catch(err => {
+      reject({code: 1, message: err.message})
+    })
+  })
+  return p
+}
+
+
+// subCoinDisappear
+function subCoinDisappear(coin, user, afterAmount) {
+  let p = new Promise((resolve, reject) => {
+    const newCoinList = user.coins.filter(object => {
+      return !coin._id.equals(object._id)
+    })
+
+    user.coins = newCoinList
+    user.save()
+      .then(u => {
+        if (u) {
+          resolve({ code: 0, message: `Saved the information of user with id = ${user._id}` })
+        } else {
+          reject({ code: 2, message: `Can not save the information of user with id = ${user._id}` })
+        }
+      })
+      .catch(err => {
+        reject({ code: 1, message: err.message })
+      })
+  })
+  return p
+
+}
+
+
+// subCoinNotDisappear
+function subCoinNotDisappear(user, afterAmount, position) {
+  let p = new Promise((resolve, reject) => {
+    user.coins[position].amount = afterAmount
+    user.save()
+      .then(u => {
+        if (u) {
+          resolve({ code: 0, message: `Saved information of user with id = ${user._id}` })
+        } else {
+          reject({ code: 2, message: `Can not save the information of user with id = ${user._id}` })
+        }
+      })
+      .catch(err => {
+        reject({ code: 1, message: err.message })
+      })
+  })
+  return p
+
+}
+
+// handleBuyCoin
+
+function handleAddCoinAuto(symbol, amount, user) {
+  let p = new Promise((resolve, reject) => {
+    Coins.findOne({ symbols: symbol }, (err, coin) => {
+      if (err) reject({ code: 1, message: err.message })
+
+      if (coin) {
+        let tmp = ""
+        let positionTEMP = 0
+        for (let i = 0; i < user.coins.length; i++) {
+          if (coin._id.equals(user.coins[i]._id)) {
+            tmp = coin._id
+            positionTEMP = i
           }
-        })
-        .catch(err => {
-          return res.status(404).json({ code: 3, message: err.message })
-        })
-      // return res.json({user, balance})
-    } else {
-      return res.json(404).json({ code: 2, message: "User is not valid !!" })
-    }
+        }
+
+        if (tmp != "") {
+          let resultAddCoinExist = addCoinExist(user, amount, positionTEMP)
+          resultAddCoinExist
+            .then(a => {
+              resolve({ code: 0, message: `Successfully !!! Add coin to user with id = ${user._id}` })
+            })
+            .catch(err => {
+              reject({ code: 1, message: err.message })
+            })
+        } else {
+          let resultAddCoinNotExist = addCoinNotExist(user, coin, amount)
+          resultAddCoinNotExist
+            .then(res => {
+              console.log(res)
+              resolve({ code: 0, message: `Successfully !!! Add coin coin to user with id = ${user._id}` })
+            })
+            .catch(err => {
+              reject({ code: 1, message: err.message })
+            })
+        }
+      } else {
+        reject({ code: 2, message: `Coin is not exist with symbol = ${symbol}` })
+      }
+    })
   })
+  return p
 }
 
-function cancelBuyCoin(req, res, gmail, idBill, fee, amount, price, symbol, status) {
-  // console.log(gmail)
-  User.findOne({ 'payment.email': gmail }, (err, user) => {
-    if (err) {
-      return res.json(404).json({ code: 1, message: "Error about find information of user" })
-    }
-    if (user) {
-      // console.log(user)
-      subCoinSupport(req, res, symbol, amount, gmail, user, price, fee, status, idBill)
-    } else {
-      return res.json(404).json({ code: 2, message: "User is not valid !!" })
-    }
-  })
-}
+function handleSubCoinAuto(symbol, amount, user) {
+  let p = new Promise((resolve, reject) => {
+    Coins.findOne({ symbols: symbol }, (err, coin) => {
+      if (err) reject({ code: 1, message: err.message })
 
-function confirmSellCoin(req, res, gmail, idBill, fee, amount, price, symbol, status) {
-  User.findOne({ 'payment.email': gmail }, (err, user) => {
-    if (err) {
-      return res.json(404).json({ code: 1, message: "Error about find information of user" })
-    }
-    if (user) {
-      subCoinSupport(req, res, symbol, amount, gmail, user, price, fee, status, idBill)
-    } else {
-      return res.json(404).json({ code: 2, message: "User is not valid !!" })
-    }
-  })
-}
-
-function cancelSellCoin(req, res, gmail, idBill, fee, amount, price, symbol, status) {
-  User.findOne({ 'payment.email': gmail }, (err, user) => {
-    if (err) {
-      return res.json(404).json({ code: 1, message: "Error about find information of user" })
-    }
-    if (user) {
-      user.Wallet.balance = parseFloat(user.Wallet.balance) - parseFloat(amount * price)
-      user.save()
-        .then(u => {
-          if (u) {
-            addCoinSupport(req, res, symbol, amount, gmail, idBill, status)
-          } else {
-            return re.status(400).json({ code: 2, message: "Can not find user !!!" })
+      if (coin) {
+        let positionTemp = 0
+        for (let i = 0; i < user.coins.length; i++) {
+          if (coin._id.equals(user.coins[i]._id)) {
+            positionTemp = i
           }
-        })
-        .catch(err => {
-          return res.status(404).json({ code: 3, message: err.message })
-        })
-    } else {
-      return res.json(404).json({ code: 2, message: "User is not valid !!" })
-    }
+        }
+
+        let currAmount = parseFloat(user.coins[positionTemp].amount)
+        let subAmount = parseFloat(amount)
+
+        let afterAmount = parseFloat(currAmount - subAmount)
+
+        if (afterAmount > 0) {
+          let resultSubCoinNotDisappear = subCoinNotDisappear(user, afterAmount, positionTemp)
+          resultSubCoinNotDisappear
+            .then(ress => {
+              resolve({ code: 0, message: `Sub coin Successfully when cancel buy coin of user with id = ${user._id}` })
+            })
+            .catch(err => {
+              reject({ code: 1, message: err.message })
+            })
+        } else if (afterAmount == 0) {
+          let resultSubCoinDisappear = subCoinDisappear(coin, user, afterAmount)
+          resultSubCoinDisappear
+            .then(ress => {
+              resolve({ code: 0, message: `Sub coin Successfully when cancel buy coin !!! of user with id = ${user._id}` })
+            })
+            .catch(err => {
+              reject({ code: 1, message: err.message })
+            })
+        } else {
+          reject({ code: 2, message: `The amount of coin want to sell is not true, own is: ${currAmount} and sell is: ${subAmount}` })
+        }
+
+
+      } else {
+        reject({ code: 2, message: `Coin is not exist` })
+      }
+    })
   })
+
+  return p
 }
 
 
@@ -474,7 +400,7 @@ class AdminController {
 
     User.find({}, (err, admin) => {
       if (err) {
-        return res.json({ code: 1, message: err.message })
+        errCode1(res, err)
       }
 
       if (admin) {
@@ -486,7 +412,7 @@ class AdminController {
           return res.json({ code: 0, dataUser: admin, page: pages, typeShow: typeShow, total: uss.length })
         })
       } else {
-        return res.json({ code: 2, message: "No user" })
+        errCode2(res, "No user")
       }
     })
       .sort({ createAt: -1, updateAt: -1 })
@@ -498,18 +424,18 @@ class AdminController {
   deleteUser(req, res) {
     const { id } = req.params
     User.findById(id, (err, user) => {
-      if (err) return res.status(404).json({ code: 1, message: err.message })
+      if (err) errCode1(res, err)
 
       if (user) {
         User.deleteOne({ _id: id })
           .then(() => {
-            return res.json({ code: 0, message: "Delete success !!" })
+            successCode(res, `Delete user successfully with id = ${id}`)
           })
           .catch(err => {
-            return res.status(404).json({ code: 1, message: err.message })
+            errCode1(res, err)
           })
       } else {
-        return res.status(400).json({ code: 2, message: `User is not valid with id = ${id}` })
+        errCode2(res, `User is not valid with id = ${id}`)
       }
     })
   }
@@ -521,7 +447,7 @@ class AdminController {
 
     User.findById(id, (err, user) => {
       if (err) {
-        return res.json({ code: 1, message: err.message })
+        errCode1(res, err)
       }
 
       if (user) {
@@ -534,25 +460,25 @@ class AdminController {
                   user.save()
                     .then(u => {
                       if (u) {
-                        return res.json({ code: 0, message: "Change password successfully with id = " + id })
+                        successCode(res, `Change password successfully with id = ${id}`)
                       } else {
-                        return res.json({ code: 4, message: "Can not change password" })
+                        errCode2(res, "Can not change password")
                       }
                     })
                     .catch(err => {
-                      return res.json({ code: 3, message: err.message })
+                      errCode1(res, err)
                     })
                 })
                 .catch(err => {
-                  return res.json({ code: 101, message: err.message })
+                  errCode1(res, err)
                 })
             } else {
-              return res.status(404).json({ code: 5, message: "Password old is not match" })
+              errCode2(res, "Password is not match")
             }
           })
 
       } else {
-        return res.json({ code: 2, message: "User is not valid !!!" })
+        errCode2(res, `User is not valid with id = ${id}`)
       }
     })
   }
@@ -566,7 +492,7 @@ class AdminController {
 
       User.findById(id, (err, user) => {
         if (err) {
-          return res.json({ code: 1, message: err.message })
+          errCode1(res, err)
         }
 
         if (user) {
@@ -578,16 +504,16 @@ class AdminController {
           user.save()
             .then(u => {
               if (u) {
-                return res.json({ code: 0, message: "Add bank information successfully with id = " + id })
+                successCode(res, `Add bank information successfully with id = ${id}`)
               } else {
-                return res.json({ code: 4, message: "Can not add information of bank" })
+                errCode2(res, `Can not addition information of user about bank payment with id = ${id}`)
               }
             })
             .catch(err => {
-              return res.json({ code: 3, message: err.message })
+              errCode1(res, err)
             })
         } else {
-          return res.json({ code: 2, message: "User is not valid !!!" })
+          errCode2(res, `User is not valid with id = ${id}`)
         }
       })
     } else {
@@ -609,23 +535,22 @@ class AdminController {
     const typeShow = req.query.show || 10
     const step = parseInt(pages - 1) * parseInt(typeShow)
 
-    Payments.find({}, (err, payments) => {
+    Payments.find({}, (err, payments) => { // total payment in page
       if (err) {
-        return res.json({ code: 1, message: err.message })
+        errCode1(res, err)
       }
       if (payments) {
 
-        Payments.find({}, (err, ps) => {
+        Payments.find({}, (err, ps) => { // for total payment
           if (err) {
-            return res.status(404).json({ code: 3, message: err.message })
+            errCode1(res, err)
           }
 
           return res.json({ code: 0, dataUser: payments, page: pages, typeShow: typeShow, total: ps.length })
-
         })
 
       } else {
-        return res.json({ code: 2, message: "No payments" })
+        errCode2(res, "No payments")
       }
     })
       .sort({ createAt: -1, updateAt: -1 })
@@ -638,13 +563,13 @@ class AdminController {
     const { id } = req.params
     Payments.findById(id, (err, p) => {
       if (err) {
-        return res.status(404).json({ code: 1, message: err.message })
+        errCode1(res, err)
       }
 
       if (p) {
         return res.json({ code: 0, message: "Success", data: p })
       } else {
-        return res.status(404).json({ code: 1, message: "Payment không tồn tại" })
+        errCode2(res, `Payment is not valid with id = ${id}`)
       }
     })
   }
@@ -654,13 +579,13 @@ class AdminController {
     const { id } = req.params
     Withdraws.findById(id, (err, p) => {
       if (err) {
-        return res.status(404).json({ code: 1, message: err.message })
+        errCode1(res, err)
       }
 
       if (p) {
         return res.json({ code: 0, message: "Success", data: p })
       } else {
-        return res.status(404).json({ code: 1, message: "Withdraw không tồn tại" })
+        errCode2(res, `Payment is not valid with id = ${id}`)
       }
     })
   }
@@ -670,13 +595,13 @@ class AdminController {
     const { id } = req.params
     Deposits.findById(id, (err, p) => {
       if (err) {
-        return res.status(404).json({ code: 1, message: err.message })
+        errCode1(res, err)
       }
 
       if (p) {
         return res.json({ code: 0, message: "Success", data: p })
       } else {
-        return res.status(404).json({ code: 1, message: "Deposit không tồn tại" })
+        errCode2(res, `Deposit is not valid with id = ${id}`)
       }
     })
   }
@@ -689,13 +614,13 @@ class AdminController {
 
     Withdraws.find({}, (err, withdraws) => {
       if (err) {
-        return res.json({ code: 1, message: err.message })
+        errCode1(res, err)
       }
       if (withdraws) {
 
         Withdraws.find({}, (err, wds) => {
           if (err) {
-            return res.status(404).json({ code: 3, message: err.message })
+            errCode1(res, err)
           }
 
           return res.json({ code: 0, dataWithdraw: withdraws, page: pages, typeShow: typeShow, total: wds.length })
@@ -703,7 +628,7 @@ class AdminController {
         })
 
       } else {
-        return res.json({ code: 2, message: "No withdraws" })
+        errCode2(res, "No withdraw")
       }
     })
       .sort({ createAt: -1, updateAt: -1 })
@@ -719,13 +644,13 @@ class AdminController {
 
     Deposits.find({}, (err, deposits) => {
       if (err) {
-        return res.json({ code: 1, message: err.message })
+        errCode1(res, err)
       }
       if (deposits) {
 
         Deposits.find({}, (err, wds) => {
           if (err) {
-            return res.status(404).json({ code: 3, message: err.message })
+            errCode1(res, err)
           }
 
           return res.json({ code: 0, dataDeposit: deposits, page: pages, typeShow: typeShow, total: wds.length })
@@ -733,7 +658,7 @@ class AdminController {
         })
 
       } else {
-        return res.json({ code: 2, message: "No deposits" })
+        errCode2(res, "No Deposit")
       }
     })
       .sort({ createAt: -1, updateAt: -1 })
@@ -743,48 +668,31 @@ class AdminController {
 
   // [PUT] /admin/updatePayment/:id
   updatePayment(req, res) {
-    let result = validationResult(req)
-    if (result.errors.length === 0) {
-      const { method, name, idMethod, rateWithdraw, rateDeposit } = req.body
-      const id = req.params.id
-      Payments.findById(id, (err, payment) => {
-        if (err) {
-          return res.json({ code: 1, message: err.message })
-        }
-
-        if (payment) {
-          payment.methodName = method
-          payment.accountName = name
-          payment.accountNumber = idMethod
-          payment.rateDeposit = rateDeposit
-          payment.rateWithdraw = rateWithdraw
-          payment.updateAt = new Date().toUTCString()
-          payment.save()
-            .then(p => {
-              if (p) {
-                return res.json({ code: 0, message: "Update successfully with id = " + id })
-              } else {
-                return res.json({ code: 5, message: "Update failed with id = " + id })
-              }
-            })
-            .catch(err => {
-              return res.json({ code: 4, message: err.message })
-            })
-        } else {
-          return res.json({ code: 2, message: "The payment is not valid !!" })
-        }
-      })
-    } else {
-      let messages = result.mapped()
-      let message = ''
-      for (let m in messages) {
-        message = messages[m]
-        break
+    let date = new Date().toUTCString()
+    const {id} = req.params
+    Payments.findById(id, (err, payment) => {
+      if (err) {
+        errCode1(res, err)
       }
-      return res.json({ code: 1, message: message.msg })
-    }
-
-
+      else {
+        if(payment){
+          req.body.updateAt = date
+          payment.update({$set: req.body})
+          .then(p => {
+            if(p){
+              successCode(res, `Update payment successfully with id = ${id}`)
+            }else{
+              errCode2(res, `Can not update payment with id = ${id}`)
+            }
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+        }else{
+          errCode2(res, `Payment is not valid with id = ${id}`)
+        }
+      }
+    })
   }
 
   // [DELETE] /admin/deletePayment/:id
@@ -808,52 +716,27 @@ class AdminController {
 
   // [PUT] /admin/updateWithdraw/:id
   updateWithdraw(req, res) {
-    let result = validationResult(req)
-    if (result.errors.length === 0) {
-      const { status, amount, methodName, accountName, accountNumber, transform, amountUsd, amountVnd, symbol } = req.body
-      const id = req.params.id
-      Withdraws.findById(id, (err, withdraw) => {
-        if (err) {
-          return res.json({ code: 1, message: err.message })
-        }
-
-        if (withdraw) {
-          withdraw.status = status
-          withdraw.amount = amount
-          withdraw.method.methodName = methodName
-          withdraw.method.accountName = accountName
-          withdraw.method.accountNumber = accountNumber
-          withdraw.method.transform = transform
-          withdraw.amountUsd = amountUsd
-          withdraw.amountVnd = amountVnd
-          withdraw.symbol = symbol
-          withdraw.updateAt = new Date().toUTCString()
-          withdraw.save()
-            .then(p => {
-              if (p) {
-                return res.json({ code: 0, message: "Update successfully with id = " + id })
-              } else {
-                return res.json({ code: 5, message: "Update failed with id = " + id })
-              }
-            })
-            .catch(err => {
-              return res.json({ code: 4, message: err.message })
-            })
-        } else {
-          return res.json({ code: 2, message: "The withdraw is not valid !!" })
-        }
-      })
-    } else {
-      let messages = result.mapped()
-      let message = ''
-      for (let m in messages) {
-        message = messages[m]
-        break
+    let date = new Date().toUTCString()
+    const id = req.params.id
+    Withdraws.findById(id, (err, withdraw) => {
+      if (err) {
+        errCode1(res, err)
       }
-      return res.json({ code: 1, message: message.msg })
-    }
-
-
+      else {
+        req.body.updateAt = date
+        withdraw.updateOne({$set: req.body})
+          .then(p => {
+            if (p) {
+              successCode(res, `Update successfully with id = ${id}`)
+            } else {
+              errCode2(res, `Update failed with id = ${id}`)
+            }
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+      }
+    })
   }
 
   // [DELETE] /admin/deleteWithdraw/:id
@@ -861,68 +744,43 @@ class AdminController {
     const { id } = req.params
     Withdraws.findById(id, (err, withdraw) => {
       if (err) {
-        return res.json({ code: 1, message: err.message })
+        errCode1(res, err)
       }
       if (withdraw) {
         Withdraws.deleteOne({ _id: id }, (err) => {
-          if (err) return res.json({ code: 3, message: err.message })
-          return res.json({ code: 0, message: "Delete withdraw success with id = " + id })
+          if (err) errCode1(res, err)
+          successCode(res, `Delete withdraw success with id = ${id}`)
 
         })
       } else {
-        return res.json({ code: 2, message: "No withdraw is valid !!!" })
+        errCode2(res, `No withdraw with id = ${id}`)
       }
     })
   }
 
   // [PUT] /admin/updateDeposit/:id
   updateDeposit(req, res) {
-    let result = validationResult(req)
-    if (result.errors.length === 0) {
-      const { status, amount, methodName, accountName, accountNumber, transform, amountUsd, amountVnd, symbol } = req.body
-      const id = req.params.id
-      Deposits.findById(id, (err, deposit) => {
-        if (err) {
-          return res.json({ code: 1, message: err.message })
-        }
-
-        if (deposit) {
-          deposit.status = status
-          deposit.amount = amount
-          deposit.method.methodName = methodName
-          deposit.method.accountName = accountName
-          deposit.method.accountNumber = accountNumber
-          deposit.method.transform = transform
-          deposit.amountUsd = amountUsd
-          deposit.amountVnd = amountVnd
-          deposit.symbol = symbol
-          deposit.updateAt = new Date().toUTCString()
-          deposit.save()
-            .then(p => {
-              if (p) {
-                return res.json({ code: 0, message: "Update successfully with id = " + id })
-              } else {
-                return res.json({ code: 5, message: "Update failed with id = " + id })
-              }
-            })
-            .catch(err => {
-              return res.json({ code: 4, message: err.message })
-            })
-        } else {
-          return res.json({ code: 2, message: "The deposit is not valid !!" })
-        }
-      })
-    } else {
-      let messages = result.mapped()
-      let message = ''
-      for (let m in messages) {
-        message = messages[m]
-        break
+    const id = req.params.id
+    let date = new Date().toUTCString()
+    Deposits.findById(id, (err, deposit) => {
+      if (err) {
+        return res.json({ code: 1, message: err.message })
       }
-      return res.json({ code: 1, message: message.msg })
-    }
-
-
+      else {
+        req.body.updateAt = date
+        deposit.updateOne({$set: req.body})
+          .then(p => {
+            if (p) {
+              successCode(res, `Update successfully with id = ${id}`)
+            } else {
+              errCode2(res, `Update failed with id = ${id}`)
+            }
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+      }
+    })
   }
 
   // [DELETE] /admin/deleteDeposit/:id
@@ -930,16 +788,16 @@ class AdminController {
     const { id } = req.params
     Deposits.findById(id, (err, deposit) => {
       if (err) {
-        return res.json({ code: 1, message: err.message })
+        errCode1(res, err)
       }
       if (deposit) {
         Deposits.deleteOne({ _id: id }, (err) => {
-          if (err) return res.json({ code: 3, message: err.message })
-          return res.json({ code: 0, message: "Delete deposit success with id = " + id })
+          if (err) errCode1(res, err)
+          successCode(res, `Delete deposit success with id = ${id}`)
 
         })
       } else {
-        return res.json({ code: 2, message: "No deposit is valid !!!" })
+        errCode2(res, `Deposit is not valid with id = ${id}`)
       }
     })
   }
@@ -967,7 +825,7 @@ class AdminController {
           return res.json({ code: 0, data: withdraw })
         })
         .catch(err => {
-          return res.json({ code: 2, message: err.message })
+          errCode1(res, err)
         })
 
     } else {
@@ -1003,7 +861,7 @@ class AdminController {
           return res.json({ code: 0, data: payment })
         })
         .catch(err => {
-          return res.json({ code: 2, message: err.message })
+          errCode1(res, err)
         })
 
     } else {
@@ -1056,235 +914,12 @@ class AdminController {
           return res.json({ code: 0, data: deposit })
         })
         .catch(err => {
-          return res.json({ code: 2, message: err.message })
+          errCode1(res, err)
         })
     } else {
       return res.json({ code: 2, message: "Please upload image" })
     }
 
-  }
-
-  // [POST] /admin/servicesCoin
-  servicesCoin(req, res) {
-    let result = validationResult(req)
-    if (result.errors.length === 0) {
-      const { gmailUser, amount, amountUsdt, symbol, price, type } = req.body
-      User.findOne({ 'payment.email': gmailUser }, (err, user) => {
-        if (err) {
-          return res.json({ code: 2, message: err.message })
-        }
-        if (!user || user == "") {
-          return res.json({ code: 2, message: "Người dùng không tồn tại" })
-        }
-
-        // return res.json({code: 1, message: "OK", data: user})
-        const typeUser = user.payment.rule,
-          rank = user.rank,
-          coins = user.coins,
-          fee = user.fee
-
-        if (type == "BuyCoin") {
-          buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user)
-        }
-        else if (type == "SellCoin") {
-          sellCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user)
-        }
-        else if (type == "AddCoin") {
-          addCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user)
-        }
-        else if (type == "SubCoin") {
-          subCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user)
-        }
-      })
-    } else {
-      let messages = result.mapped()
-      let message = ''
-      for (let m in messages) {
-        message = messages[m]
-        break
-      }
-      return res.json({ code: 1, message: message.msg })
-    }
-  }
-
-  // [POST] /admin/handleBuyCoin/:id
-  handleBuyCoin(req, res) {
-    const { id } = req.params
-    const { status } = req.body
-
-    if (status == "Confirmed") {
-      const query = {
-        _id: id,
-        status: "On hold"
-      }
-
-      Bills.findOne(query, (err, bill) => {
-        if (err) {
-          return res.status(404).json({ code: 1, message: err.message })
-        }
-        if (bill) {
-          bill.status = status
-          bill.save()
-            .then(b => {
-              if (b) {
-                let prepare = {
-                  email: b.buyer.gmailUSer,
-                  id: b._id,
-                  fee: b.fee,
-                  amount: b.amount,
-                  price: b.price,
-                  symbol: b.symbol
-                }
-                confirmBuyCoin(req, res, prepare.email, prepare.id, prepare.fee, prepare.amount, prepare.price, prepare.symbol, status)
-              } else {
-                return res.status(404).json({ code: 11, message: "Can not confirm this bill !!" })
-              }
-            })
-            .catch(err => {
-              return res.status(404).json({ code: 10, message: err.message })
-            })
-          // return res.json(bill)
-        } else {
-          return res.status(404).json({ code: 2, message: "Hoá đơn không tồn tại" })
-        }
-        // return res.json(bill)
-      })
-    } else if(status == "Canceled") {
-      const query = {
-        _id: id,
-        status: "Confirmed"
-      }
-
-      Bills.findOne(query, (err, bill) => {
-        if (err) {
-          return res.status(404).json({ code: 1, message: err.message })
-        }
-        if (bill) {
-          bill.status = status
-          bill.save()
-            .then(b => {
-              if (b) {
-                let prepare = {
-                  email: b.buyer.gmailUSer,
-                  id: b._id,
-                  fee: b.fee,
-                  amount: b.amount,
-                  price: b.price,
-                  symbol: b.symbol
-                }
-                // console.log(prepare)
-                cancelBuyCoin(req, res, prepare.email, prepare.id, prepare.fee, prepare.amount, prepare.price, prepare.symbol, status)
-              } else {
-                return res.status(404).json({ code: 11, message: "Can not cancel this bill !!" })
-              }
-            })
-            .catch(err => {
-              return res.status(404).json({ code: 10, message: err.message })
-            })
-        } else {
-          return res.status(404).json({ code: 2, message: "Hoá đơn không tồn tại" })
-        }
-        // return res.json(bill)
-      })
-    }else{
-      Bills.findById(id, (err, bill) => {
-        if(err) return res.json({code: 1, message: err.message})
-        if(bill){
-          bill.status = status
-          bill.updateAt = Date.now()
-          bill.save()
-          .then(b => {
-            if(b){
-              return res.json({code: 0, message: `Successfully !! Saved bill with id = ${id}`})
-            }else{
-              return res.json({code: 2, message: "Can not save bill information !!"})
-            }
-          })
-          .catch(err => {
-            return res.json({code: 1, message: err.message})
-          })
-        }else{
-          return res.json({code: 2, message: "Can not save bill information"})
-        }
-      })
-    }
-  }
-
-  // [POST] admin/handleSellCoin/:id
-  handleSellCoin(req, res) {
-    const { id } = req.params
-    const { status } = req.body
-
-    if (status == "Confirmed") {
-      const query = {
-        _id: id,
-        status: "On hold"
-      }
-
-      Bills.findOne(query, (err, b) => {
-        if (err) return res.status(404).json({ code: 1, message: err.message })
-        if (b) {
-          if (b) {
-            let prepare = {
-              gmail: b.buyer.gmailUSer,
-              idBill: b._id,
-              fee: b.fee,
-              amount: b.amount,
-              price: b.price,
-              symbol: b.symbol,
-            }
-            confirmSellCoin(req, res, prepare.gmail, prepare.idBill, prepare.fee, prepare.amount, prepare.price, prepare.symbol, status)
-          } else {
-            return res.status(404).json({ code: 2, message: `Bill is not valid with id: ${id}` })
-          }
-
-        } else {
-          return res.status(404).json({ code: 2, message: "Bill of sell coin is not valid !!" })
-        }
-      })
-    } else if(status == "Canceled") {
-      const query = { _id: id, status: "Confirmed" }
-
-      Bills.findOne(query, (err, b) => {
-        if (err) return res.status(404).json({ code: 1, message: err.message })
-        if (b) {
-          let prepare = {
-            gmail: b.buyer.gmailUSer,
-            idBill: b._id,
-            fee: b.fee,
-            amount: b.amount,
-            price: b.price,
-            symbol: b.symbol,
-          }
-          // return res.json(prepare)
-          cancelSellCoin(req, res, prepare.gmail, prepare.idBill, prepare.fee, prepare.amount, prepare.price, prepare.symbol, status)
-
-        } else {
-          return res.status(404).json({ code: 2, message: "Bill of sell coin is not valid !!" })
-        }
-      })
-    }else{
-      Bills.findById(id, (err, bill) => {
-        if(err) return res.json({code: 1, message: err.message})
-        if(bill){
-          bill.status = status
-          bill.updateAt = Date.now()
-          bill.save()
-          .then(b => {
-            if(b){
-              return res.json({code: 0, message: `Successfully !! Saved bill with id = ${id}`})
-            }else{
-              return res.json({code: 2, message: "Can not save bill information !!"})
-            }
-          })
-          .catch(err => {
-            return res.json({code: 1, message: err.message})
-          })
-        }else{
-          return res.json({code: 2, message: "Can not save bill information"})
-        }
-      })
-    }
   }
 
   // [GET] /admin/getAllSell
@@ -1297,7 +932,7 @@ class AdminController {
     }
     Bills.find({}, (err, bill) => {
       if (err) {
-        return res.json({ code: 1, message: err.message })
+        errCode1(res, err)
       }
       if (bill) {
 
@@ -1311,7 +946,7 @@ class AdminController {
 
 
       } else {
-        return res.json({ code: 2, message: "No sells" })
+        errCode2(res, "No bill of type sell")
       }
     })
       .sort({ createAt: -1, updateAt: -1 })
@@ -1329,7 +964,7 @@ class AdminController {
     }
     Bills.find({}, (err, bill) => {
       if (err) {
-        return res.json({ code: 1, message: err.message })
+        errCode1(res, err)
       }
       if (bill) {
 
@@ -1343,7 +978,7 @@ class AdminController {
 
 
       } else {
-        return res.json({ code: 2, message: "No buys" })
+        errCode2(res, "No bill of type Buy")
       }
     })
       .sort({ createAt: -1, updateAt: -1 })
@@ -1359,12 +994,12 @@ class AdminController {
       type: "SellCoin"
     }
     Bills.findOne(query, (err, bill) => {
-      if (err) return res.status(404).json({ code: 1, message: err.message })
+      if (err) errCode1(res, err)
 
       if (bill) {
         return res.json({ code: 0, message: "successfully", data: bill })
       } else {
-        return res.status(400).json({ code: 2, message: `Biên bán coin này không tồn tại với id = ${id}` })
+        errCode2(res, `Biên bán coin này không tồn tại với id = ${id}`)
       }
     })
   }
@@ -1377,14 +1012,319 @@ class AdminController {
       type: "BuyCoin"
     }
     Bills.findOne(query, (err, bill) => {
-      if (err) return res.status(404).json({ code: 1, message: err.message })
+      if (err) errCode1(res, err)
 
       if (bill) {
         return res.json({ code: 0, message: "successfully", data: bill })
       } else {
-        return res.status(400).json({ code: 2, message: `Biên bán coin này không tồn tại với id = ${id}` })
+        errCode2(res, `Biên bán coin này không tồn tại với id = ${id}`)
       }
     })
+  }
+
+  // [POST] /admin/handleBuyCoin/:id
+  handleBuyCoin(req, res){
+    const {id} = req.params
+    const {status} = req.body
+
+    if(status === "Confirmed"){
+      const query = {
+        _id: id,
+        status: "On hold",
+        type: "BuyCoin",
+      }
+
+      Bills.findOne(query, (err, bill) => {
+        if(err) return res.status(404).json({code: 1, message: err.message})
+
+        if(bill){
+          let emailUser = bill.buyer.gmailUSer
+          User.findOne({'payment.email': emailUser}, (err, user) => {
+            if(err) return res.status(404).json({code: 1, message: err.message})
+
+            if(user){
+              let prepare = {
+                id: bill._id,
+                amount: bill.amount,
+                symbol: bill.symbol,
+                fee: bill.fee,
+                price: bill.price,
+              }
+              let result = handleAddCoinAuto(prepare.symbol, prepare.amount, user)
+              result
+              .then(val => {
+                user.Wallet.balance = parseFloat(user.Wallet.balance) - parseFloat(prepare.amount) * parseFloat(prepare.price) * (1 + parseFloat(prepare.fee))
+                user.save()
+                .then(u => {
+                  if(u){
+                    bill.status = status
+                    bill.save()
+                    .then(b => {
+                      if(b){
+                        successCode(res, `Confirmed the bill with type buyCoin successfully with id = ${prepare.id}`)
+                      }else{
+                        errCode2(res, `Bill status is not save with id = ${prepare.id}`)
+                      }
+                    })
+                    .catch(err => {
+                      errCode1(res, err)
+                    })
+                  }else{
+                    errCode2(res, `Can not save sub the balance of user with id = ${user._id}`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
+              })
+              .catch(err => {
+                errCode1(res, err)
+              })
+            }else{
+              errCode2(res, `User is not valid with id = ${user._id}`)
+            }
+          })
+        }else{
+          errCode2(res, `Bill of buy coin is not exist with id = ${id}`)
+        }
+      })
+    }else if(status === "Canceled"){
+      const query = {
+        _id: id,
+        status: "Confirmed",
+        type: "BuyCoin",
+      }
+
+      Bills.findOne(query, (err, bill) => {
+        if(err) return res.status(404).json({code: 1, message: err.message})
+
+        if(bill){
+          let emailUser = bill.buyer.gmailUSer
+          User.findOne({'payment.email': emailUser}, (err, user) => {
+            if(err) return res.status(404).json({code: 1, message: err.message})
+            
+            if(user){
+              let prepare = {
+                id: bill._id,
+                amount: bill.amount,
+                symbol: bill.symbol,
+                fee: bill.fee,
+                price: bill.price,
+              }
+
+              let resultCanCel = handleSubCoinAuto(prepare.symbol, prepare.amount, user)
+              resultCanCel
+              .then(ress => {
+                user.Wallet.balance = parseFloat(user.Wallet.balance) + parseFloat(prepare.amount) * parseFloat(prepare.price)
+                user.save()
+                .then(u => {
+                  if(u){
+                    bill.status = status
+                    bill.save()
+                    .then(b => {
+                      successCode(res, `Successfully cancel buy coin with id = ${id}`)
+                    })
+                    .catch(err => {
+                      errCode1(req, err)
+                    })
+                  }else{
+                    errCode2(res, `Can not save user with email ${emailUser}`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
+              })
+              .catch(err => {
+                errCode1(res, err)
+              })
+            }else{
+              errCode2(res, `User is not valid with email = ${emailUser}`)
+            }
+          })
+        }else{
+          errCode2(res, `Bill with type buy is not valid with id = ${id}`)
+        }
+      })
+    }else{
+      const query = {
+        _id : id,
+        type: "BuyCoin",
+      }
+      Bills.findOne(query, (err, bill) => {
+        if(err) errCode1(res, err)
+
+        if(bill){
+          bill.status = status
+          bill.save()
+          .then(b => {
+            if(b){
+              successCode(res, `Change status of bill type buyCoin with id = ${id}`)
+            }else{
+              errCode2(res, `Can not save status bill with id = ${id}`)
+            }
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+        }else{
+          errCode2(res, `Bill is not valid with id = ${id}`)
+        }
+      })
+    }
+  }
+
+  // [POST] /admin/handleSellCoin/:id
+  handleSellCoin(req, res){
+    const {id} = req.params
+    const {status} = req.body
+
+    if(status === "Confirmed"){
+      const query = {
+        _id: id,
+        status: "On hold",
+        type: "SellCoin",
+      }
+
+      Bills.findOne(query, (err, bill) => {
+        if(err) return res.status(404).json({code: 1, message: err.message})
+
+        if(bill){
+          let emailUser = bill.buyer.gmailUSer
+          User.findOne({'payment.email': emailUser}, (err, user) => {
+            if(err) return res.status(404).json({code: 1, message: err.message})
+
+            if(user){
+              let prepare = {
+                id: bill._id,
+                amount: bill.amount,
+                symbol: bill.symbol,
+                fee: bill.fee,
+                price: bill.price,
+              }
+              let result = handleSubCoinAuto(prepare.symbol, prepare.amount, user)
+              result
+              .then(val => {
+                user.Wallet.balance = parseFloat(user.Wallet.balance) + parseFloat(prepare.amount) * parseFloat(prepare.price)
+                user.save()
+                .then(u => {
+                  if(u){
+                    bill.status = status
+                    bill.save()
+                    .then(b => {
+                      if(b){
+                        successCode(res, `Confirmed the bill with type sell coin successfully with id = ${prepare.id}`)
+                      }else{
+                        errCode2(res, `Bill status is not save with id = ${prepare.id}`)
+                      }
+                    })
+                    .catch(err => {
+                      errCode1(res, err)
+                    })
+                  }else{
+                    errCode2(res, `Can not save sub the balance of user with id = ${user._id}`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
+              })
+              .catch(err => {
+                errCode1(res, err)
+              })
+            }else{
+              errCode2(res, `User is not valid with id = ${user._id}`)
+            }
+          })
+        }else{
+          errCode2(res, `Bill of buy coin is not exist with id = ${id}`)
+        }
+      })
+    }else if(status === "Canceled"){
+      const query = {
+        _id: id,
+        status: "Confirmed",
+        type: "SellCoin",
+      }
+
+      Bills.findOne(query, (err, bill) => {
+        if(err) return res.status(404).json({code: 1, message: err.message})
+
+        if(bill){
+          let emailUser = bill.buyer.gmailUSer
+          User.findOne({'payment.email': emailUser}, (err, user) => {
+            if(err) return res.status(404).json({code: 1, message: err.message})
+            
+            if(user){
+              let prepare = {
+                id: bill._id,
+                amount: bill.amount,
+                symbol: bill.symbol,
+                fee: bill.fee,
+                price: bill.price,
+              }
+
+              let resultCanCel = handleAddCoinAuto(prepare.symbol, prepare.amount, user)
+              resultCanCel
+              .then(ress => {
+                user.Wallet.balance = parseFloat(user.Wallet.balance) - parseFloat(prepare.amount) * parseFloat(prepare.price)
+                user.save()
+                .then(u => {
+                  if(u){
+                    bill.status = status
+                    bill.save()
+                    .then(b => {
+                      successCode(res, `Successfully cancel sub coin with id = ${id}`)
+                    })
+                    .catch(err => {
+                      errCode1(req, err)
+                    })
+                  }else{
+                    errCode2(res, `Can not save user with email ${emailUser}`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
+              })
+              .catch(err => {
+                errCode1(res, err)
+              })
+            }else{
+              errCode2(res, `User is not valid with email = ${emailUser}`)
+            }
+          })
+        }else{
+          errCode2(res, `Bill with type sell is not valid with id = ${id}`)
+        }
+      })
+    }else{
+      const query = {
+        _id: id,
+        type: "SellCoin",
+      }
+      
+      Bills.findOne(query, (err, bill) => {
+        if(err) errCode1(res, err)
+
+        if(bill){
+          bill.status = status
+          bill.save()
+          .then(b => {
+            if(b){
+              successCode(res, `Change status of bill type buyCoin with id = ${id}`)
+            }else{
+              errCode2(res, `Can not save status bill with id = ${id}`)
+            }
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+        }else{
+          errCode2(res, `Bill is not valid with id = ${id}`)
+        }
+      })
+    }
   }
 
   // ---------------------------------------------services-------------------------------------------------
