@@ -452,7 +452,7 @@ class AdminController {
   }
 
   // [GET] /admin/getUser/:id
-  getUser(){
+  getUser(req, res){
     const {id} = req.params
     User.findById(id, (err, user) => {
       if(err) errCode1(res, err)

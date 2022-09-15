@@ -160,10 +160,10 @@ class CoinsController{
 			.skip(step)
 			.limit(typeShow)
 
-			const [all, total] = await Promise([allCoins, totalCoin])
+			const [all, total] = await Promise.all([allCoins, totalCoin])
 			return res.json({code: 0, message: "Success get all coin", data: all, total: total, page: pages, show: typeShow})
 		}catch{
-			methods.errCode2(res, "Can get all coin !!!")
+			methods.errCode2(res, "Can not get all coin !!!")
 		}
     }
 
