@@ -74,7 +74,8 @@ router.put('/updateDeposit/:id', checkAuth, checkAdmin, AdminController.updateDe
 // [DELETE] /admin/deleteDeposit/:id
 router.delete('/deleteDeposit/:id', checkAuth, checkAdmin, AdminController.deleteDeposit)
 
-
+// [GET] /admin/getUser/:id
+router.get('/getUser/:id', AdminController.getUser)
 
 
 

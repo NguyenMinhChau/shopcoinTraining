@@ -8,6 +8,8 @@ const path = require('path')
 const fs = require('fs')
 const jwt_decoded = require('jwt-decode')
 
+const methods = require('../function')
+
 // import model
 
 const User = require('../models/User')
@@ -393,31 +395,40 @@ class AdminController {
   // ---------------------------------------------services-------------------------------------------------
 
   // [GET] /admin/getAllUser
-  getAllUser(req, res) {
+  async getAllUser(req, res) {
     const pages = req.query.page || 1
     const typeShow = req.query.show || 10
-    const step = parseInt(pages - 1) * parseInt(typeShow)
+    const step = typeShow*pages - typeShow
 
-    User.find({}, (err, admin) => {
-      if (err) {
-        errCode1(res, err)
-      }
+    // User.find({}, async (err, admin) => {
+    //   if (err) {
+    //     errCode1(res, err)
+    //   }
 
-      if (admin) {
-        User.find({}, (err, uss) => {
-          if (err) {
-            return res.status(404).json({ code: 1, message: err.message })
-          }
+    //   if (admin) {
+    //     // User.find({}, async (err, uss) => {
+    //     //   if (err) {
+    //     //     return res.status(404).json({ code: 1, message: err.message })
+    //     //   }
+    //     // })
+    //     let total = User.countDocuments()
+    //     const [totalAll] = await Promise.all([total])
+    //     return res.json({ code: 0, dataUser: admin, page: pages, typeShow: typeShow, total: totalAll })
+    //   } else {
+    //     errCode2(res, "No user")
+    //   }
+    // })
+    //   .sort({ createAt: 'desc'})
+    //   .limit(typeShow)
+    //   .skip(step)
+    const total = User.countDocuments()
+    const allUser = User.find()
+    .sort({createAt: 'desc'})
+    .skip(step)
+    .limit(typeShow)
+    const [totalUser, all] = await Promise.all([total, allUser])
+    return res.json({ code: 0, dataUser: all, page: pages, typeShow: typeShow, total: totalUser })
 
-          return res.json({ code: 0, dataUser: admin, page: pages, typeShow: typeShow, total: uss.length })
-        })
-      } else {
-        errCode2(res, "No user")
-      }
-    })
-      .sort({ createAt: -1, updateAt: -1 })
-      .limit(typeShow)
-      .skip(step)
   }
 
   // [DELETE] /admin/deleteUser/:id
@@ -440,8 +451,19 @@ class AdminController {
     })
   }
 
-  
+  // [GET] /admin/getUser/:id
+  getUser(){
+    const {id} = req.params
+    User.findById(id, (err, user) => {
+      if(err) errCode1(res, err)
 
+      if(user){
+        methods.dataCode(res, user)
+      }else{
+        errCode2(res, `User is not valid with id = ${id}`)
+      }
+    })
+  }
   
 
   // [GET] /admin/getAllPayments

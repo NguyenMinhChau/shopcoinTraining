@@ -3,6 +3,8 @@ const path = require('path')
 const fs = require('fs')
 const {validationResult} = require('express-validator')
 
+const methods = require('../function')
+const { successCode } = require('../function')
 
 
 class CoinsController{
@@ -146,18 +148,23 @@ class CoinsController{
 	}
 
     // [GET] /coins/getAllCoin
-    getAllCoins(req, res){
-        Coins.find({}, (err, coins) => {
-            if(err){
-                return res.json({code: 1, message: err.message})
-            }
+    async getAllCoins(req, res){
+		const pages = req.query.page || 1
+    	const typeShow = req.query.show || 10
+    	const step = typeShow*pages - typeShow
 
-            if(coins){
-                return res.json({code: 0, data: coins})
-            }else{
-                return res.json({code: 2, message: "No coin"})
-            }
-        })
+        try{
+			const totalCoin = Coins.countDocuments()
+			const allCoins = Coins.find()
+			.sort({createAt: 'desc'})
+			.skip(step)
+			.limit(typeShow)
+
+			const [all, total] = await Promise([allCoins, totalCoin])
+			return res.json({code: 0, message: "Success get all coin", data: all, total: total, page: pages, show: typeShow})
+		}catch{
+			methods.errCode2(res, "Can get all coin !!!")
+		}
     }
 
 	// [DELETE] /coins/getCoin/:id
