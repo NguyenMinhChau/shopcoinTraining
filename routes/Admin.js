@@ -10,9 +10,8 @@ const checkRegister = require('./validators/RegisterValidation')
 const LoginValidator = require('./validators/LoginValidator')
 const PaymentValidator = require('./validators/PaymentValidator')
 const WithdrawValidator = require('./validators/WithdrawValidator')
-const servicesCoinValidator = require('./validators/servicesCoinValidator')
 const updatePaymentValidator = require('./validators/updatePaymentValidator')
-const additionBankInfoValidator = require('./validators/addtionBankInfoValidator')
+
 const updateWithdrawValidator = require('./validators/updateWithdrawValidator')
 const updateDepositValidator = require('./validators/updateDepositValidator')
 
@@ -75,11 +74,9 @@ router.put('/updateDeposit/:id', checkAuth, checkAdmin, AdminController.updateDe
 // [DELETE] /admin/deleteDeposit/:id
 router.delete('/deleteDeposit/:id', checkAuth, checkAdmin, AdminController.deleteDeposit)
 
-// [PUT] /admin/changePWD/:id
-router.put('/changePWD/:id', checkAuth, AdminController.changePWD)
 
-// [PUT] /admin/additionBankInfo/:id
-router.put('/additionBankInfo/:id', checkAuth, additionBankInfoValidator, AdminController.additionBankInfo)
+
+
 
 // [GET]/admin/getAllSell
 router.get('/getAllSell', AdminController.getAllSell)

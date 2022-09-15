@@ -37,7 +37,7 @@ function checkWallet(balance, payment) {
   return balance > payment
 }
 
-function buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user) {
+function buyCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user) {
   const balance = user.Wallet.balance
 
   if (checkWallet(balance, amount * price)) {
@@ -68,7 +68,7 @@ function buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
         rank: rank,
       },
       amount: amount,
-      amountUsdt: amountUsdt,
+      amountUsd: amountUsd,
       symbol: symbol,
       price: price,
       type: type,
@@ -86,7 +86,7 @@ function buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
 
 }
 
-function sellCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user) {
+function sellCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user) {
 
   const balance = user.Wallet.balance
 
@@ -116,7 +116,7 @@ function sellCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, t
       gmailUSer: gmailUser,
     },
     amount: amount,
-    amountUsdt: amountUsdt,
+    amountUsd: amountUsd,
     symbol: symbol,
     price: price,
     type: type,
@@ -131,9 +131,9 @@ function sellCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, t
     })
 }
 
-function addCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user) {
+function addCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user) {
   if (rank == "Demo") {
-    return res.json({ fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins })
+    return res.json({ fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins })
   }
   else if (rank == "Standard") {
     const newBill = new Bills({
@@ -142,7 +142,7 @@ function addCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
         gmailUSer: gmailUser,
       },
       amount: amount,
-      amountUsdt: amountUsdt,
+      amountUsd: amountUsd,
       symbol: symbol,
       price: price,
       type: type,
@@ -157,16 +157,16 @@ function addCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
       })
   }
   else if (rank == "Pro") {
-    return res.json({ fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins })
+    return res.json({ fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins })
   }
   else { // for rank VIP
-    return res.json({ fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins })
+    return res.json({ fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins })
   }
 }
 
-function subCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user) {
+function subCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user) {
   if (rank == "Demo") {
-    return res.json({ fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins })
+    return res.json({ fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins })
   }
   else if (rank == "Standard") {
     const newBill = new Bills({
@@ -175,7 +175,7 @@ function subCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
         gmailUSer: gmailUser,
       },
       amount: amount,
-      amountUsdt: amountUsdt,
+      amountUsd: amountUsd,
       symbol: symbol,
       price: price,
       type: type,
@@ -194,10 +194,10 @@ function subCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
       })
   }
   else if (rank == "Pro") {
-    return res.json({ fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins })
+    return res.json({ fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins })
   }
   else { // for rank VIP
-    return res.json({ fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins })
+    return res.json({ fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins })
   }
 }
 
@@ -295,7 +295,7 @@ function subCoinNotDisappear(user, afterAmount, position) {
 
 function handleAddCoinAuto(symbol, amount, user) {
   let p = new Promise((resolve, reject) => {
-    Coins.findOne({ symbols: symbol }, (err, coin) => {
+    Coins.findOne({ symbol: symbol }, (err, coin) => {
       if (err) reject({ code: 1, message: err.message })
 
       if (coin) {
@@ -338,7 +338,7 @@ function handleAddCoinAuto(symbol, amount, user) {
 
 function handleSubCoinAuto(symbol, amount, user) {
   let p = new Promise((resolve, reject) => {
-    Coins.findOne({ symbols: symbol }, (err, coin) => {
+    Coins.findOne({ symbol: symbol }, (err, coin) => {
       if (err) reject({ code: 1, message: err.message })
 
       if (coin) {
@@ -440,94 +440,9 @@ class AdminController {
     })
   }
 
-  // [PUT] /admin/changePWD/:id
-  changePWD(req, res) {
-    const { oldPWD, newPWD } = req.body
-    const id = req.params.id
+  
 
-    User.findById(id, (err, user) => {
-      if (err) {
-        errCode1(res, err)
-      }
-
-      if (user) {
-        bcrypt.compare(oldPWD, user.payment.password)
-          .then(result => {
-            if (result) {
-              bcrypt.hash(newPWD, 10)
-                .then(hashed => {
-                  user.payment.password = hashed
-                  user.save()
-                    .then(u => {
-                      if (u) {
-                        successCode(res, `Change password successfully with id = ${id}`)
-                      } else {
-                        errCode2(res, "Can not change password")
-                      }
-                    })
-                    .catch(err => {
-                      errCode1(res, err)
-                    })
-                })
-                .catch(err => {
-                  errCode1(res, err)
-                })
-            } else {
-              errCode2(res, "Password is not match")
-            }
-          })
-
-      } else {
-        errCode2(res, `User is not valid with id = ${id}`)
-      }
-    })
-  }
-
-  // [PUT] /admin/additionBankInfo/:id
-  additionBankInfo(req, res) {
-    let result = validationResult(req)
-    if (result.errors.length === 0) {
-      const { bankName, nameAccount, accountNumber } = req.body
-      const id = req.params.id
-
-      User.findById(id, (err, user) => {
-        if (err) {
-          errCode1(res, err)
-        }
-
-        if (user) {
-          let infoBank = user.payment.bank
-          infoBank.bankName = bankName
-          infoBank.name = nameAccount
-          infoBank.account = accountNumber
-          user.updateAt = new Date().toUTCString()
-          user.save()
-            .then(u => {
-              if (u) {
-                successCode(res, `Add bank information successfully with id = ${id}`)
-              } else {
-                errCode2(res, `Can not addition information of user about bank payment with id = ${id}`)
-              }
-            })
-            .catch(err => {
-              errCode1(res, err)
-            })
-        } else {
-          errCode2(res, `User is not valid with id = ${id}`)
-        }
-      })
-    } else {
-      let messages = result.mapped()
-      let message = ''
-      for (let m in messages) {
-        message = messages[m]
-        break
-      }
-      return res.json({ code: 1, message: message.msg })
-    }
-
-
-  }
+  
 
   // [GET] /admin/getAllPayments
   getAllPayments(req, res) {

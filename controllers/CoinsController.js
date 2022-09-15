@@ -28,7 +28,7 @@ class CoinsController{
             const coin = Coins({
                 logo: logoCoin,
                 name: name,
-                symbols: symbol,
+                symbol: symbol,
                 fullName: fullname,
                 unshow: [unshow],
             })
@@ -48,7 +48,7 @@ class CoinsController{
 		let result = validationResult(req)
         if(result.errors.length === 0){
 					const {id} = req.params
-					const {name, symbols, fullName} = req.body
+					const {name, symbol, fullName} = req.body
 					let date = Date.now()
 					let file = req.file
 					if(file)
@@ -79,20 +79,6 @@ class CoinsController{
 																return res.json({code: 2, message: "Coin can not be updated !!!"})
 														}
 												})
-												/*c.name = name
-												c.symbols = symbol
-												c.fullName = fullName
-												c.save()
-													.then(c => {
-														if(c){
-															return res.json({code: 0, message: "Update coin successfully !!", data: c})
-														}else{
-															return res.status(404).json({code: 4, message: "Can not execute command !"})
-														}
-										})
-										.catch(err => {
-											return res.status(404).json({code: 3, message: err.message})
-										})*/
 											}else{
 												return res.status(404).json({code: 2, message: err.message})
 											}

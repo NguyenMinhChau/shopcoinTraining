@@ -26,8 +26,6 @@ const user = new mongoose.Schema({
         _id: {type: mongoose.Schema.Types.ObjectId, default: "", ref: 'Coins'},
         name: {type: String, default: ""},
     }], default: []},
-    createAt: {type: String, default: new Date().toUTCString()},
-    updateAt: {type: String, default: new Date().toUTCString()},
     rank: {type: String, default: "Standard"},
     changeBalance: {type: Number, default: 0.0},
     fee: {type: Number, default: 0.15},
@@ -35,7 +33,7 @@ const user = new mongoose.Schema({
     uploadCCCDBeside: {type: String, default: ""},
     uploadLicenseFont: {type: String, default: ""},
     uploadLicenseFont: {type: String, default: ""},
-})
+},{ timestamps: true })
 
 const User = mongoose.model('User', user)
 module.exports = User

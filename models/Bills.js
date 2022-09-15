@@ -15,13 +15,11 @@ const bill = new mongoose.Schema({
             rank: "Standard",
         }},
     amount: {type: Number, default: 0},
-    amountUsdt: {type: Number, default: 0},
+    amountUsd: {type: Number, default: 0},
     symbol: {type: String, default: ""},
     price: {type: Number, default: 0},
     type: {type: String, default: ""},
-    createAt: {type: String, default: new Date().toUTCString()},
-    updateAt: {type: String, default: new Date().toUTCString()},
-})
+}, { timestamps: true })
 
 const Bill = mongoose.model('Bill', bill)
 module.exports = Bill

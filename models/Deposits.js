@@ -17,10 +17,8 @@ const deposit = new mongoose.Schema({
     amountUsd: {type: Number, default: 0.0},
     amountVnd: {type: Number, default: 0.0},
     symbol: {type: String, default: ""},
-    createAt: {type: String, default: new Date().toUTCString()},
-    updateAt: {type: String, default: new Date().toUTCString()},
     statement: {type: String, default: ""},
-})
+}, { timestamps: true })
 
 const Deposit = mongoose.model('Deposits', deposit)
 module.exports = Deposit

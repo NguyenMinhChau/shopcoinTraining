@@ -7,9 +7,7 @@ const payment = new mongoose.Schema({
     accountNumber: {type: String, default: ""},
     rateDeposit: {type: Number, default: 0},
     rateWithdraw: {type: Number, default: 0},
-    createAt: {type: String, default: new Date().toUTCString()},
-    updateAt: {type: String, default: new Date().toUTCString()},
-})
+}, { timestamps: true })
 
 const Payment = mongoose.model('Payments', payment)
 module.exports = Payment

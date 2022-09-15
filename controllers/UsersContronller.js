@@ -2,6 +2,11 @@ const Users = require('../models/User')
 const Bills = require('../models/Bills')
 const fs = require('fs')
 const Path = require('path')
+const bcrypt = require('bcrypt')
+
+const { validationResult } = require('express-validator')
+
+const methods = require('../function')
 
 // support function
 
@@ -23,7 +28,7 @@ function checkWallet(balance, payment) {
     return balance > payment
 }
 
-function buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user) {
+function buyCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user) {
     const balance = user.Wallet.balance
   
     if (checkWallet(balance, amount * price)) {
@@ -54,7 +59,7 @@ function buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
           rank: rank,
         },
         amount: amount,
-        amountUsdt: amountUsdt,
+        amountUsd: amountUsd,
         symbol: symbol,
         price: price,
         type: type,
@@ -72,7 +77,7 @@ function buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, ty
   
 }
 
-function sellCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user) {
+function sellCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user) {
 
     const balance = user.Wallet.balance
 
@@ -102,7 +107,7 @@ function sellCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, t
         gmailUSer: gmailUser,
         },
         amount: amount,
-        amountUsdt: amountUsdt,
+        amountUsd: amountUsd,
         symbol: symbol,
         price: price,
         type: type,
@@ -182,7 +187,7 @@ class UsersController{
 
     // [POST] /users/BuyCoin/
     BuyCoin(req, res){
-        const { gmailUser, amount, amountUsdt, symbol, price, type } = req.body
+        const { gmailUser, amount, amountUsd, symbol, price, type } = req.body
         Users.findOne({ 'payment.email': gmailUser }, (err, user) => {
             if (err) {
             return res.json({ code: 2, message: err.message })
@@ -197,13 +202,13 @@ class UsersController{
             coins = user.coins,
             fee = user.fee
 
-            buyCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user)
+            buyCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user)
         })
     }
 
     // [POST] /users/SellCoin/
     SellCoin(req, res){
-        const { gmailUser, amount, amountUsdt, symbol, price, type } = req.body
+        const { gmailUser, amount, amountUsd, symbol, price, type } = req.body
         Users.findOne({ 'payment.email': gmailUser }, (err, user) => {
             if (err) {
             return res.json({ code: 2, message: err.message })
@@ -218,9 +223,98 @@ class UsersController{
             coins = user.coins,
             fee = user.fee
 
-            sellCoin(req, res, fee, gmailUser, amount, amountUsdt, symbol, price, type, typeUser, rank, coins, user)
+            sellCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user)
         })
     }
+
+    // [PUT] /admin/changePWD/:id
+  changePWD(req, res) {
+    const { oldPWD, newPWD } = req.body
+    const id = req.params.id
+
+    Users.findById(id, (err, user) => {
+      if (err) {
+        methods.errCode1(res, err)
+      }
+
+      if (user) {
+        bcrypt.compare(oldPWD, user.payment.password)
+          .then(result => {
+            if (result) {
+              bcrypt.hash(newPWD, 10)
+                .then(hashed => {
+                  user.payment.password = hashed
+                  user.save()
+                    .then(u => {
+                      if (u) {
+                        methods.successCode(res, `Change password successfully with id = ${id}`)
+                      } else {
+                        methods.errCode2(res, "Can not change password")
+                      }
+                    })
+                    .catch(err => {
+                        methods.errCode1(res, err)
+                    })
+                })
+                .catch(err => {
+                    methods.errCode1(res, err)
+                })
+            } else {
+                methods.errCode2(res, "Password is not match")
+            }
+          })
+
+      } else {
+        methods.errCode2(res, `User is not valid with id = ${id}`)
+      }
+    })
+  }
+
+  // [PUT] /users/additionBankInfo/:id
+  additionBankInfo(req, res) {
+    let result = validationResult(req)
+    if (result.errors.length === 0) {
+      const { bankName, nameAccount, accountNumber } = req.body
+      const id = req.params.id
+
+      Users.findById(id, (err, user) => {
+        if (err) {
+          methods.errCode1(res, err)
+        }
+
+        if (user) {
+          let infoBank = user.payment.bank
+          infoBank.bankName = bankName
+          infoBank.name = nameAccount
+          infoBank.account = accountNumber
+          user.updateAt = new Date().toUTCString()
+          user.save()
+            .then(u => {
+              if (u) {
+                methods.successCode(res, `Add bank information successfully with id = ${id}`)
+              } else {
+                methods.errCode2(res, `Can not addition information of user about bank payment with id = ${id}`)
+              }
+            })
+            .catch(err => {
+              methods.errCode1(res, err)
+            })
+        } else {
+          methods.errCode2(res, `User is not valid with id = ${id}`)
+        }
+      })
+    } else {
+      let messages = result.mapped()
+      let message = ''
+      for (let m in messages) {
+        message = messages[m]
+        break
+      }
+      return res.json({ code: 1, message: message.msg })
+    }
+
+
+  }
 
 }
 

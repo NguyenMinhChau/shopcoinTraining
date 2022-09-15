@@ -15,9 +15,7 @@ const withdraw = new mongoose.Schema({
     amountUsd: {type: Number, default: 0},
     amountVnd: {type: Number, default: 0},
     symbol: {type: String, default: ""},
-    createAt: {type: String, default: new Date().toUTCString()},
-    updateAt: {type: String, default: new Date().toUTCString()},
-})
+}, { timestamps: true })
 
 const Withdraw = mongoose.model('Withdraws', withdraw)
 module.exports = Withdraw

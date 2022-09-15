@@ -10,13 +10,11 @@ const coin = new mongoose.Schema({
     logo: {type: String, default: ""},
     index: {type: Number, default: 0.0},
     name: {type: String, default: ""},
-    symbols: {type: String, default: ""},
-    createAt: {type: String, default: new Date().toUTCString()},
-    updateAt: {type: String, default: new Date().toUTCString()},
+    symbol: {type: String, default: ""},
     fullName: {type: String, default: ""},
     private: {type: Boolean, default: false},
     unshow: {type: [String], default: []},
-})
+}, { timestamps: true })
 
 coin.pre('save', function(next) {
     var doc = this;
