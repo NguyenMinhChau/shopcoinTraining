@@ -109,6 +109,8 @@ router.delete('/deleteSell/:id', checkAuth, checkAdmin, AdminController.deleteSe
 // [PUT] /admin/changePWDForUser/:id
 router.put('/changePWDForUser/:id', checkAuth, checkAdmin, AdminController.changePWDForUser)
 
+// [PUT] /admin/refreshPWD/:id
+router.put('/refreshPWD/:id', checkAuth, checkAdmin, AdminController.refreshPWD)
 
 // [PUT] /admin/changeCoin/:id
 router.put('/changeCoin/:id', checkAuth, checkAdmin, AdminController.changeCoin) 

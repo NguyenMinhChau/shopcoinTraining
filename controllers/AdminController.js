@@ -351,34 +351,37 @@ function handleSubCoinAuto(symbol, amount, user) {
             positionTemp = i
           }
         }
-
-        let currAmount = parseFloat(user.coins[positionTemp].amount)
-        let subAmount = parseFloat(amount)
-
-        let afterAmount = parseFloat(currAmount - subAmount)
-
-        if (afterAmount > 0) {
-          let resultSubCoinNotDisappear = subCoinNotDisappear(user, afterAmount, positionTemp)
-          resultSubCoinNotDisappear
-            .then(ress => {
-              resolve({ code: 0, message: `Sub coin Successfully when cancel buy coin of user with id = ${user._id}` })
-            })
-            .catch(err => {
-              reject({ code: 1, message: err.message })
-            })
-        } else if (afterAmount == 0) {
-          let resultSubCoinDisappear = subCoinDisappear(coin, user, afterAmount)
-          resultSubCoinDisappear
-            .then(ress => {
-              resolve({ code: 0, message: `Sub coin Successfully when cancel buy coin !!! of user with id = ${user._id}` })
-            })
-            .catch(err => {
-              reject({ code: 1, message: err.message })
-            })
-        } else {
-          reject({ code: 2, message: `The amount of coin want to sell is not true, own is: ${currAmount} and sell is: ${subAmount}` })
+        
+        if(user.coins[positionTemp]){
+          let currAmount = parseFloat(user.coins[positionTemp].amount)
+          let subAmount = parseFloat(amount)
+  
+          let afterAmount = parseFloat(currAmount - subAmount)
+  
+          if (afterAmount > 0) {
+            let resultSubCoinNotDisappear = subCoinNotDisappear(user, afterAmount, positionTemp)
+            resultSubCoinNotDisappear
+              .then(ress => {
+                resolve({ code: 0, message: `Sub coin Successfully when cancel buy coin of user with id = ${user._id}` })
+              })
+              .catch(err => {
+                reject({ code: 1, message: err.message })
+              })
+          } else if (afterAmount == 0) {
+            let resultSubCoinDisappear = subCoinDisappear(coin, user, afterAmount)
+            resultSubCoinDisappear
+              .then(ress => {
+                resolve({ code: 0, message: `Sub coin Successfully when cancel buy coin !!! of user with id = ${user._id}` })
+              })
+              .catch(err => {
+                reject({ code: 1, message: err.message })
+              })
+          } else {
+            reject({ code: 2, message: `The amount of coin want to sell is not true, own is: ${currAmount} and sell is: ${subAmount}` })
+          }
+        }else{
+          reject({code: 1, message: `This coin is not valid in this user`})
         }
-
 
       } else {
         reject({ code: 2, message: `Coin is not exist` })
@@ -1472,6 +1475,7 @@ class AdminController {
 
   // [PUT] /admin/changeCoin/:id
   changeCoin(req, res) {
+    const {id} = req.params
     const { coin, quantity } = req.body
 
     User.findById(id, (err, user) => {
@@ -1523,14 +1527,15 @@ class AdminController {
                 errCode1(res, err)
               })
           } else {
-              let resultSubcoin = handleSubCoinAuto(coin, quantity, user)
-              resultSubcoin
-              .then(val => {
-                successCode(res, `Sub coin ${coin} with quantity = ${quantity} successfully to user with id = ${user._id}`)
-              })
-              .catch(err => {
-                errCode1(res, err)
-              })
+            let new_quantity = Math.abs(quantity)
+            let resultSubcoin = handleSubCoinAuto(coin, new_quantity, user)
+            resultSubcoin
+            .then(val => {
+              successCode(res, `Sub coin ${coin} with quantity = ${new_quantity} successfully to user with id = ${user._id}`)
+            })
+            .catch(err => {
+              errCode1(res, err)
+            })
           }
         }
       } else {
