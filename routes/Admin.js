@@ -106,4 +106,12 @@ router.delete('/deleteBuy/:id', checkAuth, checkAdmin, AdminController.deleteBuy
 // [DELETE] /admin/deleteSell/:id
 router.delete('/deleteSell/:id', checkAuth, checkAdmin, AdminController.deleteSell)
 
+// [PUT] /admin/changePWDForUser/:id
+router.put('/changePWDForUser/:id', checkAuth, checkAdmin, AdminController.changePWDForUser)
+
+
+// [PUT] /admin/changeCoin/:id
+router.put('/changeCoin/:id', checkAuth, checkAdmin, AdminController.changeCoin) 
+ 
+
 module.exports = router

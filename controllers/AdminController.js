@@ -18,21 +18,22 @@ const Payments = require('../models/Payments')
 const Withdraws = require('../models/Withdraws')
 const Deposits = require('../models/Deposits')
 const Bills = require('../models/Bills');
-const { parse } = require('path');
-const Rank = require('../models/Ranks')
+const Rank = require('../models/Ranks');
+const { mail } = require('../function');
 // support function
 // error
-function errCode1(res, err){
-  return res.status(404).json({code: 1, message: err.message})
+function errCode1(res, err) {
+  return res.status(404).json({ code: 1, message: err.message })
 }
 
-function errCode2(res, err){
-  return res.status(400).json({code: 2, message: err})
+function errCode2(res, err) {
+  return res.status(400).json({ code: 2, message: err })
 }
 
-function successCode(res, mess){
-  return res.json({code: 0, message: mess})
+function successCode(res, mess) {
+  return res.json({ code: 0, message: mess })
 }
+
 
 // check balance is good for paying
 function checkWallet(balance, payment) {
@@ -233,16 +234,16 @@ function addCoinNotExist(user, coin, amount) {
       name: coin.fullName,
     })
     user.save()
-    .then(u => {
-      if(u){
-        resolve({code: 0, message: `successfully, add new coin for user with id = ${user._id}`})
-      }else{
-        reject({code: 2, message: `User balance is not saved with id = ${user._id}`})
-      }
-    })
-    .catch(err => {
-      reject({code: 1, message: err.message})
-    })
+      .then(u => {
+        if (u) {
+          resolve({ code: 0, message: `successfully, add new coin for user with id = ${user._id}` })
+        } else {
+          reject({ code: 2, message: `User balance is not saved with id = ${user._id}` })
+        }
+      })
+      .catch(err => {
+        reject({ code: 1, message: err.message })
+      })
   })
   return p
 }
@@ -398,7 +399,7 @@ class AdminController {
   async getAllUser(req, res) {
     const pages = req.query.page || 1
     const typeShow = req.query.show || 10
-    const step = typeShow*pages - typeShow
+    const step = typeShow * pages - typeShow
 
     // User.find({}, async (err, admin) => {
     //   if (err) {
@@ -423,9 +424,9 @@ class AdminController {
     //   .skip(step)
     const total = User.countDocuments()
     const allUser = User.find()
-    .sort({createAt: 'desc'})
-    .skip(step)
-    .limit(typeShow)
+      .sort({ createAt: 'desc' })
+      .skip(step)
+      .limit(typeShow)
     const [totalUser, all] = await Promise.all([total, allUser])
     return res.json({ code: 0, dataUser: all, page: pages, typeShow: typeShow, total: totalUser })
 
@@ -452,19 +453,19 @@ class AdminController {
   }
 
   // [GET] /admin/getUser/:id
-  getUser(req, res){
-    const {id} = req.params
+  getUser(req, res) {
+    const { id } = req.params
     User.findById(id, (err, user) => {
-      if(err) errCode1(res, err)
+      if (err) errCode1(res, err)
 
-      if(user){
+      if (user) {
         methods.dataCode(res, user)
-      }else{
+      } else {
         errCode2(res, `User is not valid with id = ${id}`)
       }
     })
   }
-  
+
 
   // [GET] /admin/getAllPayments
   getAllPayments(req, res) {
@@ -606,26 +607,26 @@ class AdminController {
   // [PUT] /admin/updatePayment/:id
   updatePayment(req, res) {
     let date = new Date().toUTCString()
-    const {id} = req.params
+    const { id } = req.params
     Payments.findById(id, (err, payment) => {
       if (err) {
         errCode1(res, err)
       }
       else {
-        if(payment){
+        if (payment) {
           req.body.updateAt = date
-          payment.update({$set: req.body})
-          .then(p => {
-            if(p){
-              successCode(res, `Update payment successfully with id = ${id}`)
-            }else{
-              errCode2(res, `Can not update payment with id = ${id}`)
-            }
-          })
-          .catch(err => {
-            errCode1(res, err)
-          })
-        }else{
+          payment.update({ $set: req.body })
+            .then(p => {
+              if (p) {
+                successCode(res, `Update payment successfully with id = ${id}`)
+              } else {
+                errCode2(res, `Can not update payment with id = ${id}`)
+              }
+            })
+            .catch(err => {
+              errCode1(res, err)
+            })
+        } else {
           errCode2(res, `Payment is not valid with id = ${id}`)
         }
       }
@@ -661,7 +662,7 @@ class AdminController {
       }
       else {
         req.body.updateAt = date
-        withdraw.updateOne({$set: req.body})
+        withdraw.updateOne({ $set: req.body })
           .then(p => {
             if (p) {
               successCode(res, `Update successfully with id = ${id}`)
@@ -705,7 +706,7 @@ class AdminController {
       }
       else {
         req.body.updateAt = date
-        deposit.updateOne({$set: req.body})
+        deposit.updateOne({ $set: req.body })
           .then(p => {
             if (p) {
               successCode(res, `Update successfully with id = ${id}`)
@@ -960,11 +961,11 @@ class AdminController {
   }
 
   // [PUT] /admin/handleBuyCoin/:id
-  handleBuyCoin(req, res){
-    const {id} = req.params
-    const {status} = req.body
+  handleBuyCoin(req, res) {
+    const { id } = req.params
+    const { status } = req.body
 
-    if(status === "Confirmed"){
+    if (status === "Confirmed") {
       const query = {
         _id: id,
         status: "On hold",
@@ -972,14 +973,14 @@ class AdminController {
       }
 
       Bills.findOne(query, (err, bill) => {
-        if(err) return res.status(404).json({code: 1, message: err.message})
+        if (err) return res.status(404).json({ code: 1, message: err.message })
 
-        if(bill){
+        if (bill) {
           let emailUser = bill.buyer.gmailUSer
-          User.findOne({'payment.email': emailUser}, (err, user) => {
-            if(err) return res.status(404).json({code: 1, message: err.message})
+          User.findOne({ 'payment.email': emailUser }, (err, user) => {
+            if (err) return res.status(404).json({ code: 1, message: err.message })
 
-            if(user){
+            if (user) {
               let prepare = {
                 id: bill._id,
                 amount: bill.amount,
@@ -989,43 +990,43 @@ class AdminController {
               }
               let result = handleAddCoinAuto(prepare.symbol, prepare.amount, user)
               result
-              .then(val => {
-                user.Wallet.balance = parseFloat(user.Wallet.balance) - parseFloat(prepare.amount) * parseFloat(prepare.price) * (1 + parseFloat(prepare.fee))
-                user.save()
-                .then(u => {
-                  if(u){
-                    bill.status = status
-                    bill.save()
-                    .then(b => {
-                      if(b){
-                        successCode(res, `Confirmed the bill with type buyCoin successfully with id = ${prepare.id}`)
-                      }else{
-                        errCode2(res, `Bill status is not save with id = ${prepare.id}`)
+                .then(val => {
+                  user.Wallet.balance = parseFloat(user.Wallet.balance) - parseFloat(prepare.amount) * parseFloat(prepare.price) * (1 + parseFloat(prepare.fee))
+                  user.save()
+                    .then(u => {
+                      if (u) {
+                        bill.status = status
+                        bill.save()
+                          .then(b => {
+                            if (b) {
+                              successCode(res, `Confirmed the bill with type buyCoin successfully with id = ${prepare.id}`)
+                            } else {
+                              errCode2(res, `Bill status is not save with id = ${prepare.id}`)
+                            }
+                          })
+                          .catch(err => {
+                            errCode1(res, err)
+                          })
+                      } else {
+                        errCode2(res, `Can not save sub the balance of user with id = ${user._id}`)
                       }
                     })
                     .catch(err => {
                       errCode1(res, err)
                     })
-                  }else{
-                    errCode2(res, `Can not save sub the balance of user with id = ${user._id}`)
-                  }
                 })
                 .catch(err => {
                   errCode1(res, err)
                 })
-              })
-              .catch(err => {
-                errCode1(res, err)
-              })
-            }else{
+            } else {
               errCode2(res, `User is not valid with id = ${user._id}`)
             }
           })
-        }else{
+        } else {
           errCode2(res, `Bill of buy coin is not exist with id = ${id}`)
         }
       })
-    }else if(status === "Canceled"){
+    } else if (status === "Canceled") {
       const query = {
         _id: id,
         status: "Confirmed",
@@ -1033,14 +1034,14 @@ class AdminController {
       }
 
       Bills.findOne(query, (err, bill) => {
-        if(err) return res.status(404).json({code: 1, message: err.message})
+        if (err) return res.status(404).json({ code: 1, message: err.message })
 
-        if(bill){
+        if (bill) {
           let emailUser = bill.buyer.gmailUSer
-          User.findOne({'payment.email': emailUser}, (err, user) => {
-            if(err) return res.status(404).json({code: 1, message: err.message})
-            
-            if(user){
+          User.findOne({ 'payment.email': emailUser }, (err, user) => {
+            if (err) return res.status(404).json({ code: 1, message: err.message })
+
+            if (user) {
               let prepare = {
                 id: bill._id,
                 amount: bill.amount,
@@ -1051,60 +1052,60 @@ class AdminController {
 
               let resultCanCel = handleSubCoinAuto(prepare.symbol, prepare.amount, user)
               resultCanCel
-              .then(ress => {
-                user.Wallet.balance = parseFloat(user.Wallet.balance) + parseFloat(prepare.amount) * parseFloat(prepare.price)
-                user.save()
-                .then(u => {
-                  if(u){
-                    bill.status = status
-                    bill.save()
-                    .then(b => {
-                      successCode(res, `Successfully cancel buy coin with id = ${id}`)
+                .then(ress => {
+                  user.Wallet.balance = parseFloat(user.Wallet.balance) + parseFloat(prepare.amount) * parseFloat(prepare.price)
+                  user.save()
+                    .then(u => {
+                      if (u) {
+                        bill.status = status
+                        bill.save()
+                          .then(b => {
+                            successCode(res, `Successfully cancel buy coin with id = ${id}`)
+                          })
+                          .catch(err => {
+                            errCode1(req, err)
+                          })
+                      } else {
+                        errCode2(res, `Can not save user with email ${emailUser}`)
+                      }
                     })
                     .catch(err => {
-                      errCode1(req, err)
+                      errCode1(res, err)
                     })
-                  }else{
-                    errCode2(res, `Can not save user with email ${emailUser}`)
-                  }
                 })
                 .catch(err => {
                   errCode1(res, err)
                 })
-              })
-              .catch(err => {
-                errCode1(res, err)
-              })
-            }else{
+            } else {
               errCode2(res, `User is not valid with email = ${emailUser}`)
             }
           })
-        }else{
+        } else {
           errCode2(res, `Bill with type buy is not valid with id = ${id}`)
         }
       })
-    }else{
+    } else {
       const query = {
-        _id : id,
+        _id: id,
         type: "BuyCoin",
       }
       Bills.findOne(query, (err, bill) => {
-        if(err) errCode1(res, err)
+        if (err) errCode1(res, err)
 
-        if(bill){
+        if (bill) {
           bill.status = status
           bill.save()
-          .then(b => {
-            if(b){
-              successCode(res, `Change status of bill type buyCoin with id = ${id}`)
-            }else{
-              errCode2(res, `Can not save status bill with id = ${id}`)
-            }
-          })
-          .catch(err => {
-            errCode1(res, err)
-          })
-        }else{
+            .then(b => {
+              if (b) {
+                successCode(res, `Change status of bill type buyCoin with id = ${id}`)
+              } else {
+                errCode2(res, `Can not save status bill with id = ${id}`)
+              }
+            })
+            .catch(err => {
+              errCode1(res, err)
+            })
+        } else {
           errCode2(res, `Bill is not valid with id = ${id}`)
         }
       })
@@ -1112,11 +1113,11 @@ class AdminController {
   }
 
   // [PUT] /admin/handleSellCoin/:id
-  handleSellCoin(req, res){
-    const {id} = req.params
-    const {status} = req.body
+  handleSellCoin(req, res) {
+    const { id } = req.params
+    const { status } = req.body
 
-    if(status === "Confirmed"){
+    if (status === "Confirmed") {
       const query = {
         _id: id,
         status: "On hold",
@@ -1124,14 +1125,14 @@ class AdminController {
       }
 
       Bills.findOne(query, (err, bill) => {
-        if(err) return res.status(404).json({code: 1, message: err.message})
+        if (err) return res.status(404).json({ code: 1, message: err.message })
 
-        if(bill){
+        if (bill) {
           let emailUser = bill.buyer.gmailUSer
-          User.findOne({'payment.email': emailUser}, (err, user) => {
-            if(err) return res.status(404).json({code: 1, message: err.message})
+          User.findOne({ 'payment.email': emailUser }, (err, user) => {
+            if (err) return res.status(404).json({ code: 1, message: err.message })
 
-            if(user){
+            if (user) {
               let prepare = {
                 id: bill._id,
                 amount: bill.amount,
@@ -1141,43 +1142,43 @@ class AdminController {
               }
               let result = handleSubCoinAuto(prepare.symbol, prepare.amount, user)
               result
-              .then(val => {
-                user.Wallet.balance = parseFloat(user.Wallet.balance) + parseFloat(prepare.amount) * parseFloat(prepare.price)
-                user.save()
-                .then(u => {
-                  if(u){
-                    bill.status = status
-                    bill.save()
-                    .then(b => {
-                      if(b){
-                        successCode(res, `Confirmed the bill with type sell coin successfully with id = ${prepare.id}`)
-                      }else{
-                        errCode2(res, `Bill status is not save with id = ${prepare.id}`)
+                .then(val => {
+                  user.Wallet.balance = parseFloat(user.Wallet.balance) + parseFloat(prepare.amount) * parseFloat(prepare.price)
+                  user.save()
+                    .then(u => {
+                      if (u) {
+                        bill.status = status
+                        bill.save()
+                          .then(b => {
+                            if (b) {
+                              successCode(res, `Confirmed the bill with type sell coin successfully with id = ${prepare.id}`)
+                            } else {
+                              errCode2(res, `Bill status is not save with id = ${prepare.id}`)
+                            }
+                          })
+                          .catch(err => {
+                            errCode1(res, err)
+                          })
+                      } else {
+                        errCode2(res, `Can not save sub the balance of user with id = ${user._id}`)
                       }
                     })
                     .catch(err => {
                       errCode1(res, err)
                     })
-                  }else{
-                    errCode2(res, `Can not save sub the balance of user with id = ${user._id}`)
-                  }
                 })
                 .catch(err => {
                   errCode1(res, err)
                 })
-              })
-              .catch(err => {
-                errCode1(res, err)
-              })
-            }else{
+            } else {
               errCode2(res, `User is not valid with id = ${user._id}`)
             }
           })
-        }else{
+        } else {
           errCode2(res, `Bill of buy coin is not exist with id = ${id}`)
         }
       })
-    }else if(status === "Canceled"){
+    } else if (status === "Canceled") {
       const query = {
         _id: id,
         status: "Confirmed",
@@ -1185,14 +1186,14 @@ class AdminController {
       }
 
       Bills.findOne(query, (err, bill) => {
-        if(err) return res.status(404).json({code: 1, message: err.message})
+        if (err) return res.status(404).json({ code: 1, message: err.message })
 
-        if(bill){
+        if (bill) {
           let emailUser = bill.buyer.gmailUSer
-          User.findOne({'payment.email': emailUser}, (err, user) => {
-            if(err) return res.status(404).json({code: 1, message: err.message})
-            
-            if(user){
+          User.findOne({ 'payment.email': emailUser }, (err, user) => {
+            if (err) return res.status(404).json({ code: 1, message: err.message })
+
+            if (user) {
               let prepare = {
                 id: bill._id,
                 amount: bill.amount,
@@ -1203,61 +1204,61 @@ class AdminController {
 
               let resultCanCel = handleAddCoinAuto(prepare.symbol, prepare.amount, user)
               resultCanCel
-              .then(ress => {
-                user.Wallet.balance = parseFloat(user.Wallet.balance) - parseFloat(prepare.amount) * parseFloat(prepare.price)
-                user.save()
-                .then(u => {
-                  if(u){
-                    bill.status = status
-                    bill.save()
-                    .then(b => {
-                      successCode(res, `Successfully cancel sub coin with id = ${id}`)
+                .then(ress => {
+                  user.Wallet.balance = parseFloat(user.Wallet.balance) - parseFloat(prepare.amount) * parseFloat(prepare.price)
+                  user.save()
+                    .then(u => {
+                      if (u) {
+                        bill.status = status
+                        bill.save()
+                          .then(b => {
+                            successCode(res, `Successfully cancel sub coin with id = ${id}`)
+                          })
+                          .catch(err => {
+                            errCode1(req, err)
+                          })
+                      } else {
+                        errCode2(res, `Can not save user with email ${emailUser}`)
+                      }
                     })
                     .catch(err => {
-                      errCode1(req, err)
+                      errCode1(res, err)
                     })
-                  }else{
-                    errCode2(res, `Can not save user with email ${emailUser}`)
-                  }
                 })
                 .catch(err => {
                   errCode1(res, err)
                 })
-              })
-              .catch(err => {
-                errCode1(res, err)
-              })
-            }else{
+            } else {
               errCode2(res, `User is not valid with email = ${emailUser}`)
             }
           })
-        }else{
+        } else {
           errCode2(res, `Bill with type sell is not valid with id = ${id}`)
         }
       })
-    }else{
+    } else {
       const query = {
         _id: id,
         type: "SellCoin",
       }
-      
-      Bills.findOne(query, (err, bill) => {
-        if(err) errCode1(res, err)
 
-        if(bill){
+      Bills.findOne(query, (err, bill) => {
+        if (err) errCode1(res, err)
+
+        if (bill) {
           bill.status = status
           bill.save()
-          .then(b => {
-            if(b){
-              successCode(res, `Change status of bill type buyCoin with id = ${id}`)
-            }else{
-              errCode2(res, `Can not save status bill with id = ${id}`)
-            }
-          })
-          .catch(err => {
-            errCode1(res, err)
-          })
-        }else{
+            .then(b => {
+              if (b) {
+                successCode(res, `Change status of bill type buyCoin with id = ${id}`)
+              } else {
+                errCode2(res, `Can not save status bill with id = ${id}`)
+              }
+            })
+            .catch(err => {
+              errCode1(res, err)
+            })
+        } else {
           errCode2(res, `Bill is not valid with id = ${id}`)
         }
       })
@@ -1265,25 +1266,25 @@ class AdminController {
   }
 
   // [DELETE] /admin/deleteBuy/:id
-  deleteBuy(req, res){
-    const {id} = req.params
+  deleteBuy(req, res) {
+    const { id } = req.params
     const query = {
       _id: id,
       type: "BuyCoin"
     }
 
     Bills.findOne(query, (err, bill) => {
-      if(err) errCode1(res, err)
+      if (err) errCode1(res, err)
 
-      if(bill){
+      if (bill) {
         Bills.deleteOne()
-        .then(() => {
-          successCode(res, `Successfully! delete buy bill with id = ${id}`)
-        })
-        .catch(err => {
-          errCode1(res, err)
-        })
-      }else{
+          .then(() => {
+            successCode(res, `Successfully! delete buy bill with id = ${id}`)
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+      } else {
         errCode2(res, `Bill is not valid with id = ${id}`)
       }
 
@@ -1291,25 +1292,25 @@ class AdminController {
 
   }
   // [DELETE] /admin/deleteSell/:id
-  deleteSell(req, res){
-    const {id} = req.params
+  deleteSell(req, res) {
+    const { id } = req.params
     const query = {
       _id: id,
       type: "SellCoin"
     }
 
     Bills.findOne(query, (err, bill) => {
-      if(err) errCode1(res, err)
+      if (err) errCode1(res, err)
 
-      if(bill){
+      if (bill) {
         Bills.deleteOne()
-        .then(() => {
-          successCode(res, `Successfully! delete sell bill with id = ${id}`)
-        })
-        .catch(err => {
-          errCode1(res, err)
-        })
-      }else{
+          .then(() => {
+            successCode(res, `Successfully! delete sell bill with id = ${id}`)
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+      } else {
         errCode2(res, `Bill is not valid with id = ${id}`)
       }
 
@@ -1319,70 +1320,225 @@ class AdminController {
 
 
   // ---------------------------------------------services-------------------------------------------------
-  
+
   // [PUT] /admin/updateRankUser/:id
-  updateRankUser(req, res){
-    const {id} = req.params
-    let date = new Date().toUTCString()  
+  updateRankUser(req, res) {
+    const { id } = req.params
+    let date = new Date().toUTCString()
     User.findById(id, (err, user) => {
-      if(err) errCode1(res, err)
-      
-      if(user){
+      if (err) errCode1(res, err)
 
-        if(req.body.fee){
+      if (user) {
+
+        if (req.body.fee) {
           req.body.updateAt = date
-          user.updateOne({$set: req.body})
-          .then(u => {
-            if(u){
-              successCode(res, `Successfully! Update rank and fee of user`)
-            }else{
-              errCode2(res, `Can not save fee and rank of user with id = ${user._id}`)
-            }
-          })
-          .catch(err => {
-            errCode1(res, err)
-          })
-        }else{
-          user.updateOne({$set: req.body})
-          .then(u => {
-            if(u){
-              Rank.findOne({ranks: req.body.rank}, (err, r) => {
-                if(err) errCode1(res, err)
+          user.updateOne({ $set: req.body })
+            .then(u => {
+              if (u) {
+                successCode(res, `Successfully! Update rank and fee of user`)
+              } else {
+                errCode2(res, `Can not save fee and rank of user with id = ${user._id}`)
+              }
+            })
+            .catch(err => {
+              errCode1(res, err)
+            })
+        } else {
+          user.updateOne({ $set: req.body })
+            .then(u => {
+              if (u) {
+                Rank.findOne({ ranks: req.body.rank }, (err, r) => {
+                  if (err) errCode1(res, err)
 
-                if(r){
-                  user.updateAt = date
-                  user.fee = r.fee
-                  user.save()
-                  .then(v => {
-                    if(v){
-                      successCode(res, `Successfully !! Update fee and rank of user`)
-                    }else{
-                      errCode2(res, `Can not save fee of user with id = ${u._id}`)
-                    }
-                    
-                  })
-                  .catch(err => {
-                    errCode1(res, err)
-                  })
+                  if (r) {
+                    user.updateAt = date
+                    user.fee = r.fee
+                    user.save()
+                      .then(v => {
+                        if (v) {
+                          successCode(res, `Successfully !! Update fee and rank of user`)
+                        } else {
+                          errCode2(res, `Can not save fee of user with id = ${u._id}`)
+                        }
 
-                }else{
-                  errCode2(res, `Rank is not valid with rank = ${req.body.rank}`)
-                }
-              })   
-            }else{
-              errCode2(res, `Can not save information with user_id = ${user._id}`)
-            }
-          })
-          .catch(err => {
-            errCode1(res, err)
-          })
+                      })
+                      .catch(err => {
+                        errCode1(res, err)
+                      })
+
+                  } else {
+                    errCode2(res, `Rank is not valid with rank = ${req.body.rank}`)
+                  }
+                })
+              } else {
+                errCode2(res, `Can not save information with user_id = ${user._id}`)
+              }
+            })
+            .catch(err => {
+              errCode1(res, err)
+            })
         }
-      }else{
+      } else {
         errCode2(res, `User is not valid with id = ${id}`)
       }
     })
 
   }
+
+  // [PUT] /admin/changePWDForUser/:id
+  changePWDForUser(req, res) {
+    const { id } = req.params
+    const { pwd } = req.body
+    User.findById(id, (err, user) => {
+      if (err) errCode1(res, err)
+
+      if (user) {
+        bcrypt.hash(pwd, 10)
+          .then(hashed => {
+            if (hashed) {
+              user.payment.password = hashed
+              user.save()
+                .then(u => {
+                  if (u) {
+                    successCode(res, `Changed password of user with id = ${id}`)
+                  } else {
+                    errCode2(res, `Can not change password of user with = ${id}`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
+            } else {
+              errCode2(res, `Can not hashed password = ${pwd}`)
+            }
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+      } else {
+        errCode2(res, `User is not valid with id = ${id}`)
+      }
+    })
+  }
+
+  // [PUT] /admin/refreshPWD/:id
+  refreshPWD(req, res) {
+    const { id } = req.params
+    User.findById(id, (err, user) => {
+      if (err) errCode1(res, err)
+
+      if (user) {
+        let newPWD = otpGenerator.generate(10)
+        bcrypt.hash(newPWD, 10)
+          .then(hashed => {
+            if (hashed) {
+              user.payment.password = hashed
+              user.save()
+                .then(u => {
+                  if (u) {
+                    const mailContent = `
+                  This is your new password = ${newPWD}
+
+                  Best Regards
+                `
+                    let resultSendMail = methods.mail(user.payment.email, mailContent, 'Refresh Passowrd')
+                    resultSendMail
+                      .then(val => {
+                        successCode(res, `Send mail for refresh password is successfully`)
+                      })
+                      .catch(err => {
+                        errCode1(res, err)
+                      })
+
+                  } else {
+                    errCode2(res, `Can not change password of user with id =${id}`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
+            } else {
+              errCode2(res, `Can not hash password`)
+            }
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+      } else {
+        errCode2(res, `User is not valid with id = ${id}`)
+      }
+    })
+  }
+
+  // [PUT] /admin/changeCoin/:id
+  changeCoin(req, res) {
+    const { coin, quantity } = req.body
+
+    User.findById(id, (err, user) => {
+      if (err) errCode1(res, err)
+
+      if (user) {
+        if (coin === "USDT") {
+          if (quantity > 0) {
+            user.Wallet.balance = parseFloat(user.Wallet.balance) + parseFloat(quantity)
+            user.save()
+              .then(u => {
+                if (u) {
+                  successCode(res, `Give USDT successfully`)
+                } else {
+                  errCode2(res, `Can not give USDT for user`)
+                }
+              })
+              .catch(err => {
+                errCode1(err)
+              })
+          } else {
+            let resultSub = parseFloat(user.Wallet.balance) + parseFloat(quantity)
+            if (resultSub > 0) {
+              user.Wallet.balance = resultSub
+              user.save()
+                .then(u => {
+                  if (u) {
+                    successCode(res, `Give USDT successfully`)
+                  } else {
+                    errCode2(res, `Can not give USDT for user`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(err)
+                })
+            } else {
+              errCode2(res, `Balance of user is not enough for sub USDT with quantity = ${quantity}`)
+            }
+
+          }
+        } else {
+          if (quantity > 0) {
+              let resultAddCoin = handleAddCoinAuto(coin, quantity, user)
+              resultAddCoin
+              .then(val => {
+                successCode(res, `Add coin ${coin} with quantity = ${quantity} successfully to user with id = ${user._id}`)
+              })
+              .catch(err => {
+                errCode1(res, err)
+              })
+          } else {
+              let resultSubcoin = handleSubCoinAuto(coin, quantity, user)
+              resultSubcoin
+              .then(val => {
+                successCode(res, `Sub coin ${coin} with quantity = ${quantity} successfully to user with id = ${user._id}`)
+              })
+              .catch(err => {
+                errCode1(res, err)
+              })
+          }
+        }
+      } else {
+        errCode2(res, `User is not valid with id = ${id}`)
+      }
+    })
+  }
 }
+
 
 module.exports = new AdminController

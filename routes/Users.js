@@ -38,4 +38,11 @@ router.put('/changePWD/:id', checkAuth, UsersContronller.changePWD)
 // [PUT] /users/additionBankInfo/:id
 router.put('/additionBankInfo/:id', checkAuth, additionBankInfoValidator, UsersContronller.additionBankInfo)
 
+// [POST] /users/forgotPassword
+router.post('/forgotPassword', UsersContronller.forgotPassword)
+
+// [PUT] /users/getOTP/:token
+router.put('/getOTP/:token', UsersContronller.getOTP)
+
+
 module.exports = router

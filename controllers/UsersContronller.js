@@ -3,10 +3,19 @@ const Bills = require('../models/Bills')
 const fs = require('fs')
 const Path = require('path')
 const bcrypt = require('bcrypt')
+const otpGenerator = require('otp-generator')
+const Forgot = require('../models/Forgot')
+const jwt = require('jsonwebtoken')
 
 const { validationResult } = require('express-validator')
 
+
+
+
+
 const methods = require('../function')
+const { resolve } = require('path')
+const { errCode2, successCode, errCode1 } = require('../function')
 
 // support function
 
@@ -316,6 +325,107 @@ class UsersController{
 
   }
 
+  // [POST] /users/forgotPassword
+  forgotPassword(req, res){
+    const {email} = req.body
+    Users.findOne({'payment.email': email}, (err, user) => {
+      if(err) methods.errCode1(res, err)
+
+      if(user){
+        const token = jwt.sign(
+          { email },
+          process.env.JWT_SECRET,
+          {
+            expiresIn: "3m",
+          })
+        const otp = otpGenerator.generate(4, {lowerCaseAlphabets: false, upperCaseAlphabets: false, specialChars: false})
+        const forgot = new Forgot({
+          code: otp,
+          email: email,
+          token: token
+        })
+        forgot.save()
+        .then(f => {
+          if(f){
+            const mailContent = `
+              <h1>this is link is reset password with otp = ${otp}</h1>
+              <p>http://localhost:4000/users/getOTP/${token}</p>
+
+              <h2>Best Regards</h2>
+            `
+            let resultSendMail = methods.mail(email, mailContent, 'Reset Password')
+            resultSendMail
+            .then(val => {
+              methods.successCode(res, `Send mail for forgot password successfully to email = ${email}`)
+            })
+            .catch(err => {
+              methods.errCode1(res, err)
+            })
+          }else{
+            methods.errCode2(res, `Can not save model forgot of user with email = ${email}`)
+          }
+        })
+        .catch(err => {
+          methods.errCode1(res, err)
+        })
+      }else{
+        methods.errCode2(res, `User is not valid with email = ${email}`)
+      }
+    })
+  }
+
+  // [PUT] /users/getOTP/:token
+  getOTP(req, res){
+    const {token} = req.params
+    const {otp, pwd} = req.body
+
+    if(!token){
+      errCode2(res, "A token is required")
+    }
+    try{
+      const decoded = jwt.verify(token, process.env.JWT_SECRET)
+      Forgot.findOne({email: decoded.email}, (err, f) => {
+        if(f){
+          if(f.code === otp){
+            Users.findOne({'payment.email': decoded.email}, (errs, user) => {
+              if(err) errCode1(res, err)
+
+              if(user){
+                bcrypt.hash(pwd, 10)
+                .then(hashed => {
+                  if(hashed){
+                    user.payment.password = hashed
+                    user.save()
+                    .then(u => {
+                      if(u){
+                        successCode(res, `Change password successfully of user with email = ${decoded.email}`)
+                      }else{
+                        errCode2(res, `Can not change password for user with email = ${decoded.email}`)
+                      }
+                    })
+                    .catch(err => {
+                      errCode1(res, err)
+                    })
+                  }else{
+                    errCode2(res, `Can not hash password`)
+                  }
+                })
+              }else{
+                errCode2(res, `User is not valid with email = ${decoded.email}`)
+              }
+            })
+          }else{
+            errCode2(res, `Otp iput is wrong or dead`)
+          }
+        }else{
+          errCode2(res, `Token is dead! Please order new Token for reset password`)
+        }
+      })
+    }
+    catch (err){
+      errCode2(res, "In valid token")
+    }
+  }
 }
 
 module.exports = new UsersController
