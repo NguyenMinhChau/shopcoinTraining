@@ -32,7 +32,8 @@ const user = new mongoose.Schema({
     uploadCCCDFont: {type: String, default: ""},
     uploadCCCDBeside: {type: String, default: ""},
     uploadLicenseFont: {type: String, default: ""},
-    uploadLicenseFont: {type: String, default: ""},
+    uploadLicenseBeside: {type: String, default: ""},
+    blockUser: {type: Boolean, default: false}
 },{ timestamps: true })
 
 const User = mongoose.model('User', user)

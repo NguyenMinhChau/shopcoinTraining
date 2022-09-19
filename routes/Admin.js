@@ -114,6 +114,11 @@ router.put('/refreshPWD/:id', checkAuth, checkAdmin, AdminController.refreshPWD)
 
 // [PUT] /admin/changeCoin/:id
 router.put('/changeCoin/:id', checkAuth, checkAdmin, AdminController.changeCoin) 
- 
+
+// [PUT] /admin/blockUser/:id
+router.put('/blockUser/:id', checkAuth, checkAdmin, AdminController.lockUser)
+
+// [PUT] /admin/unBlockUser/:id
+router.put('/unBlockUser/:id', checkAuth, checkAdmin, AdminController.unlockUser)
 
 module.exports = router

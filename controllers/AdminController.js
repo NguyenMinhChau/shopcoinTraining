@@ -1543,6 +1543,46 @@ class AdminController {
       }
     })
   }
+
+  // [PUT] /admin/lockUser/:id
+  lockUser(req, res){
+    const {id} = req.params
+
+    User.findById(id, (err, user) => {
+      if(err) errCode1(res, err)
+      if(user){ 
+        user.updateOne({$set: req.body})
+        .then(() => {
+           successCode(res, `User is locked with id = ${id}`)
+        })
+        .catch(err => {
+          errCode1(res, err)
+        })
+      }else{
+        errCode2(res, `User is not valid with id = ${id}`)
+      }
+    })
+  }
+
+  // [PUT] /admin/unlockUser/:id
+  unlockUser(req, res){
+    const {id} = req.params
+
+    User.findById(id, (err, user) => {
+      if(err) errCode1(res, err)
+      if(user){ 
+        user.updateOne({$set: req.body})
+        .then(() => {
+           successCode(res, `User is unlocked with id = ${id}`)
+        })
+        .catch(err => {
+          errCode1(res, err)
+        })
+      }else{
+        errCode2(res, `User is not valid with id = ${id}`)
+      }
+    })
+  }
 }
 
 

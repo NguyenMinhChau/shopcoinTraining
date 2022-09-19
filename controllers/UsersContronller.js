@@ -176,7 +176,7 @@ class UsersController{
                     user.uploadCCCDFont = newPathIamgeCCCDFont
                     user.uploadCCCDBeside = newPathIamgeCccdBeside
                     user.uploadLicenseFont = newPathIamgeLicenseFont
-                    user.uploadLicenseFont = newPathIamgeLicenseBeside
+                    user.uploadLicenseBeside = newPathIamgeLicenseBeside
 
                     user.save()
                     .then(u => {
