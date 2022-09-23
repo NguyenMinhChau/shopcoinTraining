@@ -351,13 +351,13 @@ function handleSubCoinAuto(symbol, amount, user) {
             positionTemp = i
           }
         }
-        
-        if(user.coins[positionTemp]){
+
+        if (user.coins[positionTemp]) {
           let currAmount = parseFloat(user.coins[positionTemp].amount)
           let subAmount = parseFloat(amount)
-  
+
           let afterAmount = parseFloat(currAmount - subAmount)
-  
+
           if (afterAmount > 0) {
             let resultSubCoinNotDisappear = subCoinNotDisappear(user, afterAmount, positionTemp)
             resultSubCoinNotDisappear
@@ -379,8 +379,8 @@ function handleSubCoinAuto(symbol, amount, user) {
           } else {
             reject({ code: 2, message: `The amount of coin want to sell is not true, own is: ${currAmount} and sell is: ${subAmount}` })
           }
-        }else{
-          reject({code: 1, message: `This coin is not valid in this user`})
+        } else {
+          reject({ code: 1, message: `This coin is not valid in this user` })
         }
 
       } else {
@@ -751,9 +751,10 @@ class AdminController {
 
       const codeWithdraw = otpGenerator.generate(20, { upperCaseAlphabets: false, specialChars: false });
 
-      const { amount, amountUsd, amountVnd, symbol } = req.body
+      const { user, amount, amountUsd, amountVnd, symbol } = req.body
 
       const newWithdraw = new Withdraws({
+        user: user,
         code: codeWithdraw,
         amount: amount,
         amountUsd: amountUsd,
@@ -1475,7 +1476,7 @@ class AdminController {
 
   // [PUT] /admin/changeCoin/:id
   changeCoin(req, res) {
-    const {id} = req.params
+    const { id } = req.params
     const { coin, quantity } = req.body
 
     User.findById(id, (err, user) => {
@@ -1518,8 +1519,8 @@ class AdminController {
           }
         } else {
           if (quantity > 0) {
-              let resultAddCoin = handleAddCoinAuto(coin, quantity, user)
-              resultAddCoin
+            let resultAddCoin = handleAddCoinAuto(coin, quantity, user)
+            resultAddCoin
               .then(val => {
                 successCode(res, `Add coin ${coin} with quantity = ${quantity} successfully to user with id = ${user._id}`)
               })
@@ -1530,12 +1531,12 @@ class AdminController {
             let new_quantity = Math.abs(quantity)
             let resultSubcoin = handleSubCoinAuto(coin, new_quantity, user)
             resultSubcoin
-            .then(val => {
-              successCode(res, `Sub coin ${coin} with quantity = ${new_quantity} successfully to user with id = ${user._id}`)
-            })
-            .catch(err => {
-              errCode1(res, err)
-            })
+              .then(val => {
+                successCode(res, `Sub coin ${coin} with quantity = ${new_quantity} successfully to user with id = ${user._id}`)
+              })
+              .catch(err => {
+                errCode1(res, err)
+              })
           }
         }
       } else {
@@ -1545,44 +1546,241 @@ class AdminController {
   }
 
   // [PUT] /admin/lockUser/:id
-  lockUser(req, res){
-    const {id} = req.params
+  lockUser(req, res) {
+    const { id } = req.params
 
     User.findById(id, (err, user) => {
-      if(err) errCode1(res, err)
-      if(user){ 
-        user.updateOne({$set: req.body})
-        .then(() => {
-           successCode(res, `User is locked with id = ${id}`)
-        })
-        .catch(err => {
-          errCode1(res, err)
-        })
-      }else{
+      if (err) errCode1(res, err)
+      if (user) {
+        user.updateOne({ $set: req.body })
+          .then(() => {
+            successCode(res, `User is locked with id = ${id}`)
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+      } else {
         errCode2(res, `User is not valid with id = ${id}`)
       }
     })
   }
 
   // [PUT] /admin/unlockUser/:id
-  unlockUser(req, res){
-    const {id} = req.params
+  unlockUser(req, res) {
+    const { id } = req.params
 
     User.findById(id, (err, user) => {
-      if(err) errCode1(res, err)
-      if(user){ 
-        user.updateOne({$set: req.body})
-        .then(() => {
-           successCode(res, `User is unlocked with id = ${id}`)
-        })
-        .catch(err => {
-          errCode1(res, err)
-        })
-      }else{
+      if (err) errCode1(res, err)
+      if (user) {
+        user.updateOne({ $set: req.body })
+          .then(() => {
+            successCode(res, `User is unlocked with id = ${id}`)
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+      } else {
         errCode2(res, `User is not valid with id = ${id}`)
       }
     })
   }
+
+  // [PUT] /admin/handleDeposit/:id
+  handleDeposit(req, res) {
+    const { id } = req.params
+
+    const { status } = req.body
+
+    Deposits.findById(id, (err, deposit) => {
+      if (err) errCode1(res, err)
+
+      if (deposit) {
+        User.findOne({ 'payment.email': deposit.user }, (err, user) => {
+          if (err) errCode1(res, err)
+
+          if (user) {
+            if (status === "Confirmed") {
+              const new_balance = parseFloat(user.Wallet.balance) + parseFloat(deposit.amountUsd)
+              user.Wallet.balance = new_balance
+              user.Wallet.deposit = parseFloat(user.Wallet.deposit) + parseFloat(deposit.amountUsd)
+              user.save()
+                .then(u => {
+                  if (u) {
+                    deposit.status = status
+                    deposit.updatedAt = new Date()
+                    deposit.save()
+                      .then(d => {
+                        if (d) {
+                          successCode(res, `Confirmed deposit with id = ${id}`)
+                        } else {
+                          errCode2(res, `Can not save the status of deposit with id = ${id}`)
+                        }
+                      })
+                      .catch(err => {
+                        errCode1(res, err)
+                      })
+                  } else {
+                    errCode2(res, `User balance and deposit is not saved with email = ${user.payment.email}`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
+            } else if (status === "Canceled") {
+              const new_balance = parseFloat(user.Wallet.balance) - parseFloat(deposit.amountUsd)
+              if (new_balance < 0) {
+                errCode2(res, `Can not Canceled the deposit of user because the money of this user is not enough`)
+              }
+              user.Wallet.balance = new_balance
+              user.Wallet.deposit = parseFloat(user.Wallet.deposit) - parseFloat(deposit.amountUsd)
+              user.save()
+                .then(u => {
+                  if (u) {
+                    deposit.status = status
+                    deposit.updatedAt = new Date()
+                    deposit.save()
+                      .then(d => {
+                        if (d) {
+                          successCode(res, `Canceled deposit with id = ${id}`)
+                        } else {
+                          errCode2(res, `Can not save the status of deposit with id = ${id}`)
+                        }
+                      })
+                      .catch(err => {
+                        errCode1(res, err)
+                      })
+                  } else {
+                    errCode2(res, `User balance and deposit is not saved with email = ${user.payment.email}`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
+
+            } else {
+              deposit.status = status
+              deposit.updatedAt = new Date()
+              deposit.save()
+                .then(d => {
+                  if (d) {
+                    successCode(res, `Changed ${status} of deposit with id = ${id}`)
+                  } else {
+                    errCode2(res, `Deposit can not change status with id = ${id}`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
+            }
+          } else {
+            errCode2(res, `User is not vailid`)
+          }
+
+        })
+      } else {
+        errCode2(res, `Deposit is not valid id = ${id}`)
+      }
+    })
+  }
+
+  // [PUT] /admin/handleWithdraw/:id
+  handleWithdraw(req, res) {
+    const { id } = req.params
+
+    const { status } = req.body
+
+    Withdraws.findById(id, (err, withdraw) => {
+      if (err) errCode1(res, err)
+
+      if (withdraw) {
+        User.findOne({ 'payment.email': withdraw.user }, (err, user) => {
+          if (err) errCode1(res, err)
+
+          if (user) {
+            if (status === "Confirmed") {
+              const new_balance = parseFloat(user.Wallet.balance) - parseFloat(withdraw.amountUsd)
+              if (new_balance < 0) {
+                errCode2(res, `Can not Canceled the withdraw of user because the money of this user is not enough`)
+              }
+              user.Wallet.balance = new_balance
+              user.Wallet.withdraw = parseFloat(user.Wallet.withdraw) + parseFloat(withdraw.amountUsd)
+              user.save()
+                .then(u => {
+                  if (u) {
+                    withdraw.status = status
+                    withdraw.updatedAt = new Date()
+                    withdraw.save()
+                      .then(d => {
+                        if (d) {
+                          successCode(res, `Confirmed withdraw with id = ${id}`)
+                        } else {
+                          errCode2(res, `Can not save the status of withdraw with id = ${id}`)
+                        }
+                      })
+                      .catch(err => {
+                        errCode1(res, err)
+                      })
+                  } else {
+                    errCode2(res, `User balance and withdraw is not saved with email = ${user.payment.email}`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
+            } else if (status === "Canceled") {
+              const new_balance = parseFloat(user.Wallet.balance) + parseFloat(withdraw.amountUsd)
+              user.Wallet.balance = new_balance
+              user.Wallet.withdraw = parseFloat(user.Wallet.withdraw) - parseFloat(withdraw.amountUsd)
+              user.save()
+                .then(u => {
+                  if (u) {
+                    withdraw.status = status
+                    withdraw.updatedAt = new Date()
+                    withdraw.save()
+                      .then(d => {
+                        if (d) {
+                          successCode(res, `Canceled withdraw with id = ${id}`)
+                        } else {
+                          errCode2(res, `Can not save the status of withdraw with id = ${id}`)
+                        }
+                      })
+                      .catch(err => {
+                        errCode1(res, err)
+                      })
+                  } else {
+                    errCode2(res, `User balance and withdraw is not saved with email = ${user.payment.email}`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
+
+            } else {
+              withdraw.status = status
+              withdraw.updatedAt = new Date()
+              withdraw.save()
+                .then(d => {
+                  if (d) {
+                    successCode(res, `Changed ${status} of withdraw with id = ${id}`)
+                  } else {
+                    errCode2(res, `withdraw can not change status with id = ${id}`)
+                  }
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
+            }
+          } else {
+            errCode2(res, `User is not vailid`)
+          }
+
+        })
+      } else {
+        errCode2(res, `withdraw is not valid id = ${id}`)
+      }
+    })
+  }
+
 }
 
 

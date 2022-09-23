@@ -18,7 +18,8 @@ const verifyToken = (req, res, next) => {
         if(err) errCode1(res, err)
 
         if(user){
-          if(user.blockUser){
+          
+          if(user.payment.rule === 'admin' || user.blockUser){
             next()
           }else{
             errCode2(res, `User is locked !! Please contact with admin to unlock account with email = ${email}`)

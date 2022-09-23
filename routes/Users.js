@@ -20,6 +20,8 @@ const additionBankInfoValidator = require('./validators/addtionBankInfoValidator
   
 var upload = multer({ storage: storage })
 
+const single = multer({ dest: 'uploads/images' })
+
 const cpUpload = upload.fields([{ name: 'cccdFont', maxCount: 1 }, { name: 'cccdBeside', maxCount: 1 },
  { name: 'licenseFont', maxCount: 1 }, { name: 'licenseBeside', maxCount: 1 }])
 
@@ -43,6 +45,12 @@ router.post('/forgotPassword', UsersContronller.forgotPassword)
 
 // [PUT] /users/getOTP/:token
 router.put('/getOTP/:token', UsersContronller.getOTP)
+
+// [POST] /users/deposit
+router.post('/deposit', checkAuth, single.single('statement'), UsersContronller.deposit)
+
+// [POST] /users/withdraw
+router.post('/withdraw', checkAuth, UsersContronller.withdraw)
 
 
 module.exports = router

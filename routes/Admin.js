@@ -19,6 +19,7 @@ const updateDepositValidator = require('./validators/updateDepositValidator')
 const checkAuth = require('../auth/auth')
 const checkAdmin = require('../auth/checkAmin')
 const { check } = require('express-validator')
+const { changeCoin } = require('../controllers/AdminController')
 
 // [GET] /admin/getAllUser
 router.get('/getAllUser', AdminController.getAllUser)
@@ -91,10 +92,13 @@ router.get('/getSell/:id', AdminController.getSell)
 // [GET] /admin/getBuy  
 router.get('/getBuy/:id', AdminController.getBuy)
 
-// [POST] /admin/testHandleBuyCoin/:id
+// [PUT] /admin/testHandleBuyCoin/:id
 router.put('/handleBuyCoin/:id', checkAuth, checkAdmin, AdminController.handleBuyCoin)
 
-// [POST] /admin/testHandleSellCoin/:id
+// [PUT] /admin/testHandleBuyCoinBot/:id
+router.put('/handleBuyCoinBot/:id', AdminController.handleBuyCoin)
+
+// [PUT] /admin/testHandleSellCoin/:id
 router.put('/handleSellCoin/:id', checkAuth, checkAdmin, AdminController.handleSellCoin)
 
 //[PUT] /admin/updateRankUser/:id
@@ -120,5 +124,11 @@ router.put('/blockUser/:id', checkAuth, checkAdmin, AdminController.lockUser)
 
 // [PUT] /admin/unBlockUser/:id
 router.put('/unBlockUser/:id', checkAuth, checkAdmin, AdminController.unlockUser)
+
+// [PUT] /admin/handleDeposit/:id
+router.put('/handleDeposit/:id', AdminController.handleDeposit)
+
+// [PUT] /admin/handleWithdraw/:id
+router.put('/handleWithdraw/:id', AdminController.handleWithdraw)
 
 module.exports = router

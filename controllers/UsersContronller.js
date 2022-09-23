@@ -6,6 +6,8 @@ const bcrypt = require('bcrypt')
 const otpGenerator = require('otp-generator')
 const Forgot = require('../models/Forgot')
 const jwt = require('jsonwebtoken')
+const Deposits = require('../models/Deposits')
+const Withdraws= require('../models/Withdraws')
 
 const { validationResult } = require('express-validator')
 
@@ -15,7 +17,7 @@ const { validationResult } = require('express-validator')
 
 const methods = require('../function')
 const { resolve } = require('path')
-const { errCode2, successCode, errCode1 } = require('../function')
+const { errCode2, successCode, errCode1, dataCode } = require('../function')
 
 // support function
 
@@ -425,6 +427,73 @@ class UsersController{
     catch (err){
       errCode2(res, "In valid token")
     }
+  }
+
+  // [POST] /users/deposit
+  deposit(req, res) {
+
+    const codeDeposit = otpGenerator.generate(10, { upperCaseAlphabets: false, specialChars: false });
+    const { amount, user, amountUsd, amountVnd, symbol } = req.body
+
+    let file1 = req.file
+    let name1 = file1.originalname
+    let destination = file1.destination
+    let newPath1 = Path.join(destination, Date.now() + "-" + name1)
+
+    let typeFile = file1.mimetype.split('/')[0]
+
+    if (typeFile == "image") {
+
+      fs.renameSync(file1.path, newPath1)
+      let statement = Path.join('./uploads/images', Date.now() + "-" + name1)
+
+      const newDeposit = new Deposits({
+        code: codeDeposit,
+        amount: amount,
+        user: user,
+        amountUsd: amountUsd,
+        amountVnd: amountVnd,
+        symbol: symbol,
+        statement: statement,
+      })
+
+      newDeposit.save()
+        .then(deposit => {
+          return res.json({ code: 0, data: deposit })
+        })
+        .catch(err => {
+          errCode1(res, err)
+        })
+    } else {
+      errCode2(res, "Please upload image")
+    }
+
+  }
+
+  // [POST] /users/withdraw
+  withdraw(req, res) {
+
+    const codeWithdraw = otpGenerator.generate(20, { upperCaseAlphabets: false, specialChars: false });
+
+    const { user, amount, amountUsd, amountVnd, symbol } = req.body
+
+    const newWithdraw = new Withdraws({
+      user: user,
+      code: codeWithdraw,
+      amount: amount,
+      amountUsd: amountUsd,
+      amountVnd: amountVnd,
+      symbol: symbol,
+    })
+
+    newWithdraw.save()
+      .then(withdraw => {
+        dataCode(res, withdraw)
+      })
+      .catch(err => {
+        errCode1(res, err)
+      })
+
   }
 }
 

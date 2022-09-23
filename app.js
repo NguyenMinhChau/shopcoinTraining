@@ -11,6 +11,7 @@ const session = require('express-session')
 const cors = require('cors')
 const path = require('path')
 const cookieParser = require('cookie-parser');
+require('./bot/bot')
 
 const app = express()
 
@@ -29,6 +30,8 @@ app.use(express.urlencoded({extended: false}))
 app.use(cookieParser())
 app.use(cors(corOptions))
 app.use(express.static(path.resolve('./uploads')));
+
+
 
 switch(process.env.TYPE){
     case 'product':
