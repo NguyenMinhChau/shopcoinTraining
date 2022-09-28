@@ -5,13 +5,12 @@ const Coins = require('./routes/Coins')
 const Authen = require('./routes/Authen')
 const Users = require('./routes/Users')
 const Ranks = require('./routes/Ranks')
-const test = require('./routes/test')
 const mongoose = require('mongoose')
 const session = require('express-session')
 const cors = require('cors')
 const path = require('path')
 const cookieParser = require('cookie-parser');
-require('./bot/bot')
+// require('./bot/bot')
 
 const app = express()
 
@@ -55,7 +54,6 @@ app.use('/coins', Coins)
 app.use('/users', Users)
 app.use('/authen', Authen)
 app.use('/ranks', Ranks)
-app.use('/test', test)
 
 let port = process.env.PORT || 3000
 app.listen(port, () => console.log("Running at port " + port))

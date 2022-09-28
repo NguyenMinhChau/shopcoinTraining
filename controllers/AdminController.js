@@ -865,7 +865,7 @@ class AdminController {
   }
 
   // [GET] /admin/getAllSell
-  getAllSell(req, res) {
+  async getAllSell(req, res) {
     const pages = req.query.page || 1
     const typeShow = req.query.show || 10
     const step = parseInt(pages - 1) * parseInt(typeShow)
@@ -878,26 +878,29 @@ class AdminController {
       }
       if (bill) {
 
-        Bills.find(query, (err, wds) => {
+        Bills.find(query, async (err, wds) => {
           if (err) {
             return res.status(404).json({ code: 3, message: err.message })
           }
-          return res.json({ code: 0, sells: bill, page: pages, typeShow: typeShow, total: wds.length })
+          const allSells = Bills.find(query)
+          const [total] = await Promise.all([allSells])
+          return res.json({ code: 0, sells: wds, page: pages, typeShow: typeShow, total: total.length })
 
         })
+        .sort({ createAt: -1, updateAt: -1 })
+        .limit(typeShow)
+        .skip(step)
 
 
       } else {
         errCode2(res, "No bill of type sell")
       }
     })
-      .sort({ createAt: -1, updateAt: -1 })
-      .limit(typeShow)
-      .skip(step)
+      
   }
 
   // [GET] /admin/getAllBuy
-  getAllBuy(req, res) {
+  async getAllBuy(req, res) {
     const pages = req.query.page || 1
     const typeShow = req.query.show || 10
     const step = parseInt(pages - 1) * parseInt(typeShow)
@@ -910,22 +913,24 @@ class AdminController {
       }
       if (bill) {
 
-        Bills.find(query, (err, wds) => {
+        Bills.find(query, async (err, wds) => {
           if (err) {
             return res.status(404).json({ code: 3, message: err.message })
           }
-          return res.json({ code: 0, sells: bill, page: pages, typeShow: typeShow, total: wds.length })
+          const allBuys = Bills.find(query)
+          const [total] = await Promise.all([allBuys])
+          return res.json({ code: 0, sells: wds, page: pages, typeShow: typeShow, total: total.length })
 
         })
-
+        .sort({ createAt: -1, updateAt: -1 })
+        .limit(typeShow)
+        .skip(step)
 
       } else {
         errCode2(res, "No bill of type Buy")
       }
     })
-      .sort({ createAt: -1, updateAt: -1 })
-      .limit(typeShow)
-      .skip(step)
+      
   }
 
   // [GET] /admin/getSell/:id
