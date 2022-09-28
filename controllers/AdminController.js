@@ -1707,32 +1707,33 @@ class AdminController {
               const new_balance = parseFloat(user.Wallet.balance) - parseFloat(withdraw.amountUsd)
               if (new_balance < 0) {
                 errCode2(res, `Can not Canceled the withdraw of user because the money of this user is not enough`)
+              }else{
+                user.Wallet.balance = new_balance
+                user.Wallet.withdraw = parseFloat(user.Wallet.withdraw) + parseFloat(withdraw.amountUsd)
+                user.save()
+                  .then(u => {
+                    if (u) {
+                      withdraw.status = status
+                      withdraw.updatedAt = new Date()
+                      withdraw.save()
+                        .then(d => {
+                          if (d) {
+                            successCode(res, `Confirmed withdraw with id = ${id}`)
+                          } else {
+                            errCode2(res, `Can not save the status of withdraw with id = ${id}`)
+                          }
+                        })
+                        .catch(err => {
+                          errCode1(res, err)
+                        })
+                    } else {
+                      errCode2(res, `User balance and withdraw is not saved with email = ${user.payment.email}`)
+                    }
+                  })
+                  .catch(err => {
+                    errCode1(res, err)
+                  })
               }
-              user.Wallet.balance = new_balance
-              user.Wallet.withdraw = parseFloat(user.Wallet.withdraw) + parseFloat(withdraw.amountUsd)
-              user.save()
-                .then(u => {
-                  if (u) {
-                    withdraw.status = status
-                    withdraw.updatedAt = new Date()
-                    withdraw.save()
-                      .then(d => {
-                        if (d) {
-                          successCode(res, `Confirmed withdraw with id = ${id}`)
-                        } else {
-                          errCode2(res, `Can not save the status of withdraw with id = ${id}`)
-                        }
-                      })
-                      .catch(err => {
-                        errCode1(res, err)
-                      })
-                  } else {
-                    errCode2(res, `User balance and withdraw is not saved with email = ${user.payment.email}`)
-                  }
-                })
-                .catch(err => {
-                  errCode1(res, err)
-                })
             } else if (status === "Canceled") {
               const new_balance = parseFloat(user.Wallet.balance) + parseFloat(withdraw.amountUsd)
               user.Wallet.balance = new_balance

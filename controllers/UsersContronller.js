@@ -519,28 +519,52 @@ class UsersController{
   }
 
   // [POST] /users/withdraw
-  withdraw(req, res) {
+  async withdraw(req, res) {
 
     const codeWithdraw = otpGenerator.generate(20, { upperCaseAlphabets: false, specialChars: false });
 
-    const { user, amount, amountUsd, amountVnd, symbol } = req.body
+    const { user, amountUsd, symbol } = req.body
 
-    const newWithdraw = new Withdraws({
-      user: user,
-      code: codeWithdraw,
-      amount: amount,
-      amountUsd: amountUsd,
-      amountVnd: amountVnd,
-      symbol: symbol,
+    const infoUser = Users.findOne({'payment.email': user})
+    const [info] = await Promise.all([infoUser])
+    const {account} = info.payment.bank
+
+    Payments.findOne({accountNumber: account}, (err, payment) => {
+      if(err) errCode1(res, err)
+      
+      if(payment){
+        const money = parseFloat(amountUsd) * parseFloat(payment.rateWithdraw)
+        const newWithdraw = new Withdraws({
+          user: user,
+          code: codeWithdraw,
+          amount: amountUsd,
+          method: {
+            code: payment.code,
+            methodName: payment.methodName,
+            accountName: payment.accountName,
+            accountNumber: payment.accountNumber,
+            transform: money,
+         },
+          amountUsd: amountUsd,
+          amountVnd: money,
+          symbol: symbol,
+        })
+    
+        newWithdraw.save()
+          .then(withdraw => {
+            dataCode(res, withdraw)
+          })
+          .catch(err => {
+            errCode1(res, err)
+          })
+      }else{
+        errCode2(res, `Payment is not valid valid with account number = ${account}`)
+      }
+
+
     })
 
-    newWithdraw.save()
-      .then(withdraw => {
-        dataCode(res, withdraw)
-      })
-      .catch(err => {
-        errCode1(res, err)
-      })
+    
 
   }
 }

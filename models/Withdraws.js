@@ -9,8 +9,6 @@ const withdraw = new mongoose.Schema({
         accountName: {type: String, default: ""},
         accountNumber: {type: String, default: ""},
         transform: {type: Number, default: 0},
-        createAt: {type: String, default: new Date().toUTCString()},
-        updateAt: {type: String, default: new Date().toUTCString()},
     },
     user: {type: String, default: ""},
     amountUsd: {type: Number, default: 0},
