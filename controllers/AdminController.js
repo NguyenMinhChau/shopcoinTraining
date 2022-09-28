@@ -1635,32 +1635,33 @@ class AdminController {
               const new_balance = parseFloat(user.Wallet.balance) - parseFloat(deposit.amountUsd)
               if (new_balance < 0) {
                 errCode2(res, `Can not Canceled the deposit of user because the money of this user is not enough`)
+              }else{
+                user.Wallet.balance = new_balance
+                user.Wallet.deposit = parseFloat(user.Wallet.deposit) - parseFloat(deposit.amountUsd)
+                user.save()
+                  .then(u => {
+                    if (u) {
+                      deposit.status = status
+                      deposit.updatedAt = new Date()
+                      deposit.save()
+                        .then(d => {
+                          if (d) {
+                            successCode(res, `Canceled deposit with id = ${id}`)
+                          } else {
+                            errCode2(res, `Can not save the status of deposit with id = ${id}`)
+                          }
+                        })
+                        .catch(err => {
+                          errCode1(res, err)
+                        })
+                    } else {
+                      errCode2(res, `User balance and deposit is not saved with email = ${user.payment.email}`)
+                    }
+                  })
+                  .catch(err => {
+                    errCode1(res, err)
+                  })
               }
-              user.Wallet.balance = new_balance
-              user.Wallet.deposit = parseFloat(user.Wallet.deposit) - parseFloat(deposit.amountUsd)
-              user.save()
-                .then(u => {
-                  if (u) {
-                    deposit.status = status
-                    deposit.updatedAt = new Date()
-                    deposit.save()
-                      .then(d => {
-                        if (d) {
-                          successCode(res, `Canceled deposit with id = ${id}`)
-                        } else {
-                          errCode2(res, `Can not save the status of deposit with id = ${id}`)
-                        }
-                      })
-                      .catch(err => {
-                        errCode1(res, err)
-                      })
-                  } else {
-                    errCode2(res, `User balance and deposit is not saved with email = ${user.payment.email}`)
-                  }
-                })
-                .catch(err => {
-                  errCode1(res, err)
-                })
 
             } else {
               deposit.status = status
