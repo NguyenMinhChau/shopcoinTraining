@@ -104,7 +104,7 @@ router.put('/handleSellCoin/:id', checkAuth, checkAdmin, AdminController.handleS
 //[PUT] /admin/updateRankUser/:id
 router.put('/updateRankUser/:id', checkAuth, checkAdmin, AdminController.updateRankUser)
 
-// [DELETE] /admin/deleteBcheckAuth
+// [DELETE] /admin/deleteBuy/:id
 router.delete('/deleteBuy/:id', checkAuth, checkAdmin, AdminController.deleteBuy)
 
 // [DELETE] /admin/deleteSell/:id
