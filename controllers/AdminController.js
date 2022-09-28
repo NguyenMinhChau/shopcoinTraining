@@ -23,11 +23,11 @@ const { mail } = require('../function');
 // support function
 // error
 function errCode1(res, err) {
-  return res.status(404).json({ code: 1, message: err.message })
+  return res.json({ code: 1, message: err.message })
 }
 
 function errCode2(res, err) {
-  return res.status(400).json({ code: 2, message: err })
+  return res.json({ code: 2, message: err })
 }
 
 function successCode(res, mess) {
