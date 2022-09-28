@@ -126,9 +126,9 @@ router.put('/blockUser/:id', checkAuth, checkAdmin, AdminController.lockUser)
 router.put('/unBlockUser/:id', checkAuth, checkAdmin, AdminController.unlockUser)
 
 // [PUT] /admin/handleDeposit/:id
-router.put('/handleDeposit/:id', AdminController.handleDeposit)
+router.put('/handleDeposit/:id', checkAuth, checkAdmin, AdminController.handleDeposit)
 
 // [PUT] /admin/handleWithdraw/:id
-router.put('/handleWithdraw/:id', AdminController.handleWithdraw)
+router.put('/handleWithdraw/:id', checkAuth, checkAdmin, AdminController.handleWithdraw)
 
 module.exports = router
