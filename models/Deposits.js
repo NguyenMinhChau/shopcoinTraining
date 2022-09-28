@@ -11,8 +11,6 @@ const deposit = new mongoose.Schema({
         accountName: {type: String, default: ""},
         accountNumber: {type: String, default: ""},
         transform: {type: Number, default: 0.0},
-        createAt: {type: String, default: ""},
-        updateAt: {type: String, default: ""},
     },
     amountUsd: {type: Number, default: 0.0},
     amountVnd: {type: Number, default: 0.0},

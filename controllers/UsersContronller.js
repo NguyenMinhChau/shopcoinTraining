@@ -8,6 +8,7 @@ const Forgot = require('../models/Forgot')
 const jwt = require('jsonwebtoken')
 const Deposits = require('../models/Deposits')
 const Withdraws= require('../models/Withdraws')
+const Payments = require('../models/Payments')
 
 const { validationResult } = require('express-validator')
 
@@ -133,110 +134,131 @@ function sellCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, ty
         })
 }
 
+async function addPayment(methodName, accountName, accountNumber){
+  const p = new Promise((resolve, reject) => {
+    const codePayment = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
+    const newPayment = new Payments({
+      code: codePayment,
+      methodName: methodName,
+      accountName: accountName,
+      accountNumber: accountNumber,
+    })
+  
+    newPayment.save()
+      .then(payment => {
+        resolve({ code: 0, data: payment })
+      })
+      .catch(err => {
+        reject(err)
+      })
+  })
+  return p
+}
+
 class UsersController{
 
-    // [PUT] /users/uploadImage/:id
-    async uploadImage(req, res){
-        const {id} = req.params
-        let date = Date.now()
-        Users.findById(id, async (err, user) => {
-            if(err) return res.status(404).json({code: 1, message: err.message})
+  // [PUT] /users/uploadImage/:id
+  async uploadImage(req, res){
+      const {id} = req.params
+      let date = Date.now()
+      Users.findById(id, async (err, user) => {
+          if(err) return res.status(404).json({code: 1, message: err.message})
 
-            if(user){
-                const {cccdFont,
-                    cccdBeside,
-                    licenseFont,
-                    licenseBeside} 
-                    = req.files
+          if(user){
+              const {cccdFont,
+                  cccdBeside,
+                  licenseFont,
+                  licenseBeside} 
+                  = req.files
 
-                const email = user.payment.email
-                
-                const destination = cccdFont[0].destination
+              const email = user.payment.email
+              
+              const destination = cccdFont[0].destination
 
-                const nameIamgeCCCDFont = cccdFont[0].originalname
-                const nameIamgeCccdBeside = cccdBeside[0].originalname
-                const nameIamgeLicenseFont = licenseFont[0].originalname
-                const nameIamgeLicenseBeside = licenseBeside[0].originalname
+              const nameIamgeCCCDFont = cccdFont[0].originalname
+              const nameIamgeCccdBeside = cccdBeside[0].originalname
+              const nameIamgeLicenseFont = licenseFont[0].originalname
+              const nameIamgeLicenseBeside = licenseBeside[0].originalname
 
-                const pathIamgeCCCDFont = cccdFont[0].path
-                const pathIamgeCccdBeside = cccdBeside[0].path
-                const pathIamgeLicenseFont = licenseFont[0].path
-                const pathIamgeLicenseBeside = licenseBeside[0].path
+              const pathIamgeCCCDFont = cccdFont[0].path
+              const pathIamgeCccdBeside = cccdBeside[0].path
+              const pathIamgeLicenseFont = licenseFont[0].path
+              const pathIamgeLicenseBeside = licenseBeside[0].path
 
-                const newPathIamgeCCCDFont = Path.join(destination, date + '-' + email + '-' + nameIamgeCCCDFont)
-                const newPathIamgeCccdBeside = Path.join(destination, date + '-' + email + '-' + nameIamgeCccdBeside)
-                const newPathIamgeLicenseFont = Path.join(destination, date + '-' + email + '-' + nameIamgeLicenseFont)
-                const newPathIamgeLicenseBeside = Path.join(destination, date + '-' + email + '-' + nameIamgeLicenseBeside)
-                
-                let result1 = await rename_file(pathIamgeCCCDFont, newPathIamgeCCCDFont)
-                let result2 = await rename_file(pathIamgeCccdBeside, newPathIamgeCccdBeside)
-                let result3 = await rename_file(pathIamgeLicenseFont, newPathIamgeLicenseFont)
-                let result4 = await rename_file(pathIamgeLicenseBeside, newPathIamgeLicenseBeside)
-                console.log(result1, result2, result3, result4)
+              const newPathIamgeCCCDFont = Path.join(destination, date + '-' + email + '-' + nameIamgeCCCDFont)
+              const newPathIamgeCccdBeside = Path.join(destination, date + '-' + email + '-' + nameIamgeCccdBeside)
+              const newPathIamgeLicenseFont = Path.join(destination, date + '-' + email + '-' + nameIamgeLicenseFont)
+              const newPathIamgeLicenseBeside = Path.join(destination, date + '-' + email + '-' + nameIamgeLicenseBeside)
+              
+              let result1 = await rename_file(pathIamgeCCCDFont, newPathIamgeCCCDFont)
+              let result2 = await rename_file(pathIamgeCccdBeside, newPathIamgeCccdBeside)
+              let result3 = await rename_file(pathIamgeLicenseFont, newPathIamgeLicenseFont)
+              let result4 = await rename_file(pathIamgeLicenseBeside, newPathIamgeLicenseBeside)
+              console.log(result1, result2, result3, result4)
 
-                if(result1.code == 0 && result2.code == 0 && result3.code == 0 && result4.code == 0){
-                    user.uploadCCCDFont = newPathIamgeCCCDFont
-                    user.uploadCCCDBeside = newPathIamgeCccdBeside
-                    user.uploadLicenseFont = newPathIamgeLicenseFont
-                    user.uploadLicenseBeside = newPathIamgeLicenseBeside
+              if(result1.code == 0 && result2.code == 0 && result3.code == 0 && result4.code == 0){
+                  user.uploadCCCDFont = newPathIamgeCCCDFont
+                  user.uploadCCCDBeside = newPathIamgeCccdBeside
+                  user.uploadLicenseFont = newPathIamgeLicenseFont
+                  user.uploadLicenseBeside = newPathIamgeLicenseBeside
 
-                    user.save()
-                    .then(u => {
-                        return res.json({code: 0, message: `Success !! updated images with id = ${id}`})
-                    })
-                    .catch(err => {
-                        return res.status(400).json({code: 4, message: "Cập nhật thông tin hình ảnh có lỗi khi lưu trên database"})    
-                    })
-                }else{
-                    return res.json({message: result1.message})
-                }
-            }else{
-                return res.status(400).json({code: 2, message: `User is not valid with id = ${id}`})
-            }
-        })
-    }
+                  user.save()
+                  .then(u => {
+                      return res.json({code: 0, message: `Success !! updated images with id = ${id}`})
+                  })
+                  .catch(err => {
+                      return res.status(400).json({code: 4, message: "Cập nhật thông tin hình ảnh có lỗi khi lưu trên database"})    
+                  })
+              }else{
+                  return res.json({message: result1.message})
+              }
+          }else{
+              return res.status(400).json({code: 2, message: `User is not valid with id = ${id}`})
+          }
+      })
+  }
 
     // [POST] /users/BuyCoin/
-    BuyCoin(req, res){
-        const { gmailUser, amount, amountUsd, symbol, price, type } = req.body
-        Users.findOne({ 'payment.email': gmailUser }, (err, user) => {
-            if (err) {
-            return res.json({ code: 2, message: err.message })
-            }
-            if (!user || user == "") {
-            return res.json({ code: 2, message: "Người dùng không tồn tại" })
-            }
+  BuyCoin(req, res){
+      const { gmailUser, amount, amountUsd, symbol, price, type } = req.body
+      Users.findOne({ 'payment.email': gmailUser }, (err, user) => {
+          if (err) {
+          return res.json({ code: 2, message: err.message })
+          }
+          if (!user || user == "") {
+          return res.json({ code: 2, message: "Người dùng không tồn tại" })
+          }
 
-            // return res.json({code: 1, message: "OK", data: user})
-            const typeUser = user.payment.rule,
-            rank = user.rank,
-            coins = user.coins,
-            fee = user.fee
+          // return res.json({code: 1, message: "OK", data: user})
+          const typeUser = user.payment.rule,
+          rank = user.rank,
+          coins = user.coins,
+          fee = user.fee
 
-            buyCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user)
-        })
-    }
+          buyCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user)
+      })
+  }
 
-    // [POST] /users/SellCoin/
-    SellCoin(req, res){
-        const { gmailUser, amount, amountUsd, symbol, price, type } = req.body
-        Users.findOne({ 'payment.email': gmailUser }, (err, user) => {
-            if (err) {
-            return res.json({ code: 2, message: err.message })
-            }
-            if (!user || user == "") {
-            return res.json({ code: 2, message: "Người dùng không tồn tại" })
-            }
+  // [POST] /users/SellCoin/
+  SellCoin(req, res){
+      const { gmailUser, amount, amountUsd, symbol, price, type } = req.body
+      Users.findOne({ 'payment.email': gmailUser }, (err, user) => {
+          if (err) {
+          return res.json({ code: 2, message: err.message })
+          }
+          if (!user || user == "") {
+          return res.json({ code: 2, message: "Người dùng không tồn tại" })
+          }
 
-            // return res.json({code: 1, message: "OK", data: user})
-            const typeUser = user.payment.rule,
-            rank = user.rank,
-            coins = user.coins,
-            fee = user.fee
+          // return res.json({code: 1, message: "OK", data: user})
+          const typeUser = user.payment.rule,
+          rank = user.rank,
+          coins = user.coins,
+          fee = user.fee
 
-            sellCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user)
-        })
-    }
+          sellCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user)
+      })
+  }
 
     // [PUT] /admin/changePWD/:id
   changePWD(req, res) {
@@ -302,7 +324,14 @@ class UsersController{
           user.save()
             .then(u => {
               if (u) {
-                methods.successCode(res, `Add bank information successfully with id = ${id}`)
+                const resultAddPayment = addPayment(bankName, nameAccount, accountNumber)
+                resultAddPayment
+                .then(val => {
+                  methods.successCode(res, `Add bank information successfully with id = ${id}`)
+                })
+                .catch(err => {
+                  errCode1(res, err)
+                })
               } else {
                 methods.errCode2(res, `Can not addition information of user about bank payment with id = ${id}`)
               }
@@ -430,43 +459,62 @@ class UsersController{
   }
 
   // [POST] /users/deposit
-  deposit(req, res) {
+  async deposit(req, res) {
 
     const codeDeposit = otpGenerator.generate(10, { upperCaseAlphabets: false, specialChars: false });
-    const { amount, user, amountUsd, amountVnd, symbol } = req.body
+    const { amount, user, amountVnd, symbol } = req.body
 
-    let file1 = req.file
-    let name1 = file1.originalname
-    let destination = file1.destination
-    let newPath1 = Path.join(destination, Date.now() + "-" + name1)
+    const infoUser = Users.findOne({'payment.email': user})
+    const [info] = await Promise.all([infoUser])
+    const {account} = info.payment.bank
+    Payments.findOne({accountNumber: account}, (err, payment) => {
+      if(err) errCode1(res, err)
 
-    let typeFile = file1.mimetype.split('/')[0]
+      if(payment){
+        let file1 = req.file
+        let name1 = file1.originalname
+        let destination = file1.destination
+        let newPath1 = Path.join(destination, Date.now() + "-" + name1)
 
-    if (typeFile == "image") {
+        let typeFile = file1.mimetype.split('/')[0]
 
-      fs.renameSync(file1.path, newPath1)
-      let statement = Path.join('./uploads/images', Date.now() + "-" + name1)
+        if (typeFile == "image") {
 
-      const newDeposit = new Deposits({
-        code: codeDeposit,
-        amount: amount,
-        user: user,
-        amountUsd: amountUsd,
-        amountVnd: amountVnd,
-        symbol: symbol,
-        statement: statement,
-      })
+          fs.renameSync(file1.path, newPath1)
+          let statement = Path.join('/images', Date.now() + "-" + name1)
 
-      newDeposit.save()
-        .then(deposit => {
-          return res.json({ code: 0, data: deposit })
-        })
-        .catch(err => {
-          errCode1(res, err)
-        })
-    } else {
-      errCode2(res, "Please upload image")
-    }
+          const newDeposit = new Deposits({
+            code: codeDeposit,
+            amount: amount,
+            user: user,
+            method: {
+              code: payment.code,
+              methodName: payment.methodName,
+              accountName: payment.accountName,
+              accountNumber: payment.accountNumber,
+              transform: amountVnd,
+           },
+            amountUsd: parseFloat(amountVnd) / payment.rateDeposit,
+            amountVnd: amountVnd,
+            symbol: symbol,
+            statement: statement,
+          })
+
+          newDeposit.save()
+            .then(deposit => {
+              return res.json({ code: 0, data: deposit })
+            })
+            .catch(err => {
+              errCode1(res, err)
+            })
+        } else {
+          errCode2(res, "Please upload image")
+        }
+      }else{
+        errCode2(res, `Payment is not valid valid with account number = ${account}`)
+      }
+    })
+    
 
   }
 
