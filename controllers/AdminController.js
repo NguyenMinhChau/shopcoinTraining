@@ -427,7 +427,7 @@ class AdminController {
     //   .skip(step)
     const total = User.countDocuments()
     const allUser = User.find()
-      .sort({ createAt: 'desc' })
+      .sort({ createdAt: 'desc' })
       .skip(step)
       .limit(typeShow)
     const [totalUser, all] = await Promise.all([total, allUser])
@@ -494,7 +494,7 @@ class AdminController {
         errCode2(res, "No payments")
       }
     })
-      .sort({ createAt: -1, updateAt: -1 })
+      .sort({ createdAt: -1, updatedAt: -1 })
       .limit(typeShow)
       .skip(step)
   }
@@ -572,7 +572,7 @@ class AdminController {
         errCode2(res, "No withdraw")
       }
     })
-      .sort({ createAt: -1, updateAt: -1 })
+      .sort({ createdAt: -1, updatedAt: -1 })
       .limit(typeShow)
       .skip(step)
   }
@@ -602,7 +602,7 @@ class AdminController {
         errCode2(res, "No Deposit")
       }
     })
-      .sort({ createAt: -1, updateAt: -1 })
+      .sort({ createdAt: -1, updatedAt: -1 })
       .limit(typeShow)
       .skip(step)
   }
@@ -617,7 +617,7 @@ class AdminController {
       }
       else {
         if (payment) {
-          req.body.updateAt = date
+          req.body.updatedAt = date
           payment.update({ $set: req.body })
             .then(p => {
               if (p) {
@@ -664,7 +664,7 @@ class AdminController {
         errCode1(res, err)
       }
       else {
-        req.body.updateAt = date
+        req.body.updatedAt = date
         withdraw.updateOne({ $set: req.body })
           .then(p => {
             if (p) {
@@ -708,7 +708,7 @@ class AdminController {
         return res.json({ code: 1, message: err.message })
       }
       else {
-        req.body.updateAt = date
+        req.body.updatedAt = date
         deposit.updateOne({ $set: req.body })
           .then(p => {
             if (p) {
@@ -887,16 +887,16 @@ class AdminController {
           return res.json({ code: 0, sells: wds, page: pages, typeShow: typeShow, total: total.length })
 
         })
-        .sort({ createAt: -1, updateAt: -1 })
-        .limit(typeShow)
-        .skip(step)
+          .sort({ createdAt: -1, updatedAt: -1 })
+          .limit(typeShow)
+          .skip(step)
 
 
       } else {
         errCode2(res, "No bill of type sell")
       }
     })
-      
+
   }
 
   // [GET] /admin/getAllBuy
@@ -922,15 +922,15 @@ class AdminController {
           return res.json({ code: 0, sells: wds, page: pages, typeShow: typeShow, total: total.length })
 
         })
-        .sort({ createAt: -1, updateAt: -1 })
-        .limit(typeShow)
-        .skip(step)
+          .sort({ createdAt: -1, updatedAt: -1 })
+          .limit(typeShow)
+          .skip(step)
 
       } else {
         errCode2(res, "No bill of type Buy")
       }
     })
-      
+
   }
 
   // [GET] /admin/getSell/:id
@@ -1340,7 +1340,7 @@ class AdminController {
       if (user) {
 
         if (req.body.fee) {
-          req.body.updateAt = date
+          req.body.updatedAt = date
           user.updateOne({ $set: req.body })
             .then(u => {
               if (u) {
@@ -1360,7 +1360,7 @@ class AdminController {
                   if (err) errCode1(res, err)
 
                   if (r) {
-                    user.updateAt = date
+                    user.updatedAt = date
                     user.fee = r.fee
                     user.save()
                       .then(v => {
@@ -1635,7 +1635,7 @@ class AdminController {
               const new_balance = parseFloat(user.Wallet.balance) - parseFloat(deposit.amountUsd)
               if (new_balance < 0) {
                 errCode2(res, `Can not Canceled the deposit of user because the money of this user is not enough`)
-              }else{
+              } else {
                 user.Wallet.balance = new_balance
                 user.Wallet.deposit = parseFloat(user.Wallet.deposit) - parseFloat(deposit.amountUsd)
                 user.save()
@@ -1707,7 +1707,7 @@ class AdminController {
               const new_balance = parseFloat(user.Wallet.balance) - parseFloat(withdraw.amountUsd)
               if (new_balance < 0) {
                 errCode2(res, `Can not Canceled the withdraw of user because the money of this user is not enough`)
-              }else{
+              } else {
                 user.Wallet.balance = new_balance
                 user.Wallet.withdraw = parseFloat(user.Wallet.withdraw) + parseFloat(withdraw.amountUsd)
                 user.save()

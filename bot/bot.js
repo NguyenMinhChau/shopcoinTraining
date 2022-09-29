@@ -4,22 +4,23 @@ const TelegramBot = require('node-telegram-bot-api')
 
 const { BOT_TELEGRAM_TOKEN } = process.env
 
-const bot = new TelegramBot(BOT_TELEGRAM_TOKEN, {polling: true})
+const bot = new TelegramBot(BOT_TELEGRAM_TOKEN, { polling: true })
 
 
-const getDataBuyCoin = async() => {
-    const data = await axios.get('http://localhost:4000/admin/getAllBuy/')
-    return data.data
+const getDataBuyCoin = async () => {
+  const data = await axios.get('http://localhost:4000/admin/getAllBuy/')
+  return data.data
 }
 
 let status = ""
 
-bot.onText(/\/listBuyCoin/, async (msg) => {
+bot.onText(/\/list_buy_coin/, async (msg) => {
   const chatId = msg.chat.id;
-  const {sells} = await getDataBuyCoin()
+  const { sells } = await getDataBuyCoin()
   new Promise((resolve, reject) => {
     sells.forEach((data, index) => {
       bot.sendMessage(chatId, `
+        <b>STT: ${index + 1}</b>
         <b>Id : ${data._id}</b>
         <b>Email: ${data.buyer.gmailUSer}</b>
         <b>Rank: ${data.buyer.rank}</b>
@@ -27,47 +28,47 @@ bot.onText(/\/listBuyCoin/, async (msg) => {
         <b>Type: ${data.symbol}</b>
         <b>Fee: ${data.fee}</b>
         <b>Status: ${data.status}</b>
-      `, {parse_mode: 'HTML'})
+      `, { parse_mode: 'HTML' })
     })
     resolve("OK")
   })
-  .then((val) => {
-    status = "ConfirmBuyCoin"
-  })
+    .then((val) => {
+      status = "ConfirmBuyCoin"
+    })
 
 })
 
 let scriptWarn = [
-    '/listBuyCoin'
+  '/list_buy_coin'
 ]
 
-const handleConfirmBuyCoin = async(id, status) => {
-    const data = await axios.put(`http://localhost:4000/admin/handleBuyCoinBot/${id}`, {status: status})
-    return data.data
+const handleConfirmBuyCoin = async (id, status) => {
+  const data = await axios.put(`http://localhost:4000/admin/handleBuyCoinBot/${id}`, { status: status })
+  return data.data
 }
 
-bot.on('message', async(msg) => {
-    const chatId = msg.chat.id;
-    if(!msg.text.includes(scriptWarn)){
-        const raw = msg.text.split(" ")
-        if(status === "ConfirmBuyCoin" && raw[0] === "ConfirmBuyCoin"){
-            const idOrder = raw[1]
-            const statusOrder = raw[2]
-          
-            const order = {
-                chatId: chatId,
-                idOrder: idOrder,
-                statusOrder: statusOrder
-            }
-            const res = await handleConfirmBuyCoin(idOrder, statusOrder)
-            console.log(res)
-            if(res.code === 0){
-                bot.sendMessage(chatId, JSON.stringify(order) + ". " + res.message)
-            }else{
-                bot.sendMessage(chatId, JSON.stringify(order) + ". " + res.message)
-            }
-            
-        }
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  if (!msg.text.includes(scriptWarn)) {
+    const raw = msg.text.split(" ")
+    if (status === "ConfirmBuyCoin" && raw[0] === "ConfirmBuyCoin") {
+      const idOrder = raw[1]
+      const statusOrder = raw[2]
+
+      const order = {
+        chatId: chatId,
+        idOrder: idOrder,
+        statusOrder: statusOrder
+      }
+      const res = await handleConfirmBuyCoin(idOrder, statusOrder)
+      console.log(res)
+      if (res.code === 0) {
+        bot.sendMessage(chatId, JSON.stringify(order) + ". " + res.message)
+      } else {
+        bot.sendMessage(chatId, JSON.stringify(order) + ". " + res.message)
+      }
 
     }
-  });
+
+  }
+});

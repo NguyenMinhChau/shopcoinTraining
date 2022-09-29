@@ -10,7 +10,7 @@ const session = require('express-session')
 const cors = require('cors')
 const path = require('path')
 const cookieParser = require('cookie-parser');
-// require('./bot/bot')
+require('./bot/bot')
 
 const app = express()
 
