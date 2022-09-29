@@ -2,17 +2,17 @@ const axios = require('axios');
 
 const TelegramBot = require('node-telegram-bot-api');
 
-const { BOT_TELEGRAM_TOKEN } = process.env;
+const { BOT_TELEGRAM_TOKEN, URL_API } = process.env;
 
 const bot = new TelegramBot(BOT_TELEGRAM_TOKEN, { polling: true });
 
 const getDataBuyCoin = async () => {
-    const data = await axios.get('http://localhost:4000/admin/getAllBuy/');
+    const data = await axios.get(`${URL_API}/admin/getAllBuy/`);
     return data.data;
 };
 
 const getDataSellCoin = async () => {
-    const data = await axios.get('http://localhost:4000/admin/getAllSell/');
+    const data = await axios.get(`${URL_API}/admin/getAllSell/`);
     return data.data;
 };
 

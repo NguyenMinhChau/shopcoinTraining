@@ -35,9 +35,7 @@ app.use(express.static(path.resolve('./uploads')));
 switch (process.env.TYPE) {
     case 'product':
         // for product
-        mongoose.connect(
-            'mongodb://shopcoin:shopcoin123@139.59.97.145:27017/shopcoin?authSource=admin'
-        );
+        mongoose.connect(process.env.MONGO_PRO);
         break;
     case 'development':
         // for dev
