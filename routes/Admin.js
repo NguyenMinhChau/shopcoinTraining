@@ -1,134 +1,229 @@
-const express = require('express')
-const router = express.Router()
-const AdminController = require('../controllers/AdminController')
-const multer = require('multer')
+const express = require('express');
+const router = express.Router();
+const AdminController = require('../controllers/AdminController');
+const multer = require('multer');
 
-const upload = multer({ dest: 'uploads/images' })
+const upload = multer({ dest: 'uploads/images' });
 
 // import validator
-const checkRegister = require('./validators/RegisterValidation')
-const LoginValidator = require('./validators/LoginValidator')
-const PaymentValidator = require('./validators/PaymentValidator')
-const WithdrawValidator = require('./validators/WithdrawValidator')
-const updatePaymentValidator = require('./validators/updatePaymentValidator')
+const checkRegister = require('./validators/RegisterValidation');
+const LoginValidator = require('./validators/LoginValidator');
+const PaymentValidator = require('./validators/PaymentValidator');
+const WithdrawValidator = require('./validators/WithdrawValidator');
+const updatePaymentValidator = require('./validators/updatePaymentValidator');
 
-const updateWithdrawValidator = require('./validators/updateWithdrawValidator')
-const updateDepositValidator = require('./validators/updateDepositValidator')
+const updateWithdrawValidator = require('./validators/updateWithdrawValidator');
+const updateDepositValidator = require('./validators/updateDepositValidator');
 
 // import auth
-const checkAuth = require('../auth/auth')
-const checkAdmin = require('../auth/checkAmin')
-const { check } = require('express-validator')
-const { changeCoin } = require('../controllers/AdminController')
+const checkAuth = require('../auth/auth');
+const checkAdmin = require('../auth/checkAmin');
+const { check } = require('express-validator');
+const { changeCoin } = require('../controllers/AdminController');
 
 // [GET] /admin/getAllUser
-router.get('/getAllUser', AdminController.getAllUser)
+router.get('/getAllUser', AdminController.getAllUser);
 
 // [DELETE] /admin/deleteUser/:id
-router.delete('/deleteUser/:id', checkAuth, checkAdmin, AdminController.deleteUser)
+router.delete(
+    '/deleteUser/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.deleteUser
+);
 
 // [GET] /admin/getAllPayments
-router.get('/getAllPayments', AdminController.getAllPayments)
+router.get('/getAllPayments', AdminController.getAllPayments);
 
 // [GET] /admin/getAllWithdraw
-router.get('/getAllWithdraw', AdminController.getAllWithdraw)
+router.get('/getAllWithdraw', AdminController.getAllWithdraw);
 
 // [GET] /admin/getAllDeposit
-router.get('/getAllDeposit', AdminController.getAllDeposit)
-
-
+router.get('/getAllDeposit', AdminController.getAllDeposit);
 
 // [POST] /admin/payment
-router.post('/payment', checkAuth, PaymentValidator, AdminController.payment)
+router.post('/payment', checkAuth, PaymentValidator, AdminController.payment);
 
 // [POST] /admin/withdraw
-router.post('/withdraw', checkAuth, WithdrawValidator, AdminController.withdraw)
+router.post(
+    '/withdraw',
+    checkAuth,
+    WithdrawValidator,
+    AdminController.withdraw
+);
 
 // [POST] /admin/deposit
-router.post('/deposit', checkAuth, upload.single('statement'), AdminController.deposit)
-
+router.post(
+    '/deposit',
+    checkAuth,
+    upload.single('statement'),
+    AdminController.deposit
+);
 
 // [PUT] /admin/updatePayment
-router.put('/updatePayment/:id', checkAuth, checkAdmin, AdminController.updatePayment)
+router.put(
+    '/updatePayment/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.updatePayment
+);
 
 // [GET] /admin/getPayment/:id
-router.get('/getPayment/:id', AdminController.getPayment)
+router.get('/getPayment/:id', AdminController.getPayment);
 
 // [GET] /admin/getWithdraw/:id
-router.get('/getWithdraw/:id', AdminController.getWithdraw)
+router.get('/getWithdraw/:id', AdminController.getWithdraw);
 
 // [DELETE] /admin/deletePayment/:id
-router.delete('/deletePayment/:id',checkAuth, checkAdmin, AdminController.deletePayment)
+router.delete(
+    '/deletePayment/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.deletePayment
+);
 
 // [PUT] /admin/updateWithdraw/:id
-router.put('/updateWithdraw/:id', checkAuth, checkAdmin, AdminController.updateWithdraw)
+router.put(
+    '/updateWithdraw/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.updateWithdraw
+);
 
 // [DELETE] /admin/deleteWithdraw/:id
-router.delete('/deleteWithdraw/:id', checkAuth, checkAdmin, AdminController.deleteWithdraw)
+router.delete(
+    '/deleteWithdraw/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.deleteWithdraw
+);
 
 // [GET] /admin/getDeposit/:id
-router.get('/getDeposit/:id', AdminController.getDeposit)
+router.get('/getDeposit/:id', AdminController.getDeposit);
 
 // [PUT] /admin/updateDeposit/:id
-router.put('/updateDeposit/:id', checkAuth, checkAdmin, AdminController.updateDeposit)
+router.put(
+    '/updateDeposit/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.updateDeposit
+);
 
 // [DELETE] /admin/deleteDeposit/:id
-router.delete('/deleteDeposit/:id', checkAuth, checkAdmin, AdminController.deleteDeposit)
+router.delete(
+    '/deleteDeposit/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.deleteDeposit
+);
 
 // [GET] /admin/getUser/:id
-router.get('/getUser/:id', AdminController.getUser)
-
-
+router.get('/getUser/:id', AdminController.getUser);
 
 // [GET]/admin/getAllSell
-router.get('/getAllSell', AdminController.getAllSell)
+router.get('/getAllSell', AdminController.getAllSell);
 
 // [GET]/admin/getAllBuy
-router.get('/getAllBuy', AdminController.getAllBuy)
+router.get('/getAllBuy', AdminController.getAllBuy);
 
-// [GET] /admin/getSell 
-router.get('/getSell/:id', AdminController.getSell)
+// [GET] /admin/getSell
+router.get('/getSell/:id', AdminController.getSell);
 
-// [GET] /admin/getBuy  
-router.get('/getBuy/:id', AdminController.getBuy)
+// [GET] /admin/getBuy
+router.get('/getBuy/:id', AdminController.getBuy);
 
 // [PUT] /admin/testHandleBuyCoin/:id
-router.put('/handleBuyCoin/:id', checkAuth, checkAdmin, AdminController.handleBuyCoin)
+router.put(
+    '/handleBuyCoin/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.handleBuyCoin
+);
 
 // [PUT] /admin/testHandleBuyCoinBot/:id
-router.put('/handleBuyCoinBot/:id', AdminController.handleBuyCoin)
+router.put('/handleBuyCoinBot/:id', AdminController.handleBuyCoin);
 
 // [PUT] /admin/testHandleSellCoin/:id
-router.put('/handleSellCoin/:id', checkAuth, checkAdmin, AdminController.handleSellCoin)
+router.put(
+    '/handleSellCoin/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.handleSellCoin
+);
 
 //[PUT] /admin/updateRankUser/:id
-router.put('/updateRankUser/:id', checkAuth, checkAdmin, AdminController.updateRankUser)
+router.put(
+    '/updateRankUser/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.updateRankUser
+);
 
 // [DELETE] /admin/deleteBuy/:id
-router.delete('/deleteBuy/:id', checkAuth, checkAdmin, AdminController.deleteBuy)
+router.delete(
+    '/deleteBuy/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.deleteBuy
+);
 
 // [DELETE] /admin/deleteSell/:id
-router.delete('/deleteSell/:id', checkAuth, checkAdmin, AdminController.deleteSell)
+router.delete(
+    '/deleteSell/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.deleteSell
+);
 
 // [PUT] /admin/changePWDForUser/:id
-router.put('/changePWDForUser/:id', checkAuth, checkAdmin, AdminController.changePWDForUser)
+router.put(
+    '/changePWDForUser/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.changePWDForUser
+);
 
 // [PUT] /admin/refreshPWD/:id
-router.put('/refreshPWD/:id', checkAuth, checkAdmin, AdminController.refreshPWD)
+router.put(
+    '/refreshPWD/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.refreshPWD
+);
 
 // [PUT] /admin/changeCoin/:id
-router.put('/changeCoin/:id', checkAuth, checkAdmin, AdminController.changeCoin) 
+router.put(
+    '/changeCoin/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.changeCoin
+);
 
 // [PUT] /admin/blockUser/:id
-router.put('/blockUser/:id', checkAuth, checkAdmin, AdminController.lockUser)
+router.put('/blockUser/:id', checkAuth, checkAdmin, AdminController.lockUser);
 
 // [PUT] /admin/unBlockUser/:id
-router.put('/unBlockUser/:id', checkAuth, checkAdmin, AdminController.unlockUser)
+router.put(
+    '/unBlockUser/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.unlockUser
+);
 
 // [PUT] /admin/handleDeposit/:id
-router.put('/handleDeposit/:id', checkAuth, checkAdmin, AdminController.handleDeposit)
+router.put(
+    '/handleDeposit/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.handleDeposit
+);
 
 // [PUT] /admin/handleWithdraw/:id
-router.put('/handleWithdraw/:id', checkAuth, checkAdmin, AdminController.handleWithdraw)
+router.put(
+    '/handleWithdraw/:id',
+    checkAuth,
+    checkAdmin,
+    AdminController.handleWithdraw
+);
 
-module.exports = router
+module.exports = router;

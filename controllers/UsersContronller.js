@@ -1,572 +1,725 @@
-const Users = require('../models/User')
-const Bills = require('../models/Bills')
-const fs = require('fs')
-const Path = require('path')
-const bcrypt = require('bcrypt')
-const otpGenerator = require('otp-generator')
-const Forgot = require('../models/Forgot')
-const jwt = require('jsonwebtoken')
-const Deposits = require('../models/Deposits')
-const Withdraws= require('../models/Withdraws')
-const Payments = require('../models/Payments')
+const Users = require('../models/User');
+const Bills = require('../models/Bills');
+const fs = require('fs');
+const Path = require('path');
+const bcrypt = require('bcrypt');
+const otpGenerator = require('otp-generator');
+const Forgot = require('../models/Forgot');
+const jwt = require('jsonwebtoken');
+const Deposits = require('../models/Deposits');
+const Withdraws = require('../models/Withdraws');
+const Payments = require('../models/Payments');
 
-const { validationResult } = require('express-validator')
+const { validationResult } = require('express-validator');
 
-
-
-
-
-const methods = require('../function')
-const { resolve } = require('path')
-const { errCode2, successCode, errCode1, dataCode } = require('../function')
+const methods = require('../function');
+const { resolve } = require('path');
+const { errCode2, successCode, errCode1, dataCode } = require('../function');
 
 // support function
 
-function rename_file(oldPath, newPath){
+function rename_file(oldPath, newPath) {
     let p = new Promise((resolve, reject) => {
         fs.rename(oldPath, newPath, (err) => {
-            if(err) reject({code: 1, message: "Failed"})
+            if (err) reject({ code: 1, message: 'Failed' });
             resolve({
                 code: 0,
-                message: "Success"
-            })
-        })
-        
-    })
-    return p
+                message: 'Success'
+            });
+        });
+    });
+    return p;
 }
 
 function checkWallet(balance, payment) {
-    return balance > payment
+    return balance > payment;
 }
 
-function buyCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user) {
-    const balance = user.Wallet.balance
-  
+function buyCoin(
+    req,
+    res,
+    fee,
+    gmailUser,
+    amount,
+    amountUsd,
+    symbol,
+    price,
+    type,
+    typeUser,
+    rank,
+    coins,
+    user
+) {
+    const balance = user.Wallet.balance;
+
     if (checkWallet(balance, amount * price)) {
-      let new_fee = 0
-      let fee_rank = 0
-  
-      if (rank == "Demo") {
-        fee_rank = 0
-        new_fee = parseFloat(fee) - parseFloat(fee_rank)
-      }
-      else if (rank == "Standard") {
-        fee_rank = 0
-        new_fee = parseFloat(fee) - parseFloat(fee_rank)
-      }
-      else if (rank == "Pro") {
-        fee_rank = 0.01
-        new_fee = parseFloat(fee) - parseFloat(fee_rank)
-      }
-      else if (rank == "VIP") { // for rank VIP
-        fee_rank = 0.02
-        new_fee = parseFloat(fee) - parseFloat(fee_rank)
-      }
-      const newBill = new Bills({
-        fee: new_fee,
-        buyer: {
-          typeUser: typeUser,
-          gmailUSer: gmailUser,
-          rank: rank,
-        },
-        amount: amount,
-        amountUsd: amountUsd,
-        symbol: symbol,
-        price: price,
-        type: type,
-      });
-      newBill.save()
-        .then(bill => {
-          return res.json({ code: 0, message: "Đã mua coin thành công đợi chờ xét duyệt", billInfo: bill })
-        })
-        .catch(err => {
-          return res.json({ code: 1, message: err.message })
-        })
+        let new_fee = 0;
+        let fee_rank = 0;
+
+        if (rank == 'Demo') {
+            fee_rank = 0;
+            new_fee = parseFloat(fee) - parseFloat(fee_rank);
+        } else if (rank == 'Standard') {
+            fee_rank = 0;
+            new_fee = parseFloat(fee) - parseFloat(fee_rank);
+        } else if (rank == 'Pro') {
+            fee_rank = 0.01;
+            new_fee = parseFloat(fee) - parseFloat(fee_rank);
+        } else if (rank == 'VIP') {
+            // for rank VIP
+            fee_rank = 0.02;
+            new_fee = parseFloat(fee) - parseFloat(fee_rank);
+        }
+        const newBill = new Bills({
+            fee: new_fee,
+            buyer: {
+                typeUser: typeUser,
+                gmailUSer: gmailUser,
+                rank: rank
+            },
+            amount: amount,
+            amountUsd: amountUsd,
+            symbol: symbol,
+            price: price,
+            type: type
+        });
+        newBill
+            .save()
+            .then((bill) => {
+                return res.json({
+                    code: 0,
+                    message: 'Đã mua coin thành công đợi chờ xét duyệt',
+                    billInfo: bill
+                });
+            })
+            .catch((err) => {
+                return res.json({ code: 1, message: err.message });
+            });
     } else {
-      return res.json({ code: 3, message: "Số tiền trong tài khoản của bạn hiện tại không đủ để thực hiện việc mua coin, vui lòng nạp thêm vào !!!" })
+        return res.json({
+            code: 3,
+            message:
+                'Số tiền trong tài khoản của bạn hiện tại không đủ để thực hiện việc mua coin, vui lòng nạp thêm vào !!!'
+        });
     }
-  
 }
 
-function sellCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user) {
+function sellCoin(
+    req,
+    res,
+    fee,
+    gmailUser,
+    amount,
+    amountUsd,
+    symbol,
+    price,
+    type,
+    typeUser,
+    rank,
+    coins,
+    user
+) {
+    const balance = user.Wallet.balance;
 
-    const balance = user.Wallet.balance
+    let new_fee = 0;
+    let fee_rank = 0;
 
-    let new_fee = 0
-    let fee_rank = 0
-
-    if (rank == "Demo") {
-        fee_rank = 0
-        new_fee = parseFloat(fee) - parseFloat(fee_rank)
-    }
-    else if (rank == "Standard") {
-        fee_rank = 0
-        new_fee = parseFloat(fee) - parseFloat(fee_rank)
-    }
-    else if (rank == "Pro") {
-        fee_rank = 0.01
-        new_fee = parseFloat(fee) - parseFloat(fee_rank)
-    }
-    else if (rank == "VIP") { // for rank VIP
-        fee_rank = 0.02
-        new_fee = parseFloat(fee) - parseFloat(fee_rank)
+    if (rank == 'Demo') {
+        fee_rank = 0;
+        new_fee = parseFloat(fee) - parseFloat(fee_rank);
+    } else if (rank == 'Standard') {
+        fee_rank = 0;
+        new_fee = parseFloat(fee) - parseFloat(fee_rank);
+    } else if (rank == 'Pro') {
+        fee_rank = 0.01;
+        new_fee = parseFloat(fee) - parseFloat(fee_rank);
+    } else if (rank == 'VIP') {
+        // for rank VIP
+        fee_rank = 0.02;
+        new_fee = parseFloat(fee) - parseFloat(fee_rank);
     }
 
     const newBill = new Bills({
         fee: new_fee,
         buyer: {
-        gmailUSer: gmailUser,
+            gmailUSer: gmailUser
         },
         amount: amount,
         amountUsd: amountUsd,
         symbol: symbol,
         price: price,
-        type: type,
+        type: type
     });
 
-    newBill.save()
-        .then(bill => {
-        return res.json({ code: 0, infoBill: bill })
+    newBill
+        .save()
+        .then((bill) => {
+            return res.json({ code: 0, infoBill: bill });
         })
-        .catch(err => {
-        return res.json({ code: 1, message: err.message })
-        })
+        .catch((err) => {
+            return res.json({ code: 1, message: err.message });
+        });
 }
 
-async function addPayment(methodName, accountName, accountNumber){
-  const p = new Promise((resolve, reject) => {
-    const codePayment = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
-    const newPayment = new Payments({
-      code: codePayment,
-      methodName: methodName,
-      accountName: accountName,
-      accountNumber: accountNumber,
-    })
-  
-    newPayment.save()
-      .then(payment => {
-        resolve({ code: 0, data: payment })
-      })
-      .catch(err => {
-        reject(err)
-      })
-  })
-  return p
+async function addPayment(methodName, accountName, accountNumber) {
+    const p = new Promise((resolve, reject) => {
+        const codePayment = otpGenerator.generate(6, {
+            upperCaseAlphabets: false,
+            specialChars: false
+        });
+        const newPayment = new Payments({
+            code: codePayment,
+            methodName: methodName,
+            accountName: accountName,
+            accountNumber: accountNumber
+        });
+
+        newPayment
+            .save()
+            .then((payment) => {
+                resolve({ code: 0, data: payment });
+            })
+            .catch((err) => {
+                reject(err);
+            });
+    });
+    return p;
 }
 
-class UsersController{
+class UsersController {
+    // [PUT] /users/uploadImage/:id
+    async uploadImage(req, res) {
+        const { id } = req.params;
+        let date = Date.now();
+        Users.findById(id, async (err, user) => {
+            if (err)
+                return res.status(404).json({ code: 1, message: err.message });
 
-  // [PUT] /users/uploadImage/:id
-  async uploadImage(req, res){
-      const {id} = req.params
-      let date = Date.now()
-      Users.findById(id, async (err, user) => {
-          if(err) return res.status(404).json({code: 1, message: err.message})
+            if (user) {
+                const { cccdFont, cccdBeside, licenseFont, licenseBeside } =
+                    req.files;
 
-          if(user){
-              const {cccdFont,
-                  cccdBeside,
-                  licenseFont,
-                  licenseBeside} 
-                  = req.files
+                const email = user.payment.email;
 
-              const email = user.payment.email
-              
-              const destination = cccdFont[0].destination
+                const destination = cccdFont[0].destination;
 
-              const nameIamgeCCCDFont = cccdFont[0].originalname
-              const nameIamgeCccdBeside = cccdBeside[0].originalname
-              const nameIamgeLicenseFont = licenseFont[0].originalname
-              const nameIamgeLicenseBeside = licenseBeside[0].originalname
+                const nameIamgeCCCDFont = cccdFont[0].originalname;
+                const nameIamgeCccdBeside = cccdBeside[0].originalname;
+                const nameIamgeLicenseFont = licenseFont[0].originalname;
+                const nameIamgeLicenseBeside = licenseBeside[0].originalname;
 
-              const pathIamgeCCCDFont = cccdFont[0].path
-              const pathIamgeCccdBeside = cccdBeside[0].path
-              const pathIamgeLicenseFont = licenseFont[0].path
-              const pathIamgeLicenseBeside = licenseBeside[0].path
+                const pathIamgeCCCDFont = cccdFont[0].path;
+                const pathIamgeCccdBeside = cccdBeside[0].path;
+                const pathIamgeLicenseFont = licenseFont[0].path;
+                const pathIamgeLicenseBeside = licenseBeside[0].path;
 
-              const newPathIamgeCCCDFont = Path.join(destination, date + '-' + email + '-' + nameIamgeCCCDFont)
-              const newPathIamgeCccdBeside = Path.join(destination, date + '-' + email + '-' + nameIamgeCccdBeside)
-              const newPathIamgeLicenseFont = Path.join(destination, date + '-' + email + '-' + nameIamgeLicenseFont)
-              const newPathIamgeLicenseBeside = Path.join(destination, date + '-' + email + '-' + nameIamgeLicenseBeside)
-              
-              let result1 = await rename_file(pathIamgeCCCDFont, newPathIamgeCCCDFont)
-              let result2 = await rename_file(pathIamgeCccdBeside, newPathIamgeCccdBeside)
-              let result3 = await rename_file(pathIamgeLicenseFont, newPathIamgeLicenseFont)
-              let result4 = await rename_file(pathIamgeLicenseBeside, newPathIamgeLicenseBeside)
-              console.log(result1, result2, result3, result4)
+                const newPathIamgeCCCDFont = Path.join(
+                    destination,
+                    date + '-' + email + '-' + nameIamgeCCCDFont
+                );
+                const newPathIamgeCccdBeside = Path.join(
+                    destination,
+                    date + '-' + email + '-' + nameIamgeCccdBeside
+                );
+                const newPathIamgeLicenseFont = Path.join(
+                    destination,
+                    date + '-' + email + '-' + nameIamgeLicenseFont
+                );
+                const newPathIamgeLicenseBeside = Path.join(
+                    destination,
+                    date + '-' + email + '-' + nameIamgeLicenseBeside
+                );
 
-              if(result1.code == 0 && result2.code == 0 && result3.code == 0 && result4.code == 0){
-                  user.uploadCCCDFont = newPathIamgeCCCDFont
-                  user.uploadCCCDBeside = newPathIamgeCccdBeside
-                  user.uploadLicenseFont = newPathIamgeLicenseFont
-                  user.uploadLicenseBeside = newPathIamgeLicenseBeside
+                let result1 = await rename_file(
+                    pathIamgeCCCDFont,
+                    newPathIamgeCCCDFont
+                );
+                let result2 = await rename_file(
+                    pathIamgeCccdBeside,
+                    newPathIamgeCccdBeside
+                );
+                let result3 = await rename_file(
+                    pathIamgeLicenseFont,
+                    newPathIamgeLicenseFont
+                );
+                let result4 = await rename_file(
+                    pathIamgeLicenseBeside,
+                    newPathIamgeLicenseBeside
+                );
+                console.log(result1, result2, result3, result4);
 
-                  user.save()
-                  .then(u => {
-                      return res.json({code: 0, message: `Success !! updated images with id = ${id}`})
-                  })
-                  .catch(err => {
-                      return res.status(400).json({code: 4, message: "Cập nhật thông tin hình ảnh có lỗi khi lưu trên database"})    
-                  })
-              }else{
-                  return res.json({message: result1.message})
-              }
-          }else{
-              return res.status(400).json({code: 2, message: `User is not valid with id = ${id}`})
-          }
-      })
-  }
+                if (
+                    result1.code == 0 &&
+                    result2.code == 0 &&
+                    result3.code == 0 &&
+                    result4.code == 0
+                ) {
+                    user.uploadCCCDFont = newPathIamgeCCCDFont;
+                    user.uploadCCCDBeside = newPathIamgeCccdBeside;
+                    user.uploadLicenseFont = newPathIamgeLicenseFont;
+                    user.uploadLicenseBeside = newPathIamgeLicenseBeside;
 
-    // [POST] /users/BuyCoin/
-  BuyCoin(req, res){
-      const { gmailUser, amount, amountUsd, symbol, price, type } = req.body
-      Users.findOne({ 'payment.email': gmailUser }, (err, user) => {
-          if (err) {
-          return res.json({ code: 2, message: err.message })
-          }
-          if (!user || user == "") {
-          return res.json({ code: 2, message: "Người dùng không tồn tại" })
-          }
-
-          // return res.json({code: 1, message: "OK", data: user})
-          const typeUser = user.payment.rule,
-          rank = user.rank,
-          coins = user.coins,
-          fee = user.fee
-
-          buyCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user)
-      })
-  }
-
-  // [POST] /users/SellCoin/
-  SellCoin(req, res){
-      const { gmailUser, amount, amountUsd, symbol, price, type } = req.body
-      Users.findOne({ 'payment.email': gmailUser }, (err, user) => {
-          if (err) {
-          return res.json({ code: 2, message: err.message })
-          }
-          if (!user || user == "") {
-          return res.json({ code: 2, message: "Người dùng không tồn tại" })
-          }
-
-          // return res.json({code: 1, message: "OK", data: user})
-          const typeUser = user.payment.rule,
-          rank = user.rank,
-          coins = user.coins,
-          fee = user.fee
-
-          sellCoin(req, res, fee, gmailUser, amount, amountUsd, symbol, price, type, typeUser, rank, coins, user)
-      })
-  }
-
-    // [PUT] /admin/changePWD/:id
-  changePWD(req, res) {
-    const { oldPWD, newPWD } = req.body
-    const id = req.params.id
-
-    Users.findById(id, (err, user) => {
-      if (err) {
-        methods.errCode1(res, err)
-      }
-
-      if (user) {
-        bcrypt.compare(oldPWD, user.payment.password)
-          .then(result => {
-            if (result) {
-              bcrypt.hash(newPWD, 10)
-                .then(hashed => {
-                  user.payment.password = hashed
-                  user.save()
-                    .then(u => {
-                      if (u) {
-                        methods.successCode(res, `Change password successfully with id = ${id}`)
-                      } else {
-                        methods.errCode2(res, "Can not change password")
-                      }
-                    })
-                    .catch(err => {
-                        methods.errCode1(res, err)
-                    })
-                })
-                .catch(err => {
-                    methods.errCode1(res, err)
-                })
+                    user.save()
+                        .then((u) => {
+                            return res.json({
+                                code: 0,
+                                message: `Success !! updated images with id = ${id}`
+                            });
+                        })
+                        .catch((err) => {
+                            return res.status(400).json({
+                                code: 4,
+                                message:
+                                    'Cập nhật thông tin hình ảnh có lỗi khi lưu trên database'
+                            });
+                        });
+                } else {
+                    return res.json({ message: result1.message });
+                }
             } else {
-                methods.errCode2(res, "Password is not match")
+                return res.status(400).json({
+                    code: 2,
+                    message: `User is not valid with id = ${id}`
+                });
             }
-          })
-
-      } else {
-        methods.errCode2(res, `User is not valid with id = ${id}`)
-      }
-    })
-  }
-
-  // [PUT] /users/additionBankInfo/:id
-  additionBankInfo(req, res) {
-    let result = validationResult(req)
-    if (result.errors.length === 0) {
-      const { bankName, nameAccount, accountNumber } = req.body
-      const id = req.params.id
-
-      Users.findById(id, (err, user) => {
-        if (err) {
-          methods.errCode1(res, err)
-        }
-
-        if (user) {
-          let infoBank = user.payment.bank
-          infoBank.bankName = bankName
-          infoBank.name = nameAccount
-          infoBank.account = accountNumber
-          user.updateAt = new Date().toUTCString()
-          user.save()
-            .then(u => {
-              if (u) {
-                const resultAddPayment = addPayment(bankName, nameAccount, accountNumber)
-                resultAddPayment
-                .then(val => {
-                  methods.successCode(res, `Add bank information successfully with id = ${id}`)
-                })
-                .catch(err => {
-                  errCode1(res, err)
-                })
-              } else {
-                methods.errCode2(res, `Can not addition information of user about bank payment with id = ${id}`)
-              }
-            })
-            .catch(err => {
-              methods.errCode1(res, err)
-            })
-        } else {
-          methods.errCode2(res, `User is not valid with id = ${id}`)
-        }
-      })
-    } else {
-      let messages = result.mapped()
-      let message = ''
-      for (let m in messages) {
-        message = messages[m]
-        break
-      }
-      return res.json({ code: 1, message: message.msg })
+        });
     }
 
+    // [POST] /users/BuyCoin/
+    BuyCoin(req, res) {
+        const { gmailUser, amount, amountUsd, symbol, price, type } = req.body;
+        Users.findOne({ 'payment.email': gmailUser }, (err, user) => {
+            if (err) {
+                return res.json({ code: 2, message: err.message });
+            }
+            if (!user || user == '') {
+                return res.json({
+                    code: 2,
+                    message: 'Người dùng không tồn tại'
+                });
+            }
 
-  }
+            // return res.json({code: 1, message: "OK", data: user})
+            const typeUser = user.payment.rule,
+                rank = user.rank,
+                coins = user.coins,
+                fee = user.fee;
 
-  // [POST] /users/forgotPassword
-  forgotPassword(req, res){
-    const {email} = req.body
-    Users.findOne({'payment.email': email}, (err, user) => {
-      if(err) methods.errCode1(res, err)
+            buyCoin(
+                req,
+                res,
+                fee,
+                gmailUser,
+                amount,
+                amountUsd,
+                symbol,
+                price,
+                type,
+                typeUser,
+                rank,
+                coins,
+                user
+            );
+        });
+    }
 
-      if(user){
-        const token = jwt.sign(
-          { email },
-          process.env.JWT_SECRET,
-          {
-            expiresIn: "3m",
-          })
-        const otp = otpGenerator.generate(4, {lowerCaseAlphabets: false, upperCaseAlphabets: false, specialChars: false})
-        const forgot = new Forgot({
-          code: otp,
-          email: email,
-          token: token
-        })
-        forgot.save()
-        .then(f => {
-          if(f){
-            const mailContent = `
+    // [POST] /users/SellCoin/
+    SellCoin(req, res) {
+        const { gmailUser, amount, amountUsd, symbol, price, type } = req.body;
+        Users.findOne({ 'payment.email': gmailUser }, (err, user) => {
+            if (err) {
+                return res.json({ code: 2, message: err.message });
+            }
+            if (!user || user == '') {
+                return res.json({
+                    code: 2,
+                    message: 'Người dùng không tồn tại'
+                });
+            }
+
+            // return res.json({code: 1, message: "OK", data: user})
+            const typeUser = user.payment.rule,
+                rank = user.rank,
+                coins = user.coins,
+                fee = user.fee;
+
+            sellCoin(
+                req,
+                res,
+                fee,
+                gmailUser,
+                amount,
+                amountUsd,
+                symbol,
+                price,
+                type,
+                typeUser,
+                rank,
+                coins,
+                user
+            );
+        });
+    }
+
+    // [PUT] /admin/changePWD/:id
+    changePWD(req, res) {
+        const { oldPWD, newPWD } = req.body;
+        const id = req.params.id;
+
+        Users.findById(id, (err, user) => {
+            if (err) {
+                methods.errCode1(res, err);
+            }
+
+            if (user) {
+                bcrypt.compare(oldPWD, user.payment.password).then((result) => {
+                    if (result) {
+                        bcrypt
+                            .hash(newPWD, 10)
+                            .then((hashed) => {
+                                user.payment.password = hashed;
+                                user.save()
+                                    .then((u) => {
+                                        if (u) {
+                                            methods.successCode(
+                                                res,
+                                                `Change password successfully with id = ${id}`
+                                            );
+                                        } else {
+                                            methods.errCode2(
+                                                res,
+                                                'Can not change password'
+                                            );
+                                        }
+                                    })
+                                    .catch((err) => {
+                                        methods.errCode1(res, err);
+                                    });
+                            })
+                            .catch((err) => {
+                                methods.errCode1(res, err);
+                            });
+                    } else {
+                        methods.errCode2(res, 'Password is not match');
+                    }
+                });
+            } else {
+                methods.errCode2(res, `User is not valid with id = ${id}`);
+            }
+        });
+    }
+
+    // [PUT] /users/additionBankInfo/:id
+    additionBankInfo(req, res) {
+        let result = validationResult(req);
+        if (result.errors.length === 0) {
+            const { bankName, nameAccount, accountNumber } = req.body;
+            const id = req.params.id;
+
+            Users.findById(id, (err, user) => {
+                if (err) {
+                    methods.errCode1(res, err);
+                }
+
+                if (user) {
+                    let infoBank = user.payment.bank;
+                    infoBank.bankName = bankName;
+                    infoBank.name = nameAccount;
+                    infoBank.account = accountNumber;
+                    user.updateAt = new Date().toUTCString();
+                    user.save()
+                        .then((u) => {
+                            if (u) {
+                                const resultAddPayment = addPayment(
+                                    bankName,
+                                    nameAccount,
+                                    accountNumber
+                                );
+                                resultAddPayment
+                                    .then((val) => {
+                                        methods.successCode(
+                                            res,
+                                            `Add bank information successfully with id = ${id}`
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
+                            } else {
+                                methods.errCode2(
+                                    res,
+                                    `Can not addition information of user about bank payment with id = ${id}`
+                                );
+                            }
+                        })
+                        .catch((err) => {
+                            methods.errCode1(res, err);
+                        });
+                } else {
+                    methods.errCode2(res, `User is not valid with id = ${id}`);
+                }
+            });
+        } else {
+            let messages = result.mapped();
+            let message = '';
+            for (let m in messages) {
+                message = messages[m];
+                break;
+            }
+            return res.json({ code: 1, message: message.msg });
+        }
+    }
+
+    // [POST] /users/forgotPassword
+    forgotPassword(req, res) {
+        const { email } = req.body;
+        Users.findOne({ 'payment.email': email }, (err, user) => {
+            if (err) methods.errCode1(res, err);
+
+            if (user) {
+                const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+                    expiresIn: '3m'
+                });
+                const otp = otpGenerator.generate(4, {
+                    lowerCaseAlphabets: false,
+                    upperCaseAlphabets: false,
+                    specialChars: false
+                });
+                const forgot = new Forgot({
+                    code: otp,
+                    email: email,
+                    token: token
+                });
+                forgot
+                    .save()
+                    .then((f) => {
+                        if (f) {
+                            const mailContent = `
               <h1>this is link is reset password with otp = ${otp}</h1>
               <p>http://localhost:4000/users/getOTP/${token}</p>
 
               <h2>Best Regards</h2>
-            `
-            let resultSendMail = methods.mail(email, mailContent, 'Reset Password')
-            resultSendMail
-            .then(val => {
-              methods.successCode(res, `Send mail for forgot password successfully to email = ${email}`)
-            })
-            .catch(err => {
-              methods.errCode1(res, err)
-            })
-          }else{
-            methods.errCode2(res, `Can not save model forgot of user with email = ${email}`)
-          }
-        })
-        .catch(err => {
-          methods.errCode1(res, err)
-        })
-      }else{
-        methods.errCode2(res, `User is not valid with email = ${email}`)
-      }
-    })
-  }
-
-  // [PUT] /users/getOTP/:token
-  getOTP(req, res){
-    const {token} = req.params
-    const {otp, pwd} = req.body
-
-    if(!token){
-      errCode2(res, "A token is required")
-    }
-    try{
-      const decoded = jwt.verify(token, process.env.JWT_SECRET)
-      Forgot.findOne({email: decoded.email}, (err, f) => {
-        if(f){
-          if(f.code === otp){
-            Users.findOne({'payment.email': decoded.email}, (errs, user) => {
-              if(err) errCode1(res, err)
-
-              if(user){
-                bcrypt.hash(pwd, 10)
-                .then(hashed => {
-                  if(hashed){
-                    user.payment.password = hashed
-                    user.save()
-                    .then(u => {
-                      if(u){
-                        successCode(res, `Change password successfully of user with email = ${decoded.email}`)
-                      }else{
-                        errCode2(res, `Can not change password for user with email = ${decoded.email}`)
-                      }
+            `;
+                            let resultSendMail = methods.mail(
+                                email,
+                                mailContent,
+                                'Reset Password'
+                            );
+                            resultSendMail
+                                .then((val) => {
+                                    methods.successCode(
+                                        res,
+                                        `Send mail for forgot password successfully to email = ${email}`
+                                    );
+                                })
+                                .catch((err) => {
+                                    methods.errCode1(res, err);
+                                });
+                        } else {
+                            methods.errCode2(
+                                res,
+                                `Can not save model forgot of user with email = ${email}`
+                            );
+                        }
                     })
-                    .catch(err => {
-                      errCode1(res, err)
+                    .catch((err) => {
+                        methods.errCode1(res, err);
+                    });
+            } else {
+                methods.errCode2(
+                    res,
+                    `User is not valid with email = ${email}`
+                );
+            }
+        });
+    }
+
+    // [PUT] /users/getOTP/:token
+    getOTP(req, res) {
+        const { token } = req.params;
+        const { otp, pwd } = req.body;
+
+        if (!token) {
+            errCode2(res, 'A token is required');
+        }
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            Forgot.findOne({ email: decoded.email }, (err, f) => {
+                if (f) {
+                    if (f.code === otp) {
+                        Users.findOne(
+                            { 'payment.email': decoded.email },
+                            (errs, user) => {
+                                if (err) errCode1(res, err);
+
+                                if (user) {
+                                    bcrypt.hash(pwd, 10).then((hashed) => {
+                                        if (hashed) {
+                                            user.payment.password = hashed;
+                                            user.save()
+                                                .then((u) => {
+                                                    if (u) {
+                                                        successCode(
+                                                            res,
+                                                            `Change password successfully of user with email = ${decoded.email}`
+                                                        );
+                                                    } else {
+                                                        errCode2(
+                                                            res,
+                                                            `Can not change password for user with email = ${decoded.email}`
+                                                        );
+                                                    }
+                                                })
+                                                .catch((err) => {
+                                                    errCode1(res, err);
+                                                });
+                                        } else {
+                                            errCode2(
+                                                res,
+                                                `Can not hash password`
+                                            );
+                                        }
+                                    });
+                                } else {
+                                    errCode2(
+                                        res,
+                                        `User is not valid with email = ${decoded.email}`
+                                    );
+                                }
+                            }
+                        );
+                    } else {
+                        errCode2(res, `Otp iput is wrong or dead`);
+                    }
+                } else {
+                    errCode2(
+                        res,
+                        `Token is dead! Please order new Token for reset password`
+                    );
+                }
+            });
+        } catch (err) {
+            errCode2(res, 'In valid token');
+        }
+    }
+
+    // [POST] /users/deposit
+    async deposit(req, res) {
+        const codeDeposit = otpGenerator.generate(10, {
+            upperCaseAlphabets: false,
+            specialChars: false
+        });
+        const { amount, user, amountVnd, symbol } = req.body;
+
+        const infoUser = Users.findOne({ 'payment.email': user });
+        const [info] = await Promise.all([infoUser]);
+        const { account } = info.payment.bank;
+        Payments.findOne({ accountNumber: account }, (err, payment) => {
+            if (err) errCode1(res, err);
+
+            if (payment) {
+                let file1 = req.file;
+                let name1 = file1.originalname;
+                let destination = file1.destination;
+                let newPath1 = Path.join(destination, Date.now() + '-' + name1);
+
+                let typeFile = file1.mimetype.split('/')[0];
+
+                if (typeFile == 'image') {
+                    fs.renameSync(file1.path, newPath1);
+                    let statement = Path.join(
+                        '/images',
+                        Date.now() + '-' + name1
+                    );
+
+                    const newDeposit = new Deposits({
+                        code: codeDeposit,
+                        amount: amount,
+                        user: user,
+                        method: {
+                            code: payment.code,
+                            methodName: payment.methodName,
+                            accountName: payment.accountName,
+                            accountNumber: payment.accountNumber,
+                            transform: amountVnd
+                        },
+                        amountUsd: parseFloat(amountVnd) / payment.rateDeposit,
+                        amountVnd: amountVnd,
+                        symbol: symbol,
+                        statement: statement
+                    });
+
+                    newDeposit
+                        .save()
+                        .then((deposit) => {
+                            return res.json({ code: 0, data: deposit });
+                        })
+                        .catch((err) => {
+                            errCode1(res, err);
+                        });
+                } else {
+                    errCode2(res, 'Please upload image');
+                }
+            } else {
+                errCode2(
+                    res,
+                    `Payment is not valid valid with account number = ${account}`
+                );
+            }
+        });
+    }
+
+    // [POST] /users/withdraw
+    async withdraw(req, res) {
+        const codeWithdraw = otpGenerator.generate(20, {
+            upperCaseAlphabets: false,
+            specialChars: false
+        });
+
+        const { user, amountUsd, symbol } = req.body;
+
+        const infoUser = Users.findOne({ 'payment.email': user });
+        const [info] = await Promise.all([infoUser]);
+        const { account } = info.payment.bank;
+
+        Payments.findOne({ accountNumber: account }, (err, payment) => {
+            if (err) errCode1(res, err);
+
+            if (payment) {
+                const money =
+                    parseFloat(amountUsd) * parseFloat(payment.rateWithdraw);
+                const newWithdraw = new Withdraws({
+                    user: user,
+                    code: codeWithdraw,
+                    amount: amountUsd,
+                    method: {
+                        code: payment.code,
+                        methodName: payment.methodName,
+                        accountName: payment.accountName,
+                        accountNumber: payment.accountNumber,
+                        transform: money
+                    },
+                    amountUsd: amountUsd,
+                    amountVnd: money,
+                    symbol: symbol
+                });
+
+                newWithdraw
+                    .save()
+                    .then((withdraw) => {
+                        dataCode(res, withdraw);
                     })
-                  }else{
-                    errCode2(res, `Can not hash password`)
-                  }
-                })
-              }else{
-                errCode2(res, `User is not valid with email = ${decoded.email}`)
-              }
-            })
-          }else{
-            errCode2(res, `Otp iput is wrong or dead`)
-          }
-        }else{
-          errCode2(res, `Token is dead! Please order new Token for reset password`)
-        }
-      })
+                    .catch((err) => {
+                        errCode1(res, err);
+                    });
+            } else {
+                errCode2(
+                    res,
+                    `Payment is not valid valid with account number = ${account}`
+                );
+            }
+        });
     }
-    catch (err){
-      errCode2(res, "In valid token")
-    }
-  }
-
-  // [POST] /users/deposit
-  async deposit(req, res) {
-
-    const codeDeposit = otpGenerator.generate(10, { upperCaseAlphabets: false, specialChars: false });
-    const { amount, user, amountVnd, symbol } = req.body
-
-    const infoUser = Users.findOne({'payment.email': user})
-    const [info] = await Promise.all([infoUser])
-    const {account} = info.payment.bank
-    Payments.findOne({accountNumber: account}, (err, payment) => {
-      if(err) errCode1(res, err)
-
-      if(payment){
-        let file1 = req.file
-        let name1 = file1.originalname
-        let destination = file1.destination
-        let newPath1 = Path.join(destination, Date.now() + "-" + name1)
-
-        let typeFile = file1.mimetype.split('/')[0]
-
-        if (typeFile == "image") {
-
-          fs.renameSync(file1.path, newPath1)
-          let statement = Path.join('/images', Date.now() + "-" + name1)
-
-          const newDeposit = new Deposits({
-            code: codeDeposit,
-            amount: amount,
-            user: user,
-            method: {
-              code: payment.code,
-              methodName: payment.methodName,
-              accountName: payment.accountName,
-              accountNumber: payment.accountNumber,
-              transform: amountVnd,
-           },
-            amountUsd: parseFloat(amountVnd) / payment.rateDeposit,
-            amountVnd: amountVnd,
-            symbol: symbol,
-            statement: statement,
-          })
-
-          newDeposit.save()
-            .then(deposit => {
-              return res.json({ code: 0, data: deposit })
-            })
-            .catch(err => {
-              errCode1(res, err)
-            })
-        } else {
-          errCode2(res, "Please upload image")
-        }
-      }else{
-        errCode2(res, `Payment is not valid valid with account number = ${account}`)
-      }
-    })
-    
-
-  }
-
-  // [POST] /users/withdraw
-  async withdraw(req, res) {
-
-    const codeWithdraw = otpGenerator.generate(20, { upperCaseAlphabets: false, specialChars: false });
-
-    const { user, amountUsd, symbol } = req.body
-
-    const infoUser = Users.findOne({'payment.email': user})
-    const [info] = await Promise.all([infoUser])
-    const {account} = info.payment.bank
-
-    Payments.findOne({accountNumber: account}, (err, payment) => {
-      if(err) errCode1(res, err)
-      
-      if(payment){
-        const money = parseFloat(amountUsd) * parseFloat(payment.rateWithdraw)
-        const newWithdraw = new Withdraws({
-          user: user,
-          code: codeWithdraw,
-          amount: amountUsd,
-          method: {
-            code: payment.code,
-            methodName: payment.methodName,
-            accountName: payment.accountName,
-            accountNumber: payment.accountNumber,
-            transform: money,
-         },
-          amountUsd: amountUsd,
-          amountVnd: money,
-          symbol: symbol,
-        })
-    
-        newWithdraw.save()
-          .then(withdraw => {
-            dataCode(res, withdraw)
-          })
-          .catch(err => {
-            errCode1(res, err)
-          })
-      }else{
-        errCode2(res, `Payment is not valid valid with account number = ${account}`)
-      }
-
-
-    })
-
-    
-
-  }
 }
 
-module.exports = new UsersController
+module.exports = new UsersController();
