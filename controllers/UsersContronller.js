@@ -323,6 +323,32 @@ class UsersController {
         });
     }
 
+    // [GET] /users/getAllBuy/:id
+    getAllBuy(req, res) {
+        const { id } = req.params;
+        Users.findById(id, (err, user) => {
+            if (err) methods.errCode1(res, err);
+            if (user) {
+                Bills.find(
+                    { 'buyer.gmailUSer': user.payment.email, type: 'BuyCoin' },
+                    (err, allBuy) => {
+                        if (err) methods.errCode1(res, err);
+                        if (allBuy) {
+                            methods.dataCode(res, allBuy);
+                        } else {
+                            methods.errCode2(
+                                res,
+                                `Bill of buy is empty of user with id ${id}`
+                            );
+                        }
+                    }
+                );
+            } else {
+                methods.errCode2(res, `User is not valid with id = ${id}`);
+            }
+        });
+    }
+
     // [POST] /users/SellCoin/
     SellCoin(req, res) {
         const { gmailUser, amount, amountUsd, symbol, price, type } = req.body;
@@ -358,6 +384,32 @@ class UsersController {
                 coins,
                 user
             );
+        });
+    }
+
+    // [GET] /users/getAllSell/:id
+    getAllSell(req, res) {
+        const { id } = req.params;
+        Users.findById(id, (err, user) => {
+            if (err) methods.errCode1(res, err);
+            if (user) {
+                Bills.find(
+                    { 'buyer.gmailUSer': user.payment.email, type: 'SellCoin' },
+                    (err, allBuy) => {
+                        if (err) methods.errCode1(res, err);
+                        if (allBuy) {
+                            methods.dataCode(res, allBuy);
+                        } else {
+                            methods.errCode2(
+                                res,
+                                `Bill of sell is empty of user with id ${id}`
+                            );
+                        }
+                    }
+                );
+            } else {
+                methods.errCode2(res, `User is not valid with id = ${id}`);
+            }
         });
     }
 

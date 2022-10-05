@@ -74,4 +74,10 @@ router.post(
 // [POST] /users/withdraw
 router.post('/withdraw', checkAuth, UsersContronller.withdraw);
 
+// [GET] /users/getAllBuy/:id
+router.get('/getAllBuy/:id', UsersContronller.getAllBuy);
+
+// [GET] /users/getAllSell/:id
+router.get('/getAllSell/:id', UsersContronller.getAllSell);
+
 module.exports = router;
