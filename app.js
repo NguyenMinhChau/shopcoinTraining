@@ -6,25 +6,29 @@ const Authen = require('./routes/Authen');
 const Users = require('./routes/Users');
 const Ranks = require('./routes/Ranks');
 const mongoose = require('mongoose');
-const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const { Server } = require('socket.io');
+const { createServer } = require('http');
 // require('./bot/bot');
+const methods = require('./function');
 
 const app = express();
 
-app.use(
-    session({
-        secret: 'keyboard cat',
-        cookie: { secure: true, maxAge: 60 * 60 * 1000 }
-    })
-);
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+        origin: '*'
+    }
+});
 
 const corOptions = {
     origin: true,
     credentials: true
 };
+
+app.set('conn', io);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -55,5 +59,23 @@ app.use('/users', Users);
 app.use('/authen', Authen);
 app.use('/ranks', Ranks);
 
+app.use('/', (req, res) => {
+    const io = methods.getSocket(req, res);
+    const binance = methods.getBinance(req, res);
+    binance.futuresMiniTickerStream('BTCUSDT', (data) => {
+        // io.sockets.emit('send-data-btc', data);
+        const { close, high, low } = data;
+        // console.log(close, high, low);
+        io.emit('send-data-btc', data);
+    });
+    binance
+        .futuresPrices()
+        .then((prices) => {
+            io.emit('send-price-future', prices);
+        })
+        .catch((err) => console.log(err));
+    return res.send('Welcome to api shop coin');
+});
+
 let port = process.env.PORT || 3000;
-app.listen(port, () => console.log('Running at port ' + port));
+httpServer.listen(port, () => console.log('Running at port ' + port));

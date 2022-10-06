@@ -80,4 +80,10 @@ router.get('/getAllBuy/:id', UsersContronller.getAllBuy);
 // [GET] /users/getAllSell/:id
 router.get('/getAllSell/:id', UsersContronller.getAllSell);
 
+// [GET] /users/getAllDeposits/:id
+router.get('/getAllDeposits/:id', UsersContronller.getAllDeposits);
+
+// [GET] /users/getAllWithdraw/:id
+router.get('/getAllWithdraw/:id', UsersContronller.getAllWithdraw);
+
 module.exports = router;

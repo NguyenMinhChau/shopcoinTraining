@@ -299,9 +299,7 @@ function subCoin(
                             'Đăng ký trừ coin thành công !!! Vui lòng chờ đợi !!!'
                     });
                 } else {
-                    return res
-                        .status(404)
-                        .json({ code: 3, message: 'Bill is not saved !!' });
+                    errCode2(res, 'Bill is not saved !!');
                 }
             })
             .catch((err) => {
@@ -1242,10 +1240,7 @@ class AdminController {
             };
 
             Bills.findOne(query, (err, bill) => {
-                if (err)
-                    return res
-                        .status(404)
-                        .json({ code: 1, message: err.message });
+                if (err) errCode1(res, err);
 
                 if (bill) {
                     let emailUser = bill.buyer.gmailUSer;
@@ -1335,10 +1330,7 @@ class AdminController {
             };
 
             Bills.findOne(query, (err, bill) => {
-                if (err)
-                    return res
-                        .status(404)
-                        .json({ code: 1, message: err.message });
+                if (err) errCode1(res, err);
 
                 if (bill) {
                     let emailUser = bill.buyer.gmailUSer;
@@ -1460,10 +1452,7 @@ class AdminController {
             };
 
             Bills.findOne(query, (err, bill) => {
-                if (err)
-                    return res
-                        .status(404)
-                        .json({ code: 1, message: err.message });
+                if (err) errCode1(res, err);
 
                 if (bill) {
                     let emailUser = bill.buyer.gmailUSer;
@@ -1552,10 +1541,7 @@ class AdminController {
             };
 
             Bills.findOne(query, (err, bill) => {
-                if (err)
-                    return res
-                        .status(404)
-                        .json({ code: 1, message: err.message });
+                if (err) errCode1(res, err);
 
                 if (bill) {
                     let emailUser = bill.buyer.gmailUSer;

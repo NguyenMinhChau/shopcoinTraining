@@ -1,4 +1,6 @@
 const nodemailer = require('nodemailer');
+const Binance = require('node-binance-api');
+const { APIKEYSOCKET, APISECRETSOCKET } = process.env;
 
 let transporter = nodemailer.createTransport({
     host: process.env.HOST,
@@ -44,5 +46,18 @@ module.exports = {
         });
 
         return p;
+    },
+
+    getBinance: function (req, res) {
+        const binance = new Binance().options({
+            APIKEY: APIKEYSOCKET,
+            APISECRET: APISECRETSOCKET
+        });
+        return binance;
+    },
+
+    getSocket: function (req, res) {
+        const io = req.app.get('conn');
+        return io;
     }
 };

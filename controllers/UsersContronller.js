@@ -349,6 +349,58 @@ class UsersController {
         });
     }
 
+    // [GET] /users/getAllDeposits/:id
+    getAllDeposits(req, res) {
+        const { id } = req.params;
+        Users.findById(id, (err, user) => {
+            if (err) methods.errCode1(res, err);
+            if (user) {
+                Deposits.find(
+                    { user: user.payment.email },
+                    (err, allDeposits) => {
+                        if (err) methods.errCode1(res, err);
+                        if (allDeposits) {
+                            methods.dataCode(res, allDeposits);
+                        } else {
+                            methods.errCode2(
+                                res,
+                                `Deposit is empty of user with id ${id}`
+                            );
+                        }
+                    }
+                );
+            } else {
+                methods.errCode2(res, `User is not valid with id = ${id}`);
+            }
+        });
+    }
+
+    // [GET] /users/getAllWithdraw/:id
+    getAllWithdraw(req, res) {
+        const { id } = req.params;
+        Users.findById(id, (err, user) => {
+            if (err) methods.errCode1(res, err);
+            if (user) {
+                Withdraws.find(
+                    { user: user.payment.email },
+                    (err, allWithdraw) => {
+                        if (err) methods.errCode1(res, err);
+                        if (allWithdraw) {
+                            methods.dataCode(res, allWithdraw);
+                        } else {
+                            methods.errCode2(
+                                res,
+                                `Withdraw is empty of user with id ${id}`
+                            );
+                        }
+                    }
+                );
+            } else {
+                methods.errCode2(res, `User is not valid with id = ${id}`);
+            }
+        });
+    }
+
     // [POST] /users/SellCoin/
     SellCoin(req, res) {
         const { gmailUser, amount, amountUsd, symbol, price, type } = req.body;
