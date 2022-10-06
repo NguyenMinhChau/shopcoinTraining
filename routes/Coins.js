@@ -20,6 +20,9 @@ router.get('/getAllCoin', CoinsController.getAllCoins);
 // [GET] /coins/getCoin/:id
 router.get('/getCoin/:id', CoinsController.getCoin);
 
+// [GET] /coins/getCoinSymbol/:symbol
+router.get('/getCoinSymbol/:symbol', CoinsController.getCoinSymbol);
+
 // [PUT] /coins/updateCoin/:id
 router.put(
     '/updateCoin/:id',

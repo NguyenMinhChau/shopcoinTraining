@@ -349,10 +349,10 @@ class UsersController {
         });
     }
 
-    // [GET] /users/getAllDeposits/:id
+    // [GET] /users/getAllDeposits/:email
     getAllDeposits(req, res) {
-        const { id } = req.params;
-        Users.findById(id, (err, user) => {
+        const { email } = req.params;
+        Users.findOne({ 'payment.email': email }, (err, user) => {
             if (err) methods.errCode1(res, err);
             if (user) {
                 Deposits.find(
@@ -364,21 +364,24 @@ class UsersController {
                         } else {
                             methods.errCode2(
                                 res,
-                                `Deposit is empty of user with id ${id}`
+                                `Deposit is empty of user with email = ${email}`
                             );
                         }
                     }
                 );
             } else {
-                methods.errCode2(res, `User is not valid with id = ${id}`);
+                methods.errCode2(
+                    res,
+                    `User is not valid with email = ${email}`
+                );
             }
         });
     }
 
-    // [GET] /users/getAllWithdraw/:id
+    // [GET] /users/getAllWithdraw/:email
     getAllWithdraw(req, res) {
-        const { id } = req.params;
-        Users.findById(id, (err, user) => {
+        const { email } = req.params;
+        Users.findOne({ 'payment.email': email }, (err, user) => {
             if (err) methods.errCode1(res, err);
             if (user) {
                 Withdraws.find(
@@ -390,13 +393,16 @@ class UsersController {
                         } else {
                             methods.errCode2(
                                 res,
-                                `Withdraw is empty of user with id ${id}`
+                                `Withdraw is empty of user with email = ${email}`
                             );
                         }
                     }
                 );
             } else {
-                methods.errCode2(res, `User is not valid with id = ${id}`);
+                methods.errCode2(
+                    res,
+                    `User is not valid with email = ${email}`
+                );
             }
         });
     }

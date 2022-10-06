@@ -4,7 +4,7 @@ const fs = require('fs');
 const { validationResult } = require('express-validator');
 
 const methods = require('../function');
-const { successCode } = require('../function');
+const { successCode, errCode1, errCode2 } = require('../function');
 
 class CoinsController {
     // [POST] /coins/add
@@ -214,7 +214,7 @@ class CoinsController {
         }
     }
 
-    // [DELETE] /coins/getCoin/:id
+    // [GET] /coins/getCoin/:id
     getCoin(req, res) {
         const { id } = req.params;
         Coins.findById(id, (err, c) => {
@@ -228,6 +228,20 @@ class CoinsController {
                     code: 2,
                     message: `Không tìm thấy coin từ id ${id}`
                 });
+            }
+        });
+    }
+
+    // [GET] /coins/getCoinSymbol/:symbol
+    getCoinSymbol(req, res) {
+        const { symbol } = req.params;
+        Coins.findOne({ symbol: symbol }, (err, c) => {
+            if (err) errCode1(res, err);
+
+            if (c) {
+                return res.json({ code: 0, message: 'Success', data: c });
+            } else {
+                errCode2(res, `Không tìm thấy coin từ id ${id}`);
             }
         });
     }
