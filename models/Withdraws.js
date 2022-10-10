@@ -14,7 +14,7 @@ const withdraw = new mongoose.Schema(
         user: { type: String, default: '' },
         amountUsd: { type: Number, default: 0 },
         amountVnd: { type: Number, default: 0 },
-        symbol: { type: String, default: '' }
+        symbol: { type: String, default: 'USDT' }
     },
     { timestamps: true }
 );

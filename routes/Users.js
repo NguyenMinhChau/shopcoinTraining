@@ -71,6 +71,14 @@ router.post(
     UsersContronller.deposit
 );
 
+// [PUT] /users/updateImageDeposit/:id
+router.put(
+    '/updateImageDeposit',
+    checkAuth,
+    single.single('statement'),
+    UsersContronller.updateImageDeposit
+);
+
 // [POST] /users/withdraw
 router.post('/withdraw', checkAuth, UsersContronller.withdraw);
 

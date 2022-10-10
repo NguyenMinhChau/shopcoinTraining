@@ -35,4 +35,7 @@ router.put(
 // [DELETE] /coins/deleteCoin/:id
 router.delete('/deleteCoin/:id', checkAuth, CoinsController.deleteCoin);
 
+// [GET] /coins/updatePriceAllCoin
+router.get('/updatePriceAllCoin', CoinsController.updatePriceAllCoin);
+
 module.exports = router;

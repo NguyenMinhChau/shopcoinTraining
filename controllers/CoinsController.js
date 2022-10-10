@@ -245,6 +245,34 @@ class CoinsController {
             }
         });
     }
+
+    // [GET] /coins/updatePriceAllCoin
+    updatePriceAllCoin(req, res) {
+        const binance = methods.getBinance(req, res);
+        binance
+            .futuresPrices()
+            .then((prices) => {
+                let p = new Promise((resolve, reject) => {
+                    let coins = [];
+                    for (const [key, value] of Object.entries(prices)) {
+                        //console.log(`${key}: ${value}`);
+                        Coins.findOne({ symbol: key }, (err, coin) => {
+                            if (err) reject(err);
+
+                            if (coin) {
+                                coins.push(key);
+                            }
+                        });
+                    }
+                    resolve(coins);
+                });
+                p.then((coins) => {
+                    console.log(coins);
+                    return res.json('OKK');
+                }).catch((err) => console.log(err));
+            })
+            .catch((err) => console.log(err));
+    }
 }
 
 module.exports = new CoinsController();

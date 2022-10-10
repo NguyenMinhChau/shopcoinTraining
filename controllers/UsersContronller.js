@@ -719,7 +719,7 @@ class UsersController {
             upperCaseAlphabets: false,
             specialChars: false
         });
-        const { amount, user, amountVnd, symbol } = req.body;
+        const { amount, user, amountVnd } = req.body;
 
         const infoUser = Users.findOne({ 'payment.email': user });
         const [info] = await Promise.all([infoUser]);
@@ -728,6 +728,94 @@ class UsersController {
             if (err) errCode1(res, err);
 
             if (payment) {
+                let file1 = req.file;
+                if (file1) {
+                    let name1 = file1.originalname;
+                    let destination = file1.destination;
+                    let newPath1 = Path.join(
+                        destination,
+                        Date.now() + '-' + name1
+                    );
+
+                    let typeFile = file1.mimetype.split('/')[0];
+
+                    if (typeFile == 'image') {
+                        fs.renameSync(file1.path, newPath1);
+                        let statement = Path.join(
+                            '/images',
+                            Date.now() + '-' + name1
+                        );
+
+                        const newDeposit = new Deposits({
+                            code: codeDeposit,
+                            amount: amount,
+                            user: user,
+                            method: {
+                                code: payment.code,
+                                methodName: payment.methodName,
+                                accountName: payment.accountName,
+                                accountNumber: payment.accountNumber,
+                                transform: amountVnd
+                            },
+                            amountUsd:
+                                parseFloat(amountVnd) / payment.rateDeposit,
+                            amountVnd: amountVnd,
+                            statement: statement
+                        });
+
+                        newDeposit
+                            .save()
+                            .then((deposit) => {
+                                return res.json({ code: 0, data: deposit });
+                            })
+                            .catch((err) => {
+                                errCode1(res, err);
+                            });
+                    } else {
+                        errCode2(res, `Please upload file is image`);
+                    }
+                } else {
+                    const newDeposit = new Deposits({
+                        code: codeDeposit,
+                        amount: amount,
+                        user: user,
+                        method: {
+                            code: payment.code,
+                            methodName: payment.methodName,
+                            accountName: payment.accountName,
+                            accountNumber: payment.accountNumber,
+                            transform: amountVnd
+                        },
+                        amountUsd: parseFloat(amountVnd) / payment.rateDeposit,
+                        amountVnd: amountVnd
+                    });
+
+                    newDeposit
+                        .save()
+                        .then((deposit) => {
+                            return res.json({ code: 0, data: deposit });
+                        })
+                        .catch((err) => {
+                            errCode1(res, err);
+                        });
+                }
+            } else {
+                errCode2(
+                    res,
+                    `Payment is not valid valid with account number = ${account}`
+                );
+            }
+        });
+    }
+
+    // [PUT] /users/updateImageDeposit/:id
+    async updateImageDeposit(req, res) {
+        const { id } = req.params;
+
+        Deposits.findById(id, (err, deposit) => {
+            if (err) methods.errCode1(res, err);
+
+            if (deposit) {
                 let file1 = req.file;
                 let name1 = file1.originalname;
                 let destination = file1.destination;
@@ -741,40 +829,33 @@ class UsersController {
                         '/images',
                         Date.now() + '-' + name1
                     );
-
-                    const newDeposit = new Deposits({
-                        code: codeDeposit,
-                        amount: amount,
-                        user: user,
-                        method: {
-                            code: payment.code,
-                            methodName: payment.methodName,
-                            accountName: payment.accountName,
-                            accountNumber: payment.accountNumber,
-                            transform: amountVnd
-                        },
-                        amountUsd: parseFloat(amountVnd) / payment.rateDeposit,
-                        amountVnd: amountVnd,
-                        symbol: symbol,
-                        statement: statement
-                    });
-
-                    newDeposit
+                    deposit.statement = statement;
+                    deposit
                         .save()
-                        .then((deposit) => {
-                            return res.json({ code: 0, data: deposit });
+                        .then((d) => {
+                            if (d) {
+                                successCode(
+                                    res,
+                                    `Upload image successfully with id = ${id}`
+                                );
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Can not save statement with id = ${id}`
+                                );
+                            }
                         })
                         .catch((err) => {
                             errCode1(res, err);
                         });
                 } else {
-                    errCode2(res, 'Please upload image');
+                    errCode2(
+                        res,
+                        `Please upload image for update image deposit`
+                    );
                 }
             } else {
-                errCode2(
-                    res,
-                    `Payment is not valid valid with account number = ${account}`
-                );
+                errCode2(res, `Deposit is not valid with id =${id}`);
             }
         });
     }
@@ -786,7 +867,7 @@ class UsersController {
             specialChars: false
         });
 
-        const { user, amountUsd, symbol } = req.body;
+        const { user, amountUsd } = req.body;
 
         const infoUser = Users.findOne({ 'payment.email': user });
         const [info] = await Promise.all([infoUser]);
@@ -810,8 +891,7 @@ class UsersController {
                         transform: money
                     },
                     amountUsd: amountUsd,
-                    amountVnd: money,
-                    symbol: symbol
+                    amountVnd: money
                 });
 
                 newWithdraw
