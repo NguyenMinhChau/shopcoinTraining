@@ -73,7 +73,7 @@ router.post(
 
 // [PUT] /users/updateImageDeposit/:id
 router.put(
-    '/updateImageDeposit',
+    '/updateImageDeposit/:id',
     checkAuth,
     single.single('statement'),
     UsersContronller.updateImageDeposit
