@@ -70,7 +70,7 @@ bot.onText(/\/list_sell_coin/, async (msg) => {
     });
 });
 
-let scriptWarn = ['/list_buy_coin'];
+let scriptWarn = ['/list_buy_coin', '/list_sell_coin'];
 
 const handleConfirmBuyCoin = async (id, status) => {
     const data = await axios.put(
