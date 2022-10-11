@@ -740,37 +740,49 @@ class UsersController {
                     let typeFile = file1.mimetype.split('/')[0];
 
                     if (typeFile == 'image') {
-                        fs.renameSync(file1.path, newPath1);
-                        let statement = Path.join(
-                            '/images',
-                            Date.now() + '-' + name1
+                        //fs.renameSync(file1.path, newPath1);
+                        const resultSaveFile = rename_file(
+                            file1.path,
+                            newPath1
                         );
+                        resultSaveFile
+                            .then((data) => {
+                                let statement = Path.join(
+                                    '/images',
+                                    Date.now() + '-' + name1
+                                );
 
-                        const newDeposit = new Deposits({
-                            code: codeDeposit,
-                            amount: amount,
-                            user: user,
-                            method: {
-                                code: payment.code,
-                                methodName: payment.methodName,
-                                accountName: payment.accountName,
-                                accountNumber: payment.accountNumber,
-                                transform: amountVnd
-                            },
-                            amountUsd:
-                                parseFloat(amountVnd) / payment.rateDeposit,
-                            amountVnd: amountVnd,
-                            statement: statement
-                        });
+                                const newDeposit = new Deposits({
+                                    code: codeDeposit,
+                                    amount: amount,
+                                    user: user,
+                                    method: {
+                                        code: payment.code,
+                                        methodName: payment.methodName,
+                                        accountName: payment.accountName,
+                                        accountNumber: payment.accountNumber,
+                                        transform: amountVnd
+                                    },
+                                    amountUsd:
+                                        parseFloat(amountVnd) /
+                                        payment.rateDeposit,
+                                    amountVnd: amountVnd,
+                                    statement: statement
+                                });
 
-                        newDeposit
-                            .save()
-                            .then((deposit) => {
-                                return res.json({ code: 0, data: deposit });
+                                newDeposit
+                                    .save()
+                                    .then((deposit) => {
+                                        return res.json({
+                                            code: 0,
+                                            data: deposit
+                                        });
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
                             })
-                            .catch((err) => {
-                                errCode1(res, err);
-                            });
+                            .catch((err) => errCode1(res, err));
                     } else {
                         errCode2(res, `Please upload file is image`);
                     }
@@ -816,44 +828,38 @@ class UsersController {
             if (err) methods.errCode1(res, err);
 
             if (deposit) {
-                let file1 = req.file;
-                let name1 = file1.originalname;
-                let destination = file1.destination;
-                let newPath1 = Path.join(destination, Date.now() + '-' + name1);
-
-                let typeFile = file1.mimetype.split('/')[0];
-
-                if (typeFile == 'image') {
-                    fs.renameSync(file1.path, newPath1);
-                    let statement = Path.join(
-                        '/images',
-                        Date.now() + '-' + name1
-                    );
-                    deposit.statement = statement;
-                    deposit
-                        .save()
-                        .then((d) => {
-                            if (d) {
-                                successCode(
-                                    res,
-                                    `Upload image successfully with id = ${id}`
-                                );
-                            } else {
-                                errCode2(
-                                    res,
-                                    `Can not save statement with id = ${id}`
-                                );
-                            }
-                        })
-                        .catch((err) => {
-                            errCode1(res, err);
-                        });
-                } else {
-                    errCode2(
-                        res,
-                        `Please upload image for update image deposit`
-                    );
-                }
+                //console.log(req.body);
+                let date = Date.now();
+                let file = req.body.image;
+                let oldPath = file.uri;
+                let nameImage = `${date}-${file.fileName}`;
+                let newPath = Path.join('/upload/images/', nameImage);
+                const resultSaveFile = rename_file(oldPath, newPath);
+                resultSaveFile
+                    .then((data) => {
+                        let statement = Path.join('/images', nameImage);
+                        deposit.statement = statement;
+                        deposit.updatedAt = new Date();
+                        deposit
+                            .save()
+                            .then((d) => {
+                                if (d) {
+                                    successCode(
+                                        res,
+                                        `Upload image successfully with id = ${id}`
+                                    );
+                                } else {
+                                    errCode2(
+                                        res,
+                                        `Can not save statement with id = ${id}`
+                                    );
+                                }
+                            })
+                            .catch((err) => {
+                                errCode1(res, err);
+                            });
+                    })
+                    .catch((err) => errCode1(res, err));
             } else {
                 errCode2(res, `Deposit is not valid with id =${id}`);
             }
