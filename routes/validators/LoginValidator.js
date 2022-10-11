@@ -1,13 +1,19 @@
-const {check} = require('express-validator')
+const { check } = require('express-validator');
 
 module.exports = [
     check('email')
-    .exists().withMessage('Vui lòng nhập email')
-    .notEmpty().withMessage('Email không được để trống')
-    .isEmail().withMessage('Email không hợp lệ'),
+        .exists()
+        .withMessage('Vui lòng nhập email')
+        .notEmpty()
+        .withMessage('Email không được để trống')
+        .isEmail()
+        .withMessage('Email không hợp lệ'),
 
     check('password')
-    .exists().withMessage('Vui lòng nhập password')
-    .notEmpty().withMessage('Password không được để trống')
-    .isLength({min: 6}).withMessage('Mật khẩu phải từ 6 kí tự trở lên'),
-]
+        .exists()
+        .withMessage('Vui lòng nhập password')
+        .notEmpty()
+        .withMessage('Password không được để trống')
+        .isLength({ min: 6 })
+        .withMessage('Mật khẩu phải từ 6 kí tự trở lên')
+];
