@@ -13,6 +13,7 @@ const { Server } = require('socket.io');
 const { createServer } = require('http');
 // require('./bot/bot');
 const methods = require('./function');
+const Rates = require('./routes/Rate');
 
 const app = express();
 
@@ -58,6 +59,7 @@ app.use('/coins', Coins);
 app.use('/users', Users);
 app.use('/authen', Authen);
 app.use('/ranks', Ranks);
+app.use('/rates', Rates);
 
 app.use('/', (req, res) => {
     const io = methods.getSocket(req, res);
