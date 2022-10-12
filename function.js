@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const Binance = require('node-binance-api');
 const { APIKEYSOCKET, APISECRETSOCKET } = process.env;
+const rateLimit = require('express-rate-limit');
 
 let transporter = nodemailer.createTransport({
     host: process.env.HOST,
@@ -9,6 +10,17 @@ let transporter = nodemailer.createTransport({
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS
+    }
+});
+
+const appLimit = rateLimit({
+    windowMs: 10 * 1000, // 1 minutes
+    max: 2,
+    handler: function (req, res) {
+        res.status(429).send({
+            status: 500,
+            message: 'Too many requests!'
+        });
     }
 });
 
@@ -59,5 +71,7 @@ module.exports = {
     getSocket: function (req, res) {
         const io = req.app.get('conn');
         return io;
-    }
+    },
+
+    appLimit
 };

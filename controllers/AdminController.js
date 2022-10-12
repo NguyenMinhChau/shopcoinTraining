@@ -1632,7 +1632,7 @@ class AdminController {
                             if (b) {
                                 successCode(
                                     res,
-                                    `Change status of bill type buyCoin with id = ${id}`
+                                    `Change status of bill type sell coin with id = ${id}`
                                 );
                             } else {
                                 errCode2(

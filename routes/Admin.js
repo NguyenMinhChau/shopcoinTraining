@@ -6,20 +6,13 @@ const multer = require('multer');
 const upload = multer({ dest: 'uploads/images' });
 
 // import validator
-const checkRegister = require('./validators/RegisterValidation');
-const LoginValidator = require('./validators/LoginValidator');
 const PaymentValidator = require('./validators/PaymentValidator');
 const WithdrawValidator = require('./validators/WithdrawValidator');
-const updatePaymentValidator = require('./validators/updatePaymentValidator');
-
-const updateWithdrawValidator = require('./validators/updateWithdrawValidator');
-const updateDepositValidator = require('./validators/updateDepositValidator');
 
 // import auth
 const checkAuth = require('../auth/auth');
 const checkAdmin = require('../auth/checkAmin');
-const { check } = require('express-validator');
-const { changeCoin } = require('../controllers/AdminController');
+const { appLimit } = require('../function');
 
 // [GET] /admin/getAllUser
 router.get('/getAllUser', AdminController.getAllUser);
@@ -151,6 +144,9 @@ router.put(
     AdminController.handleSellCoin
 );
 
+// [PUT] /admin/testHandleSellCoinBot/:id
+router.put('/handleSellCoinBot/:id', AdminController.handleSellCoin);
+
 //[PUT] /admin/updateRankUser/:id
 router.put(
     '/updateRankUser/:id',
@@ -217,6 +213,9 @@ router.put(
     checkAdmin,
     AdminController.handleDeposit
 );
+
+// [PUT] /admin/handleDepositBot/:id
+router.put('/handleDepositBot/:id', AdminController.handleDeposit);
 
 // [PUT] /admin/handleWithdraw/:id
 router.put(
