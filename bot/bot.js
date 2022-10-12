@@ -146,7 +146,7 @@ bot.onText(/\/list_withdraw/, async (msg) => {
         });
         resolve('OK');
     }).then((val) => {
-        status = 'ConfirmDeposit';
+        status = 'ConfirmWithdraw';
     });
 });
 
@@ -170,7 +170,7 @@ bot.onText(/\/list_coin/, async (msg) => {
         });
         resolve('OK');
     }).then((val) => {
-        status = 'ConfirmDeposit';
+        status = 'ConfirmCoin';
     });
 });
 
@@ -202,86 +202,52 @@ const handleDeposit = async (id, status) => {
     );
 };
 
+const handleConfirmWithdraw = async (id, status) => {
+    return handleService(
+        status,
+        `http://localhost:4000/admin/handleWithdrawBot/${id}`
+    );
+};
+
+const handleServiceMesaage = async (bot, chatId, raw, def) => {
+    const idOrder = raw[1];
+    const statusOrder = raw[2];
+
+    const order = {
+        chatId: chatId,
+        idOrder: idOrder,
+        statusOrder: statusOrder == 'on_hold' ? 'On hold' : statusOrder
+    };
+
+    const res = await def(
+        idOrder,
+        statusOrder == 'on_hold' ? 'On hold' : statusOrder
+    );
+    if (res.code === 0) {
+        bot.sendMessage(chatId, JSON.stringify(order) + '. ' + res.message);
+    } else {
+        bot.sendMessage(chatId, JSON.stringify(order) + '. ' + res.message);
+    }
+};
+
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     if (!msg.text.includes(scriptWarn)) {
         const raw = msg.text.split(' ');
         if (status === 'ConfirmBuyCoin' && raw[0] === 'ConfirmBuyCoin') {
-            const idOrder = raw[1];
-            const statusOrder = raw[2];
-
-            const order = {
-                chatId: chatId,
-                idOrder: idOrder,
-                statusOrder: statusOrder == 'on_hold' ? 'On hold' : statusOrder
-            };
-            const res = await handleConfirmBuyCoin(
-                idOrder,
-                statusOrder == 'on_hold' ? 'On hold' : statusOrder
-            );
-            if (res.code === 0) {
-                bot.sendMessage(
-                    chatId,
-                    JSON.stringify(order) + '. ' + res.message
-                );
-            } else {
-                bot.sendMessage(
-                    chatId,
-                    JSON.stringify(order) + '. ' + res.message
-                );
-            }
+            handleServiceMesaage(bot, chatId, raw, handleConfirmBuyCoin);
         } else if (
             status === 'ConfirmSellCoin' &&
             raw[0] === 'ConfirmSellCoin'
         ) {
-            const idOrder = raw[1];
-            const statusOrder = raw[2];
-
-            const order = {
-                chatId: chatId,
-                idOrder: idOrder,
-                statusOrder: statusOrder == 'on_hold' ? 'On hold' : statusOrder
-            };
-            const res = await handleConfirmSellCoin(
-                idOrder,
-                statusOrder == 'on_hold' ? 'On hold' : statusOrder
-            );
-            if (res.code === 0) {
-                bot.sendMessage(
-                    chatId,
-                    JSON.stringify(order) + '. ' + res.message
-                );
-            } else {
-                bot.sendMessage(
-                    chatId,
-                    JSON.stringify(order) + '. ' + res.message
-                );
-            }
+            handleServiceMesaage(bot, chatId, raw, handleConfirmSellCoin);
         } else if (status === 'ConfirmDeposit' && raw[0] === 'ConfirmDeposit') {
-            const idOrder = raw[1];
-            const statusOrder = raw[2];
-
-            const order = {
-                chatId: chatId,
-                idOrder: idOrder,
-                statusOrder: statusOrder == 'on_hold' ? 'On hold' : statusOrder
-            };
-
-            const res = await handleDeposit(
-                idOrder,
-                statusOrder == 'on_hold' ? 'On hold' : statusOrder
-            );
-            if (res.code === 0) {
-                bot.sendMessage(
-                    chatId,
-                    JSON.stringify(order) + '. ' + res.message
-                );
-            } else {
-                bot.sendMessage(
-                    chatId,
-                    JSON.stringify(order) + '. ' + res.message
-                );
-            }
+            handleServiceMesaage(bot, chatId, raw, handleDeposit);
+        } else if (
+            status === 'ConfirmWithdraw' &&
+            raw[0] === 'ConfirmWithdraw'
+        ) {
+            handleServiceMesaage(bot, chatId, raw, handleConfirmWithdraw);
         }
     }
 });

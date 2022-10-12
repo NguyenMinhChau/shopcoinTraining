@@ -225,4 +225,7 @@ router.put(
     AdminController.handleWithdraw
 );
 
+// [PUT] /admin/handleWithdrawBot/:id
+router.put('/handleWithdrawBot/:id', AdminController.handleWithdraw);
+
 module.exports = router;
