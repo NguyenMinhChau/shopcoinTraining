@@ -23,6 +23,14 @@ const getDataDeposit = async () => {
     return getData(`${URL_API}/admin/getAllDeposit/`);
 };
 
+const getDataWithdraw = async () => {
+    return getData(`${URL_API}/admin/getAllWithdraw/`);
+};
+
+const getDataCoin = async () => {
+    return getData(`${URL_API}/coins/getAllCoin`);
+};
+
 let status = '';
 
 bot.onText(/\/list_buy_coin/, async (msg) => {
@@ -99,6 +107,63 @@ bot.onText(/\/list_deposit/, async (msg) => {
             })}</b>
             <b>Amount USDT: ${data.amountUsd}</b>
             <b>Status: ${data.status}</b>
+            `,
+                { parse_mode: 'HTML' }
+            );
+        });
+        resolve('OK');
+    }).then((val) => {
+        status = 'ConfirmDeposit';
+    });
+});
+
+bot.onText(/\/list_withdraw/, async (msg) => {
+    const chatId = msg.chat.id;
+    const { dataWithdraw } = await getDataWithdraw();
+    // console.log(data);
+    new Promise((resolve, reject) => {
+        dataWithdraw.forEach((data, index) => {
+            bot.sendMessage(
+                chatId,
+                `
+            <b>STT: ${index + 1}</b>
+            <b>Id : ${data._id}</b>
+            <b>Email: ${data.user}</b>
+            <b>Code: ${data.code}</b>
+            <b>Amount: ${data.amount}</b>
+            <b>Bank Name: ${data.method.methodName}</b>
+            <b>Name account: ${data.method.accountName}</b>
+            <b>Number account: ${data.method.accountNumber}</b>
+            <b>Transform: ${data.method.transform.toLocaleString('it-IT', {
+                style: 'currency',
+                currency: 'VND'
+            })}</b>
+            <b>Amount USDT: ${data.amountUsd}</b>
+            <b>Status: ${data.status}</b>
+            `,
+                { parse_mode: 'HTML' }
+            );
+        });
+        resolve('OK');
+    }).then((val) => {
+        status = 'ConfirmDeposit';
+    });
+});
+
+bot.onText(/\/list_coin/, async (msg) => {
+    const chatId = msg.chat.id;
+    const { data } = await getDataCoin();
+    // console.log(data);
+    new Promise((resolve, reject) => {
+        data.forEach((data, index) => {
+            bot.sendMessage(
+                chatId,
+                `
+            <b>STT: ${index + 1}</b>
+            <b>Id : ${data._id}</b>
+            <b>Name: ${data.name}</b>
+            <b>Symbol: ${data.symbol}</b>
+            <b>Full Name Coin: ${data.fullName}</b>
             `,
                 { parse_mode: 'HTML' }
             );
