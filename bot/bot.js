@@ -182,31 +182,19 @@ const handleService = async (status, url) => {
 };
 
 const handleConfirmBuyCoin = async (id, status) => {
-    return handleService(
-        status,
-        `http://localhost:4000/admin/handleBuyCoinBot/${id}`
-    );
+    return handleService(status, `${URL_API}/admin/handleBuyCoinBot/${id}`);
 };
 
 const handleConfirmSellCoin = async (id, status) => {
-    return handleService(
-        status,
-        `http://localhost:4000/admin/handleSellCoinBot/${id}`
-    );
+    return handleService(status, `${URL_API}/admin/handleSellCoinBot/${id}`);
 };
 
 const handleDeposit = async (id, status) => {
-    return handleService(
-        status,
-        `http://localhost:4000/admin/handleDepositBot/${id}`
-    );
+    return handleService(status, `${URL_API}/admin/handleDepositBot/${id}`);
 };
 
 const handleConfirmWithdraw = async (id, status) => {
-    return handleService(
-        status,
-        `http://localhost:4000/admin/handleWithdrawBot/${id}`
-    );
+    return handleService(status, `${URL_API}/admin/handleWithdrawBot/${id}`);
 };
 
 const handleServiceMesaage = async (bot, chatId, raw, def) => {
