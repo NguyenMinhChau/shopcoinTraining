@@ -43,8 +43,8 @@ class RatesController {
             });
     }
 
-    // [GET] /rates/getRateById/:id
-    async getRateById(req, res) {
+    // [GET] /rates/updateRateById/:id
+    async updateRateById(req, res) {
         const { id } = req.params;
         Rates.findById(id, (err, rate) => {
             if (err) errCode1(res, err);
@@ -131,6 +131,19 @@ class RatesController {
                 errCode2(res, `No rate with id = ${id}`);
             }
         });
+    }
+
+    // [GET] /rates/getRate/:id
+    async getRate(req, res) {
+        const { id } = req.params;
+        try {
+            const result = Rates.findById(id);
+            const [rate] = await Promise.all([result]);
+
+            dataCode(res, rate);
+        } catch (err) {
+            errCode1(res, err);
+        }
     }
 }
 

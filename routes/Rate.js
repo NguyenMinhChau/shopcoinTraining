@@ -6,7 +6,10 @@ const controller = require('../controllers/RatesController');
 // [POST] /rates/add/:rates
 router.post('/add', controller.add);
 
-// [GET] /rates/getRateById/:id
-router.get('/getRateById/:id', controller.getRateById);
+// [GET] /rates/updateRateById/:id
+router.get('/updateRateById/:id', controller.updateRateById);
+
+// [GET] /rates/getRate/:id
+router.get('/getRate/:id', controller.getRate);
 
 module.exports = router;
