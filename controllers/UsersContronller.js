@@ -829,7 +829,7 @@ class UsersController {
 
             if (deposit) {
                 let date = Date.now();
-                let file = req.files;
+                let file = req.files[0];
                 let oldPath = file.path;
                 let nameImage = `${date}-${file.originalname}`;
                 let destination = file.destination;
