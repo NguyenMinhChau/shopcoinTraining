@@ -8,6 +8,8 @@ const fs = require('fs');
 // import Models
 const User = require('../models/User');
 
+const { errCode1, errCode2, dataCode } = require('../function');
+
 class AuthenController {
     // [POST] /admin/register
     register(req, res) {
@@ -89,33 +91,42 @@ class AuthenController {
                     .compare(password, user.payment.password)
                     .then((match) => {
                         if (match) {
-                            const token = jwt.sign(
-                                { id: user._id, email },
-                                process.env.JWT_SECRET,
-                                {
-                                    expiresIn: '30s'
-                                }
-                            );
-                            const refreshToken = jwt.sign(
-                                { id: user._id, email },
-                                process.env.JWT_SECRET,
-                                {
-                                    expiresIn: '1d'
-                                }
-                            );
+                            const locked = user.blockUser;
 
-                            res.cookie('jwt', refreshToken, {
-                                httpOnly: true,
-                                sameSite: 'strict',
-                                secure: false,
-                                maxAge: 60 * 1000 * 60
-                            });
+                            if (locked) {
+                                errCode2(
+                                    res,
+                                    `User is locked !! Please contact admin to unlock your account !!!`
+                                );
+                            } else {
+                                const token = jwt.sign(
+                                    { id: user._id, email },
+                                    process.env.JWT_SECRET,
+                                    {
+                                        expiresIn: '30s'
+                                    }
+                                );
+                                const refreshToken = jwt.sign(
+                                    { id: user._id, email },
+                                    process.env.JWT_SECRET,
+                                    {
+                                        expiresIn: '1d'
+                                    }
+                                );
 
-                            return res.json({
-                                code: 0,
-                                userInfo: user,
-                                token: token
-                            });
+                                res.cookie('jwt', refreshToken, {
+                                    httpOnly: true,
+                                    sameSite: 'strict',
+                                    secure: false,
+                                    maxAge: 60 * 1000 * 60
+                                });
+
+                                return res.json({
+                                    code: 0,
+                                    userInfo: user,
+                                    token: token
+                                });
+                            }
                         } else {
                             return res.json({
                                 code: 2,
