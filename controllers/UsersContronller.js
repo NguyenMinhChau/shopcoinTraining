@@ -828,12 +828,12 @@ class UsersController {
             if (err) methods.errCode1(res, err);
 
             if (deposit) {
-                //console.log(req.body);
                 let date = Date.now();
-                let file = req.body.image;
-                let oldPath = file.uri;
-                let nameImage = `${date}-${file.fileName}`;
-                let newPath = Path.join('/upload/images/', nameImage);
+                let file = req.files;
+                let oldPath = file.path;
+                let nameImage = `${date}-${file.originalname}`;
+                let destination = file.destination;
+                let newPath = Path.join(destination, nameImage);
                 const resultSaveFile = rename_file(oldPath, newPath);
                 resultSaveFile
                     .then((data) => {
