@@ -19,7 +19,10 @@ const verifyToken = (req, res, next) => {
                 if (err) errCode1(res, err);
 
                 if (user) {
-                    if (user.payment.rule === 'admin' || user.blockUser) {
+                    if (
+                        user.payment.rule === 'admin' ||
+                        user.blockUser === false
+                    ) {
                         next();
                     } else {
                         errCode2(
