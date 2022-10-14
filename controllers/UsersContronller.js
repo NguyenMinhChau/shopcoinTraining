@@ -903,7 +903,21 @@ class UsersController {
                 newWithdraw
                     .save()
                     .then((withdraw) => {
-                        dataCode(res, withdraw);
+                        const {
+                            withdrawMail
+                        } = require('../mailform/withdrawForm');
+                        methods
+                            .mail(
+                                user,
+                                withdrawMail(user, withdraw.amountUsd),
+                                'Withdraw message'
+                            )
+                            .then((result) => {
+                                dataCode(res, withdraw);
+                            })
+                            .catch((err) => {
+                                errCode1(res, err);
+                            });
                     })
                     .catch((err) => {
                         errCode1(res, err);
