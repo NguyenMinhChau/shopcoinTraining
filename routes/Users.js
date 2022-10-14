@@ -82,6 +82,13 @@ router.put(
 // [POST] /users/withdraw
 router.post('/withdraw', checkAuth, UsersContronller.withdraw);
 
+// [GET] /users/enterOTPWithdraw/:code
+router.get(
+    '/enterOTPWithdraw/:code',
+    checkAuth,
+    UsersContronller.enterOTPWithdraw
+);
+
 // [GET] /users/getAllBuy/:id
 router.get('/getAllBuy/:id', UsersContronller.getAllBuy);
 

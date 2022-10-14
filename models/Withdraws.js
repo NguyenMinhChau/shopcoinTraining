@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const withdraw = new mongoose.Schema(
     {
-        status: { type: String, default: 'On hold' },
+        status: { type: String, default: 'Waiting' },
         code: { type: String, default: '' },
         amount: { type: Number, default: 1 },
         method: {

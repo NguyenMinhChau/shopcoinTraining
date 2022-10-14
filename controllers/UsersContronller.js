@@ -9,8 +9,14 @@ const jwt = require('jsonwebtoken');
 const Deposits = require('../models/Deposits');
 const Withdraws = require('../models/Withdraws');
 const Payments = require('../models/Payments');
+const Otps = require('../models/OTP');
 
 const { validationResult } = require('express-validator');
+const {
+    withdrawMail,
+    confirmWithdraw,
+    withdrawSuccess
+} = require('../mailform/withdrawForm');
 
 const methods = require('../function');
 const { resolve } = require('path');
@@ -866,6 +872,54 @@ class UsersController {
         });
     }
 
+    // [GET] /users/enterOTPWithdraw/:code
+    enterOTPWithdraw(req, res) {
+        const { code } = req.params;
+        Otps.findOne({ code: code }, (err, otp) => {
+            if (err) errCode1(res, err);
+
+            if (otp) {
+                const id = otp.id;
+                Withdraws.findById(id, (err, withdraw) => {
+                    if (err) errCode1(res, err);
+
+                    if (withdraw) {
+                        withdraw.status = 'On hold';
+                        withdraw
+                            .save()
+                            .then((result) => {
+                                methods
+                                    .mail(
+                                        withdraw.user,
+                                        withdrawSuccess(
+                                            withdraw.user,
+                                            withdraw.amount
+                                        ),
+                                        'Success Withdraw Mail'
+                                    )
+                                    .then((result) => {
+                                        successCode(
+                                            res,
+                                            `Request withdraw is success with id = ${id}`
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
+                            })
+                            .catch((err) => {
+                                errCode1(res, err);
+                            });
+                    } else {
+                        errCode2(res, `Withdraw is not valid with id = ${id}`);
+                    }
+                });
+            } else {
+                errCode2(res, `Otp is expired or is not valid !!!`);
+            }
+        });
+    }
+
     // [POST] /users/withdraw
     async withdraw(req, res) {
         const codeWithdraw = otpGenerator.generate(20, {
@@ -903,17 +957,31 @@ class UsersController {
                 newWithdraw
                     .save()
                     .then((withdraw) => {
-                        const {
-                            withdrawMail
-                        } = require('../mailform/withdrawForm');
+                        const codeOtp = otpGenerator.generate(4, {
+                            lowerCaseAlphabets: false,
+                            upperCaseAlphabets: false,
+                            specialChars: false
+                        });
+
                         methods
                             .mail(
                                 user,
-                                withdrawMail(user, withdraw.amountUsd),
+                                confirmWithdraw(user, codeOtp),
                                 'Withdraw message'
                             )
                             .then((result) => {
-                                dataCode(res, withdraw);
+                                const otp = new Otps({
+                                    code: codeOtp,
+                                    email: user,
+                                    id: withdraw._id
+                                });
+                                otp.save()
+                                    .then((result) => {
+                                        dataCode(res, withdraw);
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
                             })
                             .catch((err) => {
                                 errCode1(res, err);
