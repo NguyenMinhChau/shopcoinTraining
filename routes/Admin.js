@@ -92,7 +92,7 @@ router.delete(
 );
 
 // [DELETE] /admin/delWithdraw/:id
-router.delete('/deleteWithdraw/:id', AdminController.deleteWithdraw);
+router.delete('/delWithdraw/:id', AdminController.deleteWithdraw);
 
 // [GET] /admin/getDeposit/:id
 router.get('/getDeposit/:id', AdminController.getDeposit);

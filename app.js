@@ -14,6 +14,7 @@ const { createServer } = require('http');
 // require('./bot/bot');
 const methods = require('./function');
 const Rates = require('./routes/Rate');
+const { default: axios } = require('axios');
 
 const app = express();
 
@@ -60,6 +61,11 @@ app.use('/users', Users);
 app.use('/authen', Authen);
 app.use('/ranks', Ranks);
 app.use('/rates', Rates);
+
+setInterval(() => {
+    axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`);
+    //axios.get(`http://localhost:4000/coins/updatePriceAllCoin`);
+}, 2000);
 
 app.use('/', (req, res) => {
     const io = methods.getSocket(req, res);

@@ -12,6 +12,7 @@ const coin = new mongoose.Schema(
         index: { type: Number, default: 0.0 },
         name: { type: String, default: '' },
         symbol: { type: String, default: '' },
+        price: { type: Number, default: 0 },
         fullName: { type: String, default: '' },
         private: { type: Boolean, default: false },
         unshow: { type: [String], default: [] }
