@@ -65,7 +65,7 @@ app.use('/rates', Rates);
 setInterval(() => {
     axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`);
     //axios.get(`http://localhost:4000/coins/updatePriceAllCoin`);
-}, 2000);
+}, 1000);
 
 app.use('/', (req, res) => {
     const io = methods.getSocket(req, res);
