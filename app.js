@@ -15,7 +15,7 @@ const { createServer } = require('http');
 const methods = require('./function');
 const Rates = require('./routes/Rate');
 const { default: axios } = require('axios');
-const { PassThrough } = require('stream');
+const fs = require('fs');
 
 const app = express();
 
@@ -62,6 +62,22 @@ app.use('/users', Users);
 app.use('/authen', Authen);
 app.use('/ranks', Ranks);
 app.use('/rates', Rates);
+
+const DIR_UPLOADS = `./uploads`;
+const images = `${DIR_UPLOADS}/images`;
+const images_user = `${DIR_UPLOADS}/images_user`;
+
+if (!fs.existsSync(DIR_UPLOADS)) {
+    fs.mkdirSync(DIR_UPLOADS);
+}
+
+if (!fs.existsSync(images)) {
+    fs.mkdirSync(images);
+}
+
+if (!fs.existsSync(images_user)) {
+    fs.mkdirSync(images_user);
+}
 
 setInterval(() => {
     axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`);
