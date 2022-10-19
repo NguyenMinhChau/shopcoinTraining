@@ -22,23 +22,6 @@ const listPrice = async (key) => {
     return p;
 };
 
-const listPriceLowCoin = async () => {};
-
-const listCoinA = async (symbol) => {
-    let p = new Promise((resolve, reject) => {
-        Coins.findOne({ symbol: symbol }, (err, coin) => {
-            if (err) reject(err);
-
-            if (coin) {
-                setTimeout(() => {
-                    resolve(coin);
-                }, 2000);
-            }
-        });
-    });
-    return p;
-};
-
 class CoinsController {
     // [POST] /coins/add
     addCoin(req, res) {
@@ -250,11 +233,29 @@ class CoinsController {
     // [GET] /coins/getCoin/:id
     getCoin(req, res) {
         const { id } = req.params;
+        const io = methods.getSocket(req, res);
+        const binance = methods.getBinance(req, res);
         Coins.findById(id, (err, c) => {
             if (err)
                 return res.status(404).json({ code: 1, message: err.message });
 
             if (c) {
+                // binance.futuresMiniTickerStream(c.symbol, (data) => {
+                //     io.emit('send-data-coin', data);
+                // });
+                setInterval(() => {
+                    axios
+                        .get(
+                            `https://api.binance.com/api/v3/ticker/24hr?symbol=${c.symbol}`
+                        )
+                        .then((result) => {
+                            if (result.data) {
+                                io.emit(`send-data-${c.symbol}`, result.data);
+                            }
+                        })
+                        .catch((err) => {});
+                }, 1000);
+
                 return res.json({ code: 0, message: 'Success', data: c });
             } else {
                 return res.status(500).json({
