@@ -290,40 +290,23 @@ class AdminController {
         const typeShow = req.query.show || 10;
         const step = typeShow * pages - typeShow;
 
-        // User.find({}, async (err, admin) => {
-        //   if (err) {
-        //     errCode1(res, err)
-        //   }
-
-        //   if (admin) {
-        //     // User.find({}, async (err, uss) => {
-        //     //   if (err) {
-        //     //     return res.status(404).json({ code: 1, message: err.message })
-        //     //   }
-        //     // })
-        //     let total = User.countDocuments()
-        //     const [totalAll] = await Promise.all([total])
-        //     return res.json({ code: 0, dataUser: admin, page: pages, typeShow: typeShow, total: totalAll })
-        //   } else {
-        //     errCode2(res, "No user")
-        //   }
-        // })
-        //   .sort({ createAt: 'desc'})
-        //   .limit(typeShow)
-        //   .skip(step)
-        const total = User.countDocuments();
-        const allUser = User.find()
-            .sort({ createdAt: 'desc' })
-            .skip(step)
-            .limit(typeShow);
-        const [totalUser, all] = await Promise.all([total, allUser]);
-        return res.json({
-            code: 0,
-            dataUser: all,
-            page: pages,
-            typeShow: typeShow,
-            total: totalUser
-        });
+        try {
+            const total = User.countDocuments();
+            const allUser = User.find()
+                .sort({ createdAt: 'desc' })
+                .skip(step)
+                .limit(typeShow);
+            const [totalUser, all] = await Promise.all([total, allUser]);
+            return res.json({
+                code: 0,
+                dataUser: all,
+                page: pages,
+                typeShow: typeShow,
+                total: totalUser
+            });
+        } catch {
+            errCode2(res, `Error something in get all users`);
+        }
     }
 
     // [DELETE] /admin/deleteUser/:id
@@ -364,38 +347,27 @@ class AdminController {
     }
 
     // [GET] /admin/getAllPayments
-    getAllPayments(req, res) {
+    async getAllPayments(req, res) {
         const pages = req.query.page || 1;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
-
-        Payments.find({}, (err, payments) => {
-            // total payment in page
-            if (err) {
-                errCode1(res, err);
-            }
-            if (payments) {
-                Payments.find({}, (err, ps) => {
-                    // for total payment
-                    if (err) {
-                        errCode1(res, err);
-                    }
-
-                    return res.json({
-                        code: 0,
-                        dataUser: payments,
-                        page: pages,
-                        typeShow: typeShow,
-                        total: ps.length
-                    });
-                });
-            } else {
-                errCode2(res, 'No payments');
-            }
-        })
-            .sort({ createdAt: -1, updatedAt: -1 })
-            .limit(typeShow)
-            .skip(step);
+        try {
+            const total = Payments.countDocuments();
+            const allPayment = Payments.find()
+                .sort({ createdAt: 'desc' })
+                .skip(step)
+                .limit(typeShow);
+            const [totalPayment, all] = await Promise.all([total, allPayment]);
+            return res.json({
+                code: 0,
+                dataUser: all,
+                page: pages,
+                typeShow: typeShow,
+                total: totalPayment
+            });
+        } catch {
+            errCode2(res, `No payment`);
+        }
     }
 
     // [GET] /admin/getPayment/:id
@@ -407,7 +379,8 @@ class AdminController {
             }
 
             if (p) {
-                return res.json({ code: 0, message: 'Success', data: p });
+                // return res.json({ code: 0, message: 'Success', data: p });
+                methods.dataCode(res, p);
             } else {
                 errCode2(res, `Payment is not valid with id = ${id}`);
             }
@@ -423,7 +396,8 @@ class AdminController {
             }
 
             if (p) {
-                return res.json({ code: 0, message: 'Success', data: p });
+                // return res.json({ code: 0, message: 'Success', data: p });
+                methods.dataCode(res, p);
             } else {
                 errCode2(res, `Payment is not valid with id = ${id}`);
             }
@@ -439,7 +413,8 @@ class AdminController {
             }
 
             if (p) {
-                return res.json({ code: 0, message: 'Success', data: p });
+                // return res.json({ code: 0, message: 'Success', data: p });
+                methods.dataCode(res, p);
             } else {
                 errCode2(res, `Deposit is not valid with id = ${id}`);
             }
@@ -447,69 +422,57 @@ class AdminController {
     }
 
     // [GET] /admin/getAllWithdraw
-    getAllWithdraw(req, res) {
+    async getAllWithdraw(req, res) {
         const pages = req.query.page || 1;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
-
-        Withdraws.find({}, (err, withdraws) => {
-            if (err) {
-                errCode1(res, err);
-            }
-            if (withdraws) {
-                Withdraws.find({}, (err, wds) => {
-                    if (err) {
-                        errCode1(res, err);
-                    }
-
-                    return res.json({
-                        code: 0,
-                        dataWithdraw: withdraws,
-                        page: pages,
-                        typeShow: typeShow,
-                        total: wds.length
-                    });
-                });
-            } else {
-                errCode2(res, 'No withdraw');
-            }
-        })
-            .sort({ createdAt: -1, updatedAt: -1 })
-            .limit(typeShow)
-            .skip(step);
+        try {
+            const total = Withdraws.countDocuments();
+            const allWithdraw = Withdraws.find()
+                .sort({ createdAt: 'desc' })
+                .skip(step)
+                .limit(typeShow);
+            const [totalWithdraw, all] = await Promise.all([
+                total,
+                allWithdraw
+            ]);
+            return res.json({
+                code: 0,
+                dataUser: all,
+                page: pages,
+                typeShow: typeShow,
+                total: totalWithdraw
+            });
+        } catch {
+            errCode2(res, `Error something`);
+        }
     }
 
     // [GET] /admin/getAllDeposit
-    getAllDeposit(req, res) {
+    async getAllDeposit(req, res) {
         const pages = req.query.page || 1;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
-
-        Deposits.find({}, (err, deposits) => {
-            if (err) {
-                errCode1(res, err);
-            }
-            if (deposits) {
-                Deposits.find({}, (err, wds) => {
-                    if (err) {
-                        errCode1(res, err);
-                    }
-
-                    return res.json({
-                        code: 0,
-                        dataDeposit: deposits,
-                        page: pages,
-                        typeShow: typeShow,
-                        total: wds.length
-                    });
-                });
-            } else {
-                errCode2(res, 'No Deposit');
-            }
-        })
-            .sort({ createdAt: -1, updatedAt: -1 })
-            .limit(typeShow)
-            .skip(step);
+        try {
+            const total = Deposits.countDocuments();
+            const allDeposits = Deposits.find()
+                .sort({ createdAt: 'desc' })
+                .skip(step)
+                .limit(typeShow);
+            const [totalDeposits, all] = await Promise.all([
+                total,
+                allDeposits
+            ]);
+            return res.json({
+                code: 0,
+                dataUser: all,
+                page: pages,
+                typeShow: typeShow,
+                total: totalDeposits
+            });
+        } catch {
+            errCode2(res, `Error something about get deposit`);
+        }
     }
 
     // [PUT] /admin/updatePayment/:id
@@ -552,21 +515,15 @@ class AdminController {
         const { id } = req.params;
         Payments.findById(id, (err, payment) => {
             if (err) {
-                return res.json({ code: 1, message: err.message });
+                errCode1(res, err);
             }
             if (payment) {
                 Payments.deleteOne({ _id: id }, (err) => {
-                    if (err) return res.json({ code: 3, message: err.message });
-                    return res.json({
-                        code: 0,
-                        message: 'Delete payment success with id = ' + id
-                    });
+                    if (err) errCode1(res, err);
+                    successCode(res, 'Delete payment success with id = ' + id);
                 });
             } else {
-                return res.json({
-                    code: 2,
-                    message: 'No payment is valid !!!'
-                });
+                errCode2(res, 'No payment is valid !!!');
             }
         });
     }
@@ -623,7 +580,7 @@ class AdminController {
         let date = new Date().toUTCString();
         Deposits.findById(id, (err, deposit) => {
             if (err) {
-                return res.json({ code: 1, message: err.message });
+                errCode1(res, err);
             } else {
                 req.body.updatedAt = date;
                 deposit
@@ -686,7 +643,7 @@ class AdminController {
             newWithdraw
                 .save()
                 .then((withdraw) => {
-                    return res.json({ code: 0, data: withdraw });
+                    methods.dataCode(res, withdraw);
                 })
                 .catch((err) => {
                     errCode1(res, err);
@@ -698,7 +655,7 @@ class AdminController {
                 message = messages[m];
                 break;
             }
-            return res.json({ code: 1, message: message.msg });
+            errCode2(res, message.msg);
         }
     }
 
@@ -729,7 +686,7 @@ class AdminController {
             newPayment
                 .save()
                 .then((payment) => {
-                    return res.json({ code: 0, data: payment });
+                    methods.dataCode(res, payment);
                 })
                 .catch((err) => {
                     errCode1(res, err);
@@ -741,7 +698,7 @@ class AdminController {
                 message = messages[m];
                 break;
             }
-            return res.json({ code: 1, message: message.msg });
+            errCode2(res, message.msg);
         }
     }
 
@@ -766,7 +723,7 @@ class AdminController {
             !symbol ||
             !req.file
         ) {
-            return res.json({ code: 2, message: 'Please enter fields' });
+            errCode2(res, 'Please enter fields');
         }
 
         let file1 = req.file;
@@ -796,90 +753,69 @@ class AdminController {
             newDeposit
                 .save()
                 .then((deposit) => {
-                    return res.json({ code: 0, data: deposit });
+                    methods.dataCode(res, deposit);
                 })
                 .catch((err) => {
                     errCode1(res, err);
                 });
         } else {
-            return res.json({ code: 2, message: 'Please upload image' });
+            errCode2(res, 'Please upload image');
         }
     }
 
     // [GET] /admin/getAllSell
     async getAllSell(req, res) {
-        const pages = req.query.page || 1;
-        const typeShow = req.query.show || 10;
-        const step = parseInt(pages - 1) * parseInt(typeShow);
         const query = {
             type: 'SellCoin'
         };
-        Bills.find({}, (err, bill) => {
-            if (err) {
-                errCode1(res, err);
-            }
-            if (bill) {
-                Bills.find(query, async (err, wds) => {
-                    if (err) {
-                        return res
-                            .status(404)
-                            .json({ code: 3, message: err.message });
-                    }
-                    const allSells = Bills.find(query);
-                    const [total] = await Promise.all([allSells]);
-                    return res.json({
-                        code: 0,
-                        sells: wds,
-                        page: pages,
-                        typeShow: typeShow,
-                        total: total.length
-                    });
-                })
-                    .sort({ createdAt: -1, updatedAt: -1 })
-                    .limit(typeShow)
-                    .skip(step);
-            } else {
-                errCode2(res, 'No bill of type sell');
-            }
-        });
+
+        const pages = req.query.page || 1;
+        const typeShow = req.query.show || 10;
+        const step = parseInt(pages - 1) * parseInt(typeShow);
+        try {
+            const total = Bills.countDocuments(query);
+            const allBuys = Bills.find(query)
+                .sort({ createdAt: 'desc' })
+                .skip(step)
+                .limit(typeShow);
+            const [totalBuys, all] = await Promise.all([total, allBuys]);
+            return res.json({
+                code: 0,
+                data: all,
+                page: pages,
+                typeShow: typeShow,
+                total: totalBuys
+            });
+        } catch {
+            errCode2(res, `Error something in get Buys`);
+        }
     }
 
     // [GET] /admin/getAllBuy
     async getAllBuy(req, res) {
-        const pages = req.query.page || 1;
-        const typeShow = req.query.show || 10;
-        const step = parseInt(pages - 1) * parseInt(typeShow);
         const query = {
             type: 'BuyCoin'
         };
-        Bills.find({}, (err, bill) => {
-            if (err) {
-                errCode1(res, err);
-            }
-            if (bill) {
-                Bills.find(query, async (err, wds) => {
-                    if (err) {
-                        return res
-                            .status(404)
-                            .json({ code: 3, message: err.message });
-                    }
-                    const allBuys = Bills.find(query);
-                    const [total] = await Promise.all([allBuys]);
-                    return res.json({
-                        code: 0,
-                        sells: wds,
-                        page: pages,
-                        typeShow: typeShow,
-                        total: total.length
-                    });
-                })
-                    .sort({ createdAt: -1, updatedAt: -1 })
-                    .limit(typeShow)
-                    .skip(step);
-            } else {
-                errCode2(res, 'No bill of type Buy');
-            }
-        });
+        const pages = req.query.page || 1;
+        const typeShow = req.query.show || 10;
+        const step = parseInt(pages - 1) * parseInt(typeShow);
+        try {
+            const total = Bills.countDocuments(query);
+            const allSells = Bills.find(query)
+                .sort({ createdAt: 'desc' })
+                .skip(step)
+                .limit(typeShow);
+            const [totalSells, all] = await Promise.all([total, allSells]);
+            return res.json({
+                code: 0,
+                data: all,
+                page: pages,
+                typeShow: typeShow,
+                total: totalSells
+            });
+        } catch {
+            errCode2(res, `Error something in get Buys`);
+        }
     }
 
     // [GET] /admin/getSell/:id
@@ -893,11 +829,7 @@ class AdminController {
             if (err) errCode1(res, err);
 
             if (bill) {
-                return res.json({
-                    code: 0,
-                    message: 'successfully',
-                    data: bill
-                });
+                methods.dataCode(res, bill);
             } else {
                 errCode2(res, `Biên bán coin này không tồn tại với id = ${id}`);
             }
@@ -915,11 +847,7 @@ class AdminController {
             if (err) errCode1(res, err);
 
             if (bill) {
-                return res.json({
-                    code: 0,
-                    message: 'successfully',
-                    data: bill
-                });
+                methods.dataCode(res, bill);
             } else {
                 errCode2(res, `Biên bán coin này không tồn tại với id = ${id}`);
             }
