@@ -15,6 +15,7 @@ const { createServer } = require('http');
 const methods = require('./function');
 const Rates = require('./routes/Rate');
 const { default: axios } = require('axios');
+const { PassThrough } = require('stream');
 
 const app = express();
 
@@ -64,26 +65,30 @@ app.use('/rates', Rates);
 
 setInterval(() => {
     axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`);
-    //axios.get(`http://localhost:4000/coins/updatePriceAllCoin`);
-}, 1000);
+    axios.get(`${process.env.URL_API}/coins/updateHighLowAllCoin`);
+    // axios.get('http://localhost:4000/coins/updatePriceAllCoin');
+    // axios.get('http://localhost:4000/coins/updateHighLowAllCoin');
+}, 60000);
 
-app.use('/', (req, res) => {
-    const io = methods.getSocket(req, res);
-    const binance = methods.getBinance(req, res);
-    binance.futuresMiniTickerStream('BTCUSDT', (data) => {
-        // io.sockets.emit('send-data-btc', data);
-        const { close, high, low } = data;
-        // console.log(close, high, low);
-        io.emit('send-data-btc', data);
-    });
-    binance
-        .futuresPrices()
-        .then((prices) => {
-            io.emit('send-price-future', prices);
-        })
-        .catch((err) => console.log(err));
-    return res.send('Welcome to api shop coin');
-});
+// app.use('/', (req, res) => {
+//     const io = methods.getSocket(req, res);
+//     const binance = methods.getBinance(req, res);
+//     setInterval(() => {
+//         binance.futuresMiniTickerStream('BTCUSDT', (data) => {
+//             // io.sockets.emit('send-data-btc', data);
+//             const { close, high, low } = data;
+//             // console.log(close, high, low);
+//             io.emit('send-data-btc', data);
+//         });
+//         binance
+//             .futuresPrices()
+//             .then((prices) => {
+//                 io.emit('send-price-future', prices);
+//             })
+//             .catch((err) => console.log(err));
+//     }, 3000);
+//     return res.send('Welcome to api shop coin');
+// });
 
 let port = process.env.PORT || 3000;
 httpServer.listen(port, () => console.log('Running at port ' + port));

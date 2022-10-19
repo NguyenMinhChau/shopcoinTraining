@@ -38,4 +38,7 @@ router.delete('/deleteCoin/:id', checkAuth, CoinsController.deleteCoin);
 // [GET] /coins/updatePriceAllCoin
 router.get('/updatePriceAllCoin', CoinsController.updatePriceAllCoin);
 
+// [GET] /coins/updateHighLowAllCoin
+router.get('/updateHighLowAllCoin', CoinsController.updateHighLowAllCoin);
+
 module.exports = router;

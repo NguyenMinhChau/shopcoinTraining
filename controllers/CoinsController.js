@@ -5,6 +5,7 @@ const { validationResult } = require('express-validator');
 
 const methods = require('../function');
 const { successCode, errCode1, errCode2 } = require('../function');
+const { default: axios } = require('axios');
 
 const listPrice = async (key) => {
     let p = new Promise((resolve, reject) => {
@@ -12,7 +13,26 @@ const listPrice = async (key) => {
             if (err) reject(err);
 
             if (coin) {
-                resolve(coin);
+                setTimeout(() => {
+                    resolve(coin);
+                }, 2000);
+            }
+        });
+    });
+    return p;
+};
+
+const listPriceLowCoin = async () => {};
+
+const listCoinA = async (symbol) => {
+    let p = new Promise((resolve, reject) => {
+        Coins.findOne({ symbol: symbol }, (err, coin) => {
+            if (err) reject(err);
+
+            if (coin) {
+                setTimeout(() => {
+                    resolve(coin);
+                }, 2000);
             }
         });
     });
@@ -274,6 +294,28 @@ class CoinsController {
                 return res.json('Update Price coins is successfully');
             })
             .catch((err) => console.log(err));
+    }
+
+    // [GET] /coins/updateHighLowAllCoin
+    async updateHighLowAllCoin(req, res) {
+        const allCoins = Coins.find();
+        const [coins] = await Promise.all([allCoins]);
+        coins.forEach((coin) => {
+            axios
+                .get(
+                    `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin.symbol}`
+                )
+                .then((result) => {
+                    if (result.data) {
+                        let { lowPrice, highPrice } = result.data;
+                        coin.low = lowPrice;
+                        coin.high = highPrice;
+                        coin.save();
+                    }
+                })
+                .catch((err) => {});
+        });
+        successCode(res, `Update high low for all coins successfully`);
     }
 }
 
