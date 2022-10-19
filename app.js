@@ -22,7 +22,8 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origins: ['http://localhost:5500']
+        //origins: ['http://localhost:5500']
+        origin: '*'
     }
 });
 
