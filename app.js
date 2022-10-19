@@ -22,7 +22,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: '*'
+        origins: ['http://localhost:5500']
     }
 });
 
@@ -80,10 +80,10 @@ if (!fs.existsSync(images_user)) {
 }
 
 setInterval(() => {
-    // axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`);
-    // axios.get(`${process.env.URL_API}/coins/updateHighLowAllCoin`);
-    axios.get('http://localhost:4000/coins/updatePriceAllCoin');
-    axios.get('http://localhost:4000/coins/updateHighLowAllCoin');
+    // axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`).catch(err => {});
+    // axios.get(`${process.env.URL_API}/coins/updateHighLowAllCoin`).catch(err => {});
+    // axios.get('http://localhost:4000/coins/updatePriceAllCoin').catch(err => {});
+    // axios.get('http://localhost:4000/coins/updateHighLowAllCoin').catch(err => {});
 }, 60000);
 
 // app.use('/', (req, res) => {

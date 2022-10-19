@@ -4,23 +4,8 @@ const fs = require('fs');
 const { validationResult } = require('express-validator');
 
 const methods = require('../function');
-const { successCode, errCode1, errCode2 } = require('../function');
+const { successCode, errCode1, errCode2, dataCode } = require('../function');
 const { default: axios } = require('axios');
-
-const listPrice = async (key) => {
-    let p = new Promise((resolve, reject) => {
-        Coins.findOne({ symbol: key }, (err, coin) => {
-            if (err) reject(err);
-
-            if (coin) {
-                setTimeout(() => {
-                    resolve(coin);
-                }, 2000);
-            }
-        });
-    });
-    return p;
-};
 
 class CoinsController {
     // [POST] /coins/add
@@ -46,14 +31,15 @@ class CoinsController {
                 fullName: fullname,
                 unshow: [unshow]
             });
-            // return res.json(coin)
             coin.save()
                 .then((coin) => {
-                    return res.json({ code: 1, coin: coin });
+                    // return res.json({ code: 1, coin: coin });
+                    dataCode(res, coin);
                 })
-                .catch((err) => res.json({ code: 2, message: err.message }));
+                .catch((err) => errCode1(res, err));
         } else {
-            return res.json({ code: 2, message: 'Please upload image' });
+            // return res.json({ code: 2, message: 'Please upload image' });
+            errCode2(res, 'Please upload image');
         }
     }
 
@@ -62,7 +48,7 @@ class CoinsController {
         let result = validationResult(req);
         if (result.errors.length === 0) {
             const { id } = req.params;
-            const { name, symbol, fullName } = req.body;
+            // const { name, symbol, fullName } = req.body;
             let date = Date.now();
             let file = req.file;
             if (file) {
@@ -133,9 +119,7 @@ class CoinsController {
             } else {
                 Coins.findById(id, (err, coin) => {
                     if (err) {
-                        return res
-                            .status(404)
-                            .json({ code: 1, message: err.message });
+                        errCode1(res, err);
                     }
 
                     if (coin) {
@@ -159,9 +143,7 @@ class CoinsController {
                             }
                         });
                     } else {
-                        return res
-                            .status(404)
-                            .json({ code: 1, message: 'Coin is not valid' });
+                        errCode2(res, 'Coin is not valid');
                     }
                 });
             }
@@ -172,7 +154,8 @@ class CoinsController {
                 message = messages[m];
                 break;
             }
-            return res.json({ code: 1, message: message.msg });
+            // return res.json({ code: 1, message: message.msg });
+            errCode2(res, message.msg);
         }
     }
 
@@ -234,10 +217,10 @@ class CoinsController {
     getCoin(req, res) {
         const { id } = req.params;
         const io = methods.getSocket(req, res);
-        const binance = methods.getBinance(req, res);
+        // const binance = methods.getBinance(req, res);
         Coins.findById(id, (err, c) => {
-            if (err)
-                return res.status(404).json({ code: 1, message: err.message });
+            if (err) errCode1(res, err);
+            // return res.status(404).json({ code: 1, message: err.message });
 
             if (c) {
                 // binance.futuresMiniTickerStream(c.symbol, (data) => {
@@ -298,6 +281,7 @@ class CoinsController {
                 })
                 .catch((err) => {});
         });
+        successCode(res, `Update price for all coins successfully`);
     }
 
     // [GET] /coins/updateHighLowAllCoin
