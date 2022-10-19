@@ -360,7 +360,7 @@ class AdminController {
             const [totalPayment, all] = await Promise.all([total, allPayment]);
             return res.json({
                 code: 0,
-                dataUser: all,
+                data: all,
                 page: pages,
                 typeShow: typeShow,
                 total: totalPayment
@@ -438,7 +438,7 @@ class AdminController {
             ]);
             return res.json({
                 code: 0,
-                dataUser: all,
+                data: all,
                 page: pages,
                 typeShow: typeShow,
                 total: totalWithdraw
@@ -465,7 +465,7 @@ class AdminController {
             ]);
             return res.json({
                 code: 0,
-                dataUser: all,
+                data: all,
                 page: pages,
                 typeShow: typeShow,
                 total: totalDeposits
