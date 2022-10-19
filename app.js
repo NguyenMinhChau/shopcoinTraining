@@ -80,10 +80,10 @@ if (!fs.existsSync(images_user)) {
 }
 
 setInterval(() => {
-    axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`);
-    axios.get(`${process.env.URL_API}/coins/updateHighLowAllCoin`);
-    // axios.get('http://localhost:4000/coins/updatePriceAllCoin');
-    // axios.get('http://localhost:4000/coins/updateHighLowAllCoin');
+    // axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`);
+    // axios.get(`${process.env.URL_API}/coins/updateHighLowAllCoin`);
+    axios.get('http://localhost:4000/coins/updatePriceAllCoin');
+    axios.get('http://localhost:4000/coins/updateHighLowAllCoin');
 }, 60000);
 
 // app.use('/', (req, res) => {

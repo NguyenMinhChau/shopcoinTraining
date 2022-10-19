@@ -282,19 +282,22 @@ class CoinsController {
 
     // [GET] /coins/updatePriceAllCoin
     async updatePriceAllCoin(req, res) {
-        const binance = methods.getBinance(req, res);
-        binance
-            .futuresPrices()
-            .then((prices) => {
-                for (const [key, value] of Object.entries(prices)) {
-                    listPrice(key).then((re) => {
-                        re.price = value;
-                        re.save();
-                    });
-                }
-                return res.json('Update Price coins is successfully');
-            })
-            .catch((err) => console.log(err));
+        const allCoins = Coins.find();
+        const [coins] = await Promise.all([allCoins]);
+        coins.forEach((coin) => {
+            axios
+                .get(
+                    `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin.symbol}`
+                )
+                .then((result) => {
+                    if (result.data) {
+                        let { lastPrice } = result.data;
+                        coin.price = lastPrice;
+                        coin.save();
+                    }
+                })
+                .catch((err) => {});
+        });
     }
 
     // [GET] /coins/updateHighLowAllCoin
