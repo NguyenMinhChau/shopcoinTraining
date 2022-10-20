@@ -11,7 +11,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const { Server } = require('socket.io');
 const { createServer } = require('http');
-require('./bot/bot');
+// require('./bot/bot');
 const methods = require('./function');
 const Rates = require('./routes/Rate');
 const { default: axios } = require('axios');
