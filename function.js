@@ -4,12 +4,14 @@ const { APIKEYSOCKET, APISECRETSOCKET } = process.env;
 const rateLimit = require('express-rate-limit');
 
 let transporter = nodemailer.createTransport({
-    host: process.env.HOST,
-    port: process.env.PORT_MAIL,
-    secure: false, // true for 465, false for other ports
+    service: 'gmail',
     auth: {
+        type: 'OAuth2',
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS
+        pass: process.env.MAIL_PASS,
+        clientId: process.env.CLIENT_ID,
+        clientSecret: process.env.CLIENT_SECRET,
+        refreshToken: process.env.REFRESH_TOKEN_MAIL
     }
 });
 
@@ -46,7 +48,7 @@ module.exports = {
             from: process.env.EMAIL,
             to: email,
             subject: subject,
-            text: message
+            html: message
         };
         let p = new Promise((resolve, reject) => {
             transporter.sendMail(mailOptions, (err, info) => {
