@@ -1,5 +1,6 @@
 const Users = require('../models/User');
 const Bills = require('../models/Bills');
+const Coins = require('../models/Coins');
 const fs = require('fs');
 const Path = require('path');
 const bcrypt = require('bcrypt');
@@ -23,6 +24,16 @@ const { resolve } = require('path');
 const { errCode2, successCode, errCode1, dataCode } = require('../function');
 
 // support function
+
+const getCoinByIdSupport = async (id, amount, callback) => {
+    const coin = Coins.findById(id);
+    const [c] = await Promise.all([coin]);
+    let r = {
+        amount: amount,
+        coin: c
+    };
+    setTimeout(() => callback(r), 500);
+};
 
 function rename_file(oldPath, newPath) {
     let p = new Promise((resolve, reject) => {
@@ -355,6 +366,38 @@ class UsersController {
                 );
             } else {
                 methods.errCode2(res, `User is not valid with id = ${id}`);
+            }
+        });
+    }
+
+    // [GET] /users/getAllCoinOfUser/:id
+    async getAllCoinOfUser(req, res) {
+        const { id } = req.params;
+        Users.findById(id, (err, user) => {
+            if (err) errCode1(res, err);
+
+            if (user) {
+                let coins = user.coins;
+                let listCoins = [];
+                coins.forEach(async (coin) => {
+                    listCoins.push(
+                        new Promise((resolve) => {
+                            getCoinByIdSupport(
+                                coin._id,
+                                coin.amount,
+                                (result) => {
+                                    resolve(result);
+                                }
+                            );
+                        })
+                    );
+                });
+                // listCoins
+                Promise.all(listCoins).then((coins) => {
+                    dataCode(res, coins);
+                });
+            } else {
+                errCode2(res, `User is not valid with id = ${id}`);
             }
         });
     }
