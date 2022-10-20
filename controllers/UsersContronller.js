@@ -1045,6 +1045,24 @@ class UsersController {
             }
         });
     }
+
+    // [DELETE] /users/cancelWithdraw/:id
+    cancelWithdraw(req, res) {
+        const { id } = req.params;
+        Withdraws.findById(id, (err, withdraw) => {
+            if (err) {
+                errCode1(res, err);
+            }
+            if (withdraw) {
+                Withdraws.deleteOne({ _id: id }, (err) => {
+                    if (err) errCode1(res, err);
+                    successCode(res, `Delete withdraw success with id = ${id}`);
+                });
+            } else {
+                errCode2(res, `No withdraw with id = ${id}`);
+            }
+        });
+    }
 }
 
 module.exports = new UsersController();

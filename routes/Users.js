@@ -104,4 +104,7 @@ router.get('/getAllWithdraw/:email', UsersContronller.getAllWithdraw);
 // [GET] /users/getAllCoinOfUser/:id
 router.get('/getAllCoinOfUser/:id', UsersContronller.getAllCoinOfUser);
 
+// [DELETE] /users/cancelWithdraw/:id
+router.delete('/cancelWithdraw/:id', UsersContronller.cancelWithdraw);
+
 module.exports = router;
