@@ -75,17 +75,25 @@ function buyCoin(
 
         if (rank == 'Demo') {
             fee_rank = 0;
-            new_fee = parseFloat(fee) - parseFloat(fee_rank);
+            new_fee = methods.precisionRound(
+                parseFloat(fee) - parseFloat(fee_rank)
+            );
         } else if (rank == 'Standard') {
             fee_rank = 0;
-            new_fee = parseFloat(fee) - parseFloat(fee_rank);
+            new_fee = methods.precisionRound(
+                parseFloat(fee) - parseFloat(fee_rank)
+            );
         } else if (rank == 'Pro') {
             fee_rank = 0.01;
-            new_fee = parseFloat(fee) - parseFloat(fee_rank);
+            new_fee = methods.precisionRound(
+                parseFloat(fee) - parseFloat(fee_rank)
+            );
         } else if (rank == 'VIP') {
             // for rank VIP
             fee_rank = 0.02;
-            new_fee = parseFloat(fee) - parseFloat(fee_rank);
+            new_fee = methods.precisionRound(
+                parseFloat(fee) - parseFloat(fee_rank)
+            );
         }
         const newBill = new Bills({
             fee: new_fee,
@@ -143,17 +151,25 @@ function sellCoin(
 
     if (rank == 'Demo') {
         fee_rank = 0;
-        new_fee = parseFloat(fee) - parseFloat(fee_rank);
+        new_fee = methods.precisionRound(
+            parseFloat(fee) - parseFloat(fee_rank)
+        );
     } else if (rank == 'Standard') {
         fee_rank = 0;
-        new_fee = parseFloat(fee) - parseFloat(fee_rank);
+        new_fee = methods.precisionRound(
+            parseFloat(fee) - parseFloat(fee_rank)
+        );
     } else if (rank == 'Pro') {
         fee_rank = 0.01;
-        new_fee = parseFloat(fee) - parseFloat(fee_rank);
+        new_fee = methods.precisionRound(
+            parseFloat(fee) - parseFloat(fee_rank)
+        );
     } else if (rank == 'VIP') {
         // for rank VIP
         fee_rank = 0.02;
-        new_fee = parseFloat(fee) - parseFloat(fee_rank);
+        new_fee = methods.precisionRound(
+            parseFloat(fee) - parseFloat(fee_rank)
+        );
     }
 
     const newBill = new Bills({
@@ -659,7 +675,7 @@ class UsersController {
                         if (f) {
                             const mailContent = `
               <h1>this is link is reset password with otp = ${otp}</h1>
-              <p>http://localhost:3000/users/getOTP/${token}</p>
+              
 
               <h2>Best Regards</h2>
             `;
@@ -670,10 +686,11 @@ class UsersController {
                             );
                             resultSendMail
                                 .then((val) => {
-                                    methods.successCode(
-                                        res,
-                                        `Send mail for forgot password successfully to email = ${email}`
-                                    );
+                                    // methods.successCode(
+                                    //     res,
+                                    //     `Send mail for forgot password successfully to email = ${email}`
+                                    // );
+                                    methods.dataCode(res, token);
                                 })
                                 .catch((err) => {
                                     methods.errCode1(res, err);
@@ -722,10 +739,14 @@ class UsersController {
                                             user.save()
                                                 .then((u) => {
                                                     if (u) {
-                                                        successCode(
-                                                            res,
-                                                            `Change password successfully of user with email = ${decoded.email}`
-                                                        );
+                                                        Forgot.deleteOne({
+                                                            _id: f.id
+                                                        }).then((ok) => {
+                                                            dataCode(
+                                                                res,
+                                                                token
+                                                            );
+                                                        });
                                                     } else {
                                                         errCode2(
                                                             res,
@@ -816,9 +837,10 @@ class UsersController {
                                         accountNumber: payment.accountNumber,
                                         transform: amountVnd
                                     },
-                                    amountUsd:
+                                    amountUsd: methods.precisionRound(
                                         parseFloat(amountVnd) /
-                                        payment.rateDeposit,
+                                            payment.rateDeposit
+                                    ),
                                     amountVnd: amountVnd,
                                     statement: statement
                                 });
@@ -851,7 +873,9 @@ class UsersController {
                             accountNumber: payment.accountNumber,
                             transform: amountVnd
                         },
-                        amountUsd: parseFloat(amountVnd) / payment.rateDeposit,
+                        amountUsd: methods.precisionRound(
+                            parseFloat(amountVnd) / payment.rateDeposit
+                        ),
                         amountVnd: amountVnd
                     });
 
@@ -984,8 +1008,9 @@ class UsersController {
             if (err) errCode1(res, err);
 
             if (payment) {
-                const money =
-                    parseFloat(amountUsd) * parseFloat(payment.rateWithdraw);
+                const money = methods.precisionRound(
+                    parseFloat(amountUsd) * parseFloat(payment.rateWithdraw)
+                );
                 const newWithdraw = new Withdraws({
                     user: user,
                     code: codeWithdraw,
