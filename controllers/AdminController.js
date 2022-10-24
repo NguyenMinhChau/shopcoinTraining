@@ -39,9 +39,8 @@ function successCode(res, mess) {
 // add coin is exist
 function addCoinExist(user, amount, position) {
     let p = new Promise((resolve, reject) => {
-        user.coins[position].amount = methods.precisionRound(
-            parseFloat(user.coins[position].amount) + parseFloat(amount)
-        );
+        user.coins[position].amount =
+            parseFloat(user.coins[position].amount) + parseFloat(amount);
         user.save()
             .then((u) => {
                 if (u) {
@@ -227,9 +226,7 @@ function handleSubCoinAuto(symbol, amount, user) {
                     );
                     let subAmount = parseFloat(amount);
 
-                    let afterAmount = methods.precisionRound(
-                        parseFloat(currAmount - subAmount)
-                    );
+                    let afterAmount = parseFloat(currAmount - subAmount);
 
                     if (afterAmount > 0) {
                         let resultSubCoinNotDisappear = subCoinNotDisappear(
@@ -898,23 +895,10 @@ class AdminController {
                                 result
                                     .then((val) => {
                                         user.Wallet.balance =
-                                            methods.precisionRound(
-                                                parseFloat(
-                                                    user.Wallet.balance
-                                                ) -
-                                                    methods.precisionRound(
-                                                        parseFloat(
-                                                            prepare.amount
-                                                        ) *
-                                                            parseFloat(
-                                                                prepare.price
-                                                            ) *
-                                                            (1 +
-                                                                parseFloat(
-                                                                    prepare.fee
-                                                                ))
-                                                    )
-                                            );
+                                            parseFloat(user.Wallet.balance) -
+                                            parseFloat(prepare.amount) *
+                                                parseFloat(prepare.price) *
+                                                (1 + parseFloat(prepare.fee));
                                         user.save()
                                             .then((u) => {
                                                 if (u) {
@@ -1002,19 +986,9 @@ class AdminController {
                                 resultCanCel
                                     .then((ress) => {
                                         user.Wallet.balance =
-                                            methods.precisionRound(
-                                                parseFloat(
-                                                    user.Wallet.balance
-                                                ) +
-                                                    methods.precisionRound(
-                                                        parseFloat(
-                                                            prepare.amount
-                                                        ) *
-                                                            parseFloat(
-                                                                prepare.price
-                                                            )
-                                                    )
-                                            );
+                                            parseFloat(user.Wallet.balance) +
+                                            parseFloat(prepare.amount) *
+                                                parseFloat(prepare.price);
                                         user.save()
                                             .then((u) => {
                                                 if (u) {
@@ -1133,19 +1107,9 @@ class AdminController {
                                 result
                                     .then((val) => {
                                         user.Wallet.balance =
-                                            methods.precisionRound(
-                                                parseFloat(
-                                                    user.Wallet.balance
-                                                ) +
-                                                    methods.precisionRound(
-                                                        parseFloat(
-                                                            prepare.amount
-                                                        ) *
-                                                            parseFloat(
-                                                                prepare.price
-                                                            )
-                                                    )
-                                            );
+                                            parseFloat(user.Wallet.balance) +
+                                            parseFloat(prepare.amount) *
+                                                parseFloat(prepare.price);
                                         user.save()
                                             .then((u) => {
                                                 if (u) {
@@ -1233,19 +1197,9 @@ class AdminController {
                                 resultCanCel
                                     .then((ress) => {
                                         user.Wallet.balance =
-                                            methods.precisionRound(
-                                                parseFloat(
-                                                    user.Wallet.balance
-                                                ) -
-                                                    methods.precisionRound(
-                                                        parseFloat(
-                                                            prepare.amount
-                                                        ) *
-                                                            parseFloat(
-                                                                prepare.price
-                                                            )
-                                                    )
-                                            );
+                                            parseFloat(user.Wallet.balance) -
+                                            parseFloat(prepare.amount) *
+                                                parseFloat(prepare.price);
                                         user.save()
                                             .then((u) => {
                                                 if (u) {
@@ -1575,10 +1529,9 @@ class AdminController {
             if (user) {
                 if (coin === 'USDT') {
                     if (quantity > 0) {
-                        user.Wallet.balance = methods.precisionRound(
+                        user.Wallet.balance =
                             parseFloat(user.Wallet.balance) +
-                                parseFloat(quantity)
-                        );
+                            parseFloat(quantity);
                         user.save()
                             .then((u) => {
                                 if (u) {
@@ -1591,10 +1544,9 @@ class AdminController {
                                 errCode1(err);
                             });
                     } else {
-                        let resultSub = methods.precisionRound(
+                        let resultSub =
                             parseFloat(user.Wallet.balance) +
-                                parseFloat(quantity)
-                        );
+                            parseFloat(quantity);
                         if (resultSub > 0) {
                             user.Wallet.balance = resultSub;
                             user.save()
@@ -1718,15 +1670,13 @@ class AdminController {
 
                     if (user) {
                         if (status === 'Confirmed') {
-                            const new_balance = methods.precisionRound(
+                            const new_balance =
                                 parseFloat(user.Wallet.balance) +
-                                    parseFloat(deposit.amountUsd)
-                            );
+                                parseFloat(deposit.amountUsd);
                             user.Wallet.balance = new_balance;
-                            user.Wallet.deposit = methods.precisionRound(
+                            user.Wallet.deposit =
                                 parseFloat(user.Wallet.deposit) +
-                                    parseFloat(deposit.amountUsd)
-                            );
+                                parseFloat(deposit.amountUsd);
                             user.save()
                                 .then((u) => {
                                     if (u) {
@@ -1761,10 +1711,9 @@ class AdminController {
                                     errCode1(res, err);
                                 });
                         } else if (status === 'Canceled') {
-                            const new_balance = methods.precisionRound(
+                            const new_balance =
                                 parseFloat(user.Wallet.balance) -
-                                    parseFloat(deposit.amountUsd)
-                            );
+                                parseFloat(deposit.amountUsd);
                             if (new_balance < 0) {
                                 errCode2(
                                     res,
@@ -1772,10 +1721,9 @@ class AdminController {
                                 );
                             } else {
                                 user.Wallet.balance = new_balance;
-                                user.Wallet.deposit = methods.precisionRound(
+                                user.Wallet.deposit =
                                     parseFloat(user.Wallet.deposit) -
-                                        parseFloat(deposit.amountUsd)
-                                );
+                                    parseFloat(deposit.amountUsd);
                                 user.save()
                                     .then((u) => {
                                         if (u) {
@@ -1859,10 +1807,9 @@ class AdminController {
 
                         if (user) {
                             if (status === 'Confirmed') {
-                                const new_balance = methods.precisionRound(
+                                const new_balance =
                                     parseFloat(user.Wallet.balance) -
-                                        parseFloat(withdraw.amountUsd)
-                                );
+                                    parseFloat(withdraw.amountUsd);
                                 if (new_balance < 0) {
                                     errCode2(
                                         res,
@@ -1871,10 +1818,8 @@ class AdminController {
                                 } else {
                                     user.Wallet.balance = new_balance;
                                     user.Wallet.withdraw =
-                                        methods.precisionRound(
-                                            parseFloat(user.Wallet.withdraw) +
-                                                parseFloat(withdraw.amountUsd)
-                                        );
+                                        parseFloat(user.Wallet.withdraw) +
+                                        parseFloat(withdraw.amountUsd);
                                     user.save()
                                         .then((u) => {
                                             if (u) {
@@ -1910,15 +1855,13 @@ class AdminController {
                                         });
                                 }
                             } else if (status === 'Canceled') {
-                                const new_balance = methods.precisionRound(
+                                const new_balance =
                                     parseFloat(user.Wallet.balance) +
-                                        parseFloat(withdraw.amountUsd)
-                                );
+                                    parseFloat(withdraw.amountUsd);
                                 user.Wallet.balance = new_balance;
-                                user.Wallet.withdraw = methods.precisionRound(
+                                user.Wallet.withdraw =
                                     parseFloat(user.Wallet.withdraw) -
-                                        parseFloat(withdraw.amountUsd)
-                                );
+                                    parseFloat(withdraw.amountUsd);
                                 user.save()
                                     .then((u) => {
                                         if (u) {
