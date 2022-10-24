@@ -659,7 +659,7 @@ class UsersController {
                         if (f) {
                             const mailContent = `
               <h1>this is link is reset password with otp = ${otp}</h1>
-              <p>http://localhost:4000/users/getOTP/${token}</p>
+              <p>Token: ${token}</p>
 
               <h2>Best Regards</h2>
             `;

@@ -1813,7 +1813,7 @@ class AdminController {
                                 if (new_balance < 0) {
                                     errCode2(
                                         res,
-                                        `Can not Canceled the withdraw of user because the money of this user is not enough`
+                                        `Can not Confirmed the withdraw of user because the money of this user is not enough`
                                     );
                                 } else {
                                     user.Wallet.balance = new_balance;
