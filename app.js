@@ -17,6 +17,8 @@ const Rates = require('./routes/Rate');
 const { default: axios } = require('axios');
 const fs = require('fs');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
 
 const app = express();
 
@@ -33,13 +35,23 @@ const corOptions = {
     credentials: true
 };
 
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100
+});
+
 app.set('conn', io);
 app.use(helmet());
+app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(cors(corOptions));
 app.use(express.static(path.resolve('./uploads')));
+
+if (process.env.TYPE === 'product') {
+    app.use(limiter);
+}
 
 switch (process.env.TYPE) {
     case 'product':
@@ -48,7 +60,8 @@ switch (process.env.TYPE) {
         break;
     case 'development':
         // for dev
-        mongoose.connect(process.env.MONGO_DEV);
+        // mongoose.connect(process.env.MONGO_DEV);
+        mongoose.connect(process.env.MONGO_PRO);
         break;
 }
 // mongoose.connect('mongodb://shopcoin:shopcoin123@139.59.97.145:27017/shopcoin?authSource=admin')
