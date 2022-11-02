@@ -187,7 +187,6 @@ function handleAddCoinAuto(symbol, amount, user) {
                     );
                     resultAddCoinNotExist
                         .then((res) => {
-                            console.log(res);
                             resolve({
                                 code: 0,
                                 message: `Successfully !!! Add coin coin to user with id = ${user._id}`

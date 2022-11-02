@@ -25,7 +25,7 @@ class RanksController {
             if (err) methods.errCode1(res, err);
 
             if (rank) {
-                console.log(rank);
+                // console.log(rank);
                 methods.errCode2(
                     res,
                     `Rank is valid with name rank is ${ranks}`

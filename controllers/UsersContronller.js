@@ -279,7 +279,7 @@ class UsersController {
                     pathIamgeLicenseBeside,
                     newPathIamgeLicenseBeside
                 );
-                console.log(result1, result2, result3, result4);
+                // console.log(result1, result2, result3, result4);
 
                 if (
                     result1.code == 0 &&

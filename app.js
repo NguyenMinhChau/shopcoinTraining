@@ -16,6 +16,7 @@ const methods = require('./function');
 const Rates = require('./routes/Rate');
 const { default: axios } = require('axios');
 const fs = require('fs');
+const helmet = require('helmet');
 
 const app = express();
 
@@ -33,7 +34,7 @@ const corOptions = {
 };
 
 app.set('conn', io);
-
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
