@@ -724,9 +724,10 @@ class UsersController {
         }
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            Forgot.findOne({ email: decoded.email }, (err, f) => {
+            Forgot.find({ email: decoded.email }, (err, f) => {
                 if (f) {
-                    if (f.code === otp) {
+                    const resultOfOTP = f[0];
+                    if (resultOfOTP.code === otp) {
                         Users.findOne(
                             { 'payment.email': decoded.email },
                             (errs, user) => {
@@ -740,7 +741,7 @@ class UsersController {
                                                 .then((u) => {
                                                     if (u) {
                                                         Forgot.deleteOne({
-                                                            _id: f.id
+                                                            _id: resultOfOTP.id
                                                         }).then((ok) => {
                                                             dataCode(
                                                                 res,
@@ -775,16 +776,70 @@ class UsersController {
                     } else {
                         errCode2(res, `Otp iput is wrong or dead`);
                     }
+                    // return res.json({ resultOfOTP });
                 } else {
                     errCode2(
                         res,
                         `Token is dead! Please order new Token for reset password`
                     );
                 }
-            });
+            }).sort({ createdAt: 'desc' });
         } catch (err) {
             errCode2(res, 'In valid token');
         }
+    }
+
+    // [POST] /users/resendOTPWithdraw/:id
+    resendOTPWithdraw(req, res) {
+        const codeOtp = otpGenerator.generate(4, {
+            lowerCaseAlphabets: false,
+            upperCaseAlphabets: false,
+            specialChars: false
+        });
+        const { id } = req.params;
+        const { email } = req.body;
+        Users.find({ 'payment.email': email }, (err, user) => {
+            if (err) errCode1(res, err);
+
+            if (user) {
+                methods
+                    .mail(
+                        email,
+                        confirmWithdraw(email, codeOtp),
+                        'Withdraw message'
+                    )
+                    .then((result) => {
+                        Withdraws.findById(id, (err, withdraw) => {
+                            if (err) errCode1(res, err);
+                            if (withdraw) {
+                                const otp = new Otps({
+                                    code: codeOtp,
+                                    email: email,
+                                    id: id
+                                });
+                                otp.save()
+                                    .then((result) => {
+                                        dataCode(res, withdraw);
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Withdraw is not valid with id = ${id}`
+                                );
+                            }
+                        });
+                    })
+                    .catch((err) => {
+                        errCode1(res, err);
+                    });
+            } else {
+                errCode2(res, `User is not valid with email = ${email}`);
+            }
+        });
+        // methods.mail(email, )
     }
 
     // [POST] /users/deposit

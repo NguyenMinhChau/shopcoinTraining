@@ -78,7 +78,7 @@ module.exports = {
     appLimit,
 
     precisionRound: function (number) {
-        let precision = 10;
+        let precision = 5;
         let factor = Math.pow(10, precision);
         return Math.round(number * factor) / factor;
     }

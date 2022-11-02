@@ -107,4 +107,7 @@ router.get('/getAllCoinOfUser/:id', UsersContronller.getAllCoinOfUser);
 // [DELETE] /users/cancelWithdraw/:id
 router.delete('/cancelWithdraw/:id', UsersContronller.cancelWithdraw);
 
+// [POST] /users/resendOTPWithdraw/:id
+router.post('/resendOTPWithdraw/:id', UsersContronller.resendOTPWithdraw);
+
 module.exports = router;
