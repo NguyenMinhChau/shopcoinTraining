@@ -1335,7 +1335,7 @@ class AdminController {
             if (err) errCode1(res, err);
 
             if (bill) {
-                Bills.deleteOne()
+                Bills.deleteOne({ _id: bill.id })
                     .then(() => {
                         successCode(
                             res,
@@ -1362,7 +1362,7 @@ class AdminController {
             if (err) errCode1(res, err);
 
             if (bill) {
-                Bills.deleteOne()
+                Bills.deleteOne({ _id: id })
                     .then(() => {
                         successCode(
                             res,
