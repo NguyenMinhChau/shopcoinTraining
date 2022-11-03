@@ -60,8 +60,8 @@ switch (process.env.TYPE) {
         break;
     case 'development':
         // for dev
-        // mongoose.connect(process.env.MONGO_DEV);
-        mongoose.connect(process.env.MONGO_PRO);
+        mongoose.connect(process.env.MONGO_DEV);
+        // mongoose.connect(process.env.MONGO_PRO);
         break;
 }
 // mongoose.connect('mongodb://shopcoin:shopcoin123@139.59.97.145:27017/shopcoin?authSource=admin')

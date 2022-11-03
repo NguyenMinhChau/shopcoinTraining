@@ -488,7 +488,7 @@ class AdminController {
                 if (payment) {
                     req.body.updatedAt = date;
                     payment
-                        .update({ $set: req.body })
+                        .updateOne({ $set: req.body })
                         .then((p) => {
                             if (p) {
                                 successCode(

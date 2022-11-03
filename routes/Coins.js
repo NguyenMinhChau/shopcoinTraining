@@ -7,12 +7,19 @@ const upload = multer({ dest: 'uploads/images' });
 
 // auth
 const checkAuth = require('../auth/auth');
+const checkAdmin = require('../auth/checkAmin');
 
 // import validator
 const updateCoinValidator = require('./validators/updateCoinValidator');
 
 // [POST] /coins/add
-router.post('/add', checkAuth, upload.single('logo'), CoinsController.addCoin);
+router.post(
+    '/add',
+    checkAuth,
+    checkAdmin,
+    upload.single('logo'),
+    CoinsController.addCoin
+);
 
 // [GET] /coins/getAllCoin
 router.get('/getAllCoin', CoinsController.getAllCoins);
@@ -27,13 +34,19 @@ router.get('/getCoinSymbol/:symbol', CoinsController.getCoinSymbol);
 router.put(
     '/updateCoin/:id',
     checkAuth,
+    checkAdmin,
     upload.single('logo'),
     updateCoinValidator,
     CoinsController.updateCoin
 );
 
 // [DELETE] /coins/deleteCoin/:id
-router.delete('/deleteCoin/:id', checkAuth, CoinsController.deleteCoin);
+router.delete(
+    '/deleteCoin/:id',
+    checkAuth,
+    checkAdmin,
+    CoinsController.deleteCoin
+);
 
 // [GET] /coins/updatePriceAllCoin
 router.get('/updatePriceAllCoin', CoinsController.updatePriceAllCoin);
