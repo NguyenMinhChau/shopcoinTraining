@@ -17,7 +17,7 @@ let transporter = nodemailer.createTransport({
 
 const appLimit = rateLimit({
     windowMs: 10 * 1000, // 1 minutes
-    max: 2,
+    max: 100,
     handler: function (req, res) {
         res.status(429).send({
             status: 500,

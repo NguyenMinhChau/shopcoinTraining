@@ -270,13 +270,19 @@ class CoinsController {
         coins.forEach((coin) => {
             axios
                 .get(
-                    `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin.symbol}`
+                    // `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin.symbol}`
+                    `https://fapi.binance.com/fapi/v1/ticker/price`
                 )
                 .then((result) => {
-                    if (result.data) {
-                        let { lastPrice } = result.data;
-                        coin.price = lastPrice;
-                        coin.save();
+                    let data = result.data;
+                    if (data) {
+                        data.forEach((c) => {
+                            if (c.symbol == coin.symbol) {
+                                // console.log(c);
+                                coin.price = c.price;
+                                coin.save().catch((err) => console.log(err));
+                            }
+                        });
                     }
                 })
                 .catch((err) => {});
