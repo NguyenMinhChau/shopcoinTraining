@@ -171,10 +171,17 @@ function handleAddCoinAuto(symbol, amount, user) {
                     );
                     resultAddCoinExist
                         .then((a) => {
-                            resolve({
-                                code: 0,
-                                message: `Successfully !!! Add coin to user with id = ${user._id}`
-                            });
+                            coin.total = methods.precisionRound(parseFloat(coin.total) + parseFloat(amount))
+                            coin.save()
+                            .then((co) => {
+                                resolve({
+                                    code: 0,
+                                    message: `Successfully !!! Add coin to user with id = ${user._id}`
+                                });
+                            })
+                            .catch(err => {
+                                reject({ code: 1, message: "Can not save total of coin in add coin exist" });
+                            })
                         })
                         .catch((err) => {
                             reject({ code: 1, message: err.message });
@@ -187,10 +194,17 @@ function handleAddCoinAuto(symbol, amount, user) {
                     );
                     resultAddCoinNotExist
                         .then((res) => {
-                            resolve({
-                                code: 0,
-                                message: `Successfully !!! Add coin coin to user with id = ${user._id}`
-                            });
+                            coin.total = methods.precisionRound(parseFloat(coin.total) + parseFloat(amount))
+                            coin.save()
+                            .then((co) => {
+                                resolve({
+                                    code: 0,
+                                    message: `Successfully !!! Add coin coin to user with id = ${user._id}`
+                                });
+                            })
+                            .catch(err => {
+                                reject({ code: 1, message: "Can not save total of coin in add coin not exist" });
+                            })
                         })
                         .catch((err) => {
                             reject({ code: 1, message: err.message });
@@ -238,10 +252,16 @@ function handleSubCoinAuto(symbol, amount, user) {
                         );
                         resultSubCoinNotDisappear
                             .then((ress) => {
-                                resolve({
-                                    code: 0,
-                                    message: `Sub coin Successfully when cancel buy coin of user with id = ${user._id}`
-                                });
+                                coin.total = methods.precisionRound(parseFloat(coin.total) - parseFloat(amount))
+                                coin.save(s => {
+                                    resolve({
+                                        code: 0,
+                                        message: `Sub coin Successfully when cancel buy coin of user with id = ${user._id}`
+                                    });
+                                })
+                                .catch(err => {
+                                    reject({ code: 1, message: err.message });
+                                })
                             })
                             .catch((err) => {
                                 reject({ code: 1, message: err.message });
@@ -254,10 +274,17 @@ function handleSubCoinAuto(symbol, amount, user) {
                         );
                         resultSubCoinDisappear
                             .then((ress) => {
-                                resolve({
-                                    code: 0,
-                                    message: `Sub coin Successfully when cancel buy coin !!! of user with id = ${user._id}`
-                                });
+                                coin.total = methods.precisionRound(parseFloat(coin.total) - parseFloat(amount))
+                                coin.save()
+                                .then(d => {
+                                    resolve({
+                                        code: 0,
+                                        message: `Sub coin Successfully when cancel buy coin !!! of user with id = ${user._id}`
+                                    });
+                                })
+                                .catch(err => {
+                                    reject({ code: 1, message: err.message });
+                                })
                             })
                             .catch((err) => {
                                 reject({ code: 1, message: err.message });
@@ -1984,6 +2011,8 @@ class AdminController {
             }
         });
     }
+
+    // [GET] /
 }
 
 module.exports = new AdminController();

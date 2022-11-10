@@ -6,6 +6,17 @@ const { validationResult } = require('express-validator');
 const methods = require('../function');
 const { successCode, errCode1, errCode2, dataCode } = require('../function');
 const { default: axios } = require('axios');
+const User = require('../models/User');
+
+const getCoinByIdSupport = async (id, amount, callback) => {
+    const coin = Coins.findById(id);
+    const [c] = await Promise.all([coin]);
+    let r = {
+        amount: amount,
+        coin: c
+    };
+    setTimeout(() => callback(r), 500);
+};
 
 class CoinsController {
     // [POST] /coins/add
@@ -313,6 +324,31 @@ class CoinsController {
                 .catch((err) => {});
         });
         successCode(res, `Update high low for all coins successfully`);
+    }
+    // [GET] /coins/getAmountCoinUserBuy
+    async getAmountCoinUserBuy(req, res){
+        try{
+            const {from, to} = req.body
+            let fromDate = new Date(from)
+            let toDate = new Date(to)
+            if(!fromDate || !toDate){
+                errCode2(res, `No date`)
+            }
+            const totalCoin = Coins.find({
+                createdAt: {
+                    $gte: fromDate,
+                    $lt: toDate
+                }
+            })
+            const [coins] = await Promise.all([totalCoin])
+            if(coins.length == 0){
+                errCode2(res, `No coin from ${fromDate} to ${toDate}`)
+            }else{
+                dataCode(res, coins)
+            }
+        }catch(err){
+            errCode1(res, err)
+        }
     }
 }
 
