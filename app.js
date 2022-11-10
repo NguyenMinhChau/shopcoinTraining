@@ -96,23 +96,23 @@ if (!fs.existsSync(images_user)) {
 
 // setInterval(() => {
 //     // axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`).catch(err => {});
-//     // axios
-//     //     .get(`${process.env.URL_API}/coins/updateHighLowAllCoin`)
-//     //     .catch((err) => {});
-//     // axios.get('http://localhost:4000/coins/updatePriceAllCoin').catch(err => {});
 //     axios
-//         .get('http://localhost:4000/coins/updateHighLowAllCoin')
+//         .get(`${process.env.URL_API}/coins/updateHighLowAllCoin`)
 //         .catch((err) => {});
-// }, 1000);
+//     // axios.get('http://localhost:4000/coins/updatePriceAllCoin').catch(err => {});
+//     // axios
+//     //     .get('http://localhost:4000/coins/updateHighLowAllCoin')
+//     //     .catch((err) => {});
+// }, 10000);
 
 // setInterval(() => {
-//     axios
-//         .get('http://localhost:4000/coins/updatePriceAllCoin')
-//         .catch((err) => {});
 //     // axios
-//     //     .get(`${process.env.URL_API}/coins/updatePriceAllCoin`)
+//     //     .get('http://localhost:4000/coins/updatePriceAllCoin')
 //     //     .catch((err) => {});
-// }, 2000);
+//     axios
+//         .get(`${process.env.URL_API}/coins/updatePriceAllCoin`)
+//         .catch((err) => {});
+// }, 5*60*1000);
 
 let port = process.env.PORT || 3000;
 httpServer.listen(port, () => console.log('Running at port ' + port));

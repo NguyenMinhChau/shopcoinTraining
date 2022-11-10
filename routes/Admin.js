@@ -231,4 +231,14 @@ router.put(
 // [PUT] /admin/handleWithdrawBot/:id
 router.put('/handleWithdrawBot/:id', AdminController.handleWithdraw);
 
+// [POST] /admin/totalDeposit
+router.post('/totalDeposit', AdminController.totalDeposit);
+
+// [POST] /admin/totalWithdraw
+router.post('/totalWithdraw', AdminController.totalWithdraw);
+
+// [POST] /admin/totalBalance
+router.post('/totalBalance', AdminController.totalBalance);
+
+
 module.exports = router;

@@ -19,8 +19,16 @@ const Withdraws = require('../models/Withdraws');
 const Deposits = require('../models/Deposits');
 const Bills = require('../models/Bills');
 const Rank = require('../models/Ranks');
-const { mail } = require('../function');
+const { mail, dataCode } = require('../function');
+const { resolve } = require('path');
+
 // support function
+const calculateAdd = async (total, value, callback) => {
+    let res = methods.precisionRound(parseFloat(total) + parseFloat(value))
+    console.log(res)
+    setTimeout(() => callback(res), 500);
+};
+
 // error
 function errCode1(res, err) {
     return res.json({ code: 1, message: err.message });
@@ -2012,7 +2020,120 @@ class AdminController {
         });
     }
 
-    // [GET] /
+    // [GET] /admin/totalDeposit
+    async totalDeposit(req, res){
+        const {from, to} = req.body
+        if(!from || !to){
+            const totalDep = Deposits.find()
+            const [deposits] = await Promise.all([totalDep])
+            if(deposits.length == 0){
+                errCode2(res, `No deposit !!`)
+            }else{
+                let total = 0
+                for (let i = 0; i < deposits.length; i++) {
+                    total = methods.precisionRound(parseFloat(total) + parseFloat(deposits[i].amountUsd))
+                }
+                dataCode(res, total)
+            }
+        }else{
+            let fromDate = new Date(from)
+            let toDate = new Date(to)
+            const totalDep = Deposits.find({
+                createdAt: {
+                    $gte: fromDate,
+                    $lt: toDate
+                }
+            })
+            const [deposits] = await Promise.all([totalDep])
+            if(deposits.length == 0){
+                errCode2(res, `No deposit !!`)
+            }else{
+                let total = 0
+                for (let i = 0; i < deposits.length; i++) {
+                    total = methods.precisionRound(parseFloat(total) + parseFloat(deposits[i].amountUsd))
+                }
+                dataCode(res, total)
+            }
+        }
+    }
+
+    // [POST] /admin/totalWithdraw
+    async totalWithdraw(req, res){
+        try{
+            const {from, to} = req.body
+            if(!from || !to){
+                const totalWithdraw = Withdraws.find()
+                const [withdraws] = await Promise.all([totalWithdraw])
+                if(withdraws.length == 0){
+                    errCode2(res, `No Withdraw !!`)
+                }else{
+                    let total = 0
+                    for (let i = 0; i < withdraws.length; i++) {
+                        total = methods.precisionRound(parseFloat(total) + parseFloat(withdraws[i].amountUsd))
+                    }
+                    dataCode(res, total)
+                }
+            }else{
+                let fromDate = new Date(from)
+                let toDate = new Date(to)
+                const totalWithdraw = Withdraws.find({
+                    createdAt: {
+                        $gte: fromDate,
+                        $lt: toDate
+                    }
+                })
+                const [withdraws] = await Promise.all([totalWithdraw])
+                if(withdraws.length == 0){
+                    errCode2(res, `No Withdraw !!`)
+                }else{
+                    let total = 0
+                    for (let i = 0; i < withdraws.length; i++) {
+                        total = methods.precisionRound(parseFloat(total) + parseFloat(withdraws[i].amountUsd))
+                    }
+                    dataCode(res, total)
+                }
+            }
+        }catch(err){
+            errCode1(res, err)
+        }
+    }
+
+    // [POST] /admin/totalBalance
+    async totalBalance(req, res){
+        const {from, to} = req.body
+            if(!from || !to){
+                const totalUser = User.find()
+                const [users] = await Promise.all([totalUser])
+                if(users.length == 0){
+                    errCode2(res, `No Balance of user !!`)
+                }else{
+                    let total = 0
+                    for (let i = 0; i < users.length; i++) {
+                        total = methods.precisionRound(parseFloat(total) + parseFloat(users[i].Wallet.balance))
+                    }
+                    dataCode(res, total)
+                }
+            }else{
+                let fromDate = new Date(from)
+                let toDate = new Date(to)
+                const totalUser = User.find({
+                    createdAt: {
+                        $gte: fromDate,
+                        $lt: toDate
+                    }
+                })
+                const [users] = await Promise.all([totalUser])
+                if(users.length == 0){
+                    errCode2(res, `No Balance of user !!`)
+                }else{
+                    let total = 0
+                    for (let i = 0; i < users.length; i++) {
+                        total = methods.precisionRound(parseFloat(total) + parseFloat(users[i].Wallet.balance))
+                    }
+                    dataCode(res, total)
+                }
+            }
+    }
 }
 
 module.exports = new AdminController();
