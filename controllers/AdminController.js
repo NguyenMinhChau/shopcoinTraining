@@ -295,7 +295,8 @@ class AdminController {
         try {
             const total = User.countDocuments();
             const allUser = User.find()
-                .sort({ createdAt: 'desc' })
+                // .sort({ createdAt: 'desc' })
+                .sort({'payment.username': '1'})
                 .skip(step)
                 .limit(typeShow);
             const [totalUser, all] = await Promise.all([total, allUser]);

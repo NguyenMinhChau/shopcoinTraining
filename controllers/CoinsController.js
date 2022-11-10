@@ -195,7 +195,8 @@ class CoinsController {
         try {
             const totalCoin = Coins.countDocuments();
             const allCoins = Coins.find()
-                .sort({ createAt: 'desc' })
+                // .sort({ createAt: 'desc' })
+                .sort({name: '1'})
                 .skip(step)
                 .limit(typeShow);
 
