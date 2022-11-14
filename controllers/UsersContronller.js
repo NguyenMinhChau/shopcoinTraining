@@ -589,51 +589,59 @@ class UsersController {
     }
 
     // [PUT] /users/additionBankInfo/:id
-    additionBankInfo(req, res) {
+    async additionBankInfo(req, res) {
         let result = validationResult(req);
         if (result.errors.length === 0) {
             const { bankName, nameAccount, accountNumber } = req.body;
             const id = req.params.id;
 
-            Users.findById(id, (err, user) => {
+            Users.findById(id, async (err, user) => {
                 if (err) {
                     methods.errCode1(res, err);
                 }
 
                 if (user) {
-                    let infoBank = user.payment.bank;
-                    infoBank.bankName = bankName;
-                    infoBank.name = nameAccount;
-                    infoBank.account = accountNumber;
-                    user.updateAt = new Date().toUTCString();
-                    user.save()
-                        .then((u) => {
-                            if (u) {
-                                const resultAddPayment = addPayment(
-                                    bankName,
-                                    nameAccount,
-                                    accountNumber
-                                );
-                                resultAddPayment
-                                    .then((val) => {
-                                        methods.successCode(
-                                            res,
-                                            `Add bank information successfully with id = ${id}`
-                                        );
-                                    })
-                                    .catch((err) => {
-                                        errCode1(res, err);
-                                    });
-                            } else {
-                                methods.errCode2(
-                                    res,
-                                    `Can not addition information of user about bank payment with id = ${id}`
-                                );
-                            }
-                        })
-                        .catch((err) => {
-                            methods.errCode1(res, err);
-                        });
+
+                    const checkPaymentPre = Payments.findOne({accountNumber: accountNumber})
+                    const [checkPayment] = await Promise.all([checkPaymentPre])
+                    if(checkPayment){
+                        errCode2(res, `Payment with number account = ${accountNumber} is valid`)
+                    }else{
+                        let infoBank = user.payment.bank;
+                        infoBank.bankName = bankName;
+                        infoBank.name = nameAccount;
+                        infoBank.account = accountNumber;
+                        user.updateAt = new Date().toUTCString();
+                        user.save()
+                            .then((u) => {
+                                if (u) {
+                                    const resultAddPayment = addPayment(
+                                        bankName,
+                                        nameAccount,
+                                        accountNumber
+                                    );
+                                    resultAddPayment
+                                        .then((val) => {
+                                            methods.successCode(
+                                                res,
+                                                `Add bank information successfully with id = ${id}`
+                                            );
+                                        })
+                                        .catch((err) => {
+                                            errCode1(res, err);
+                                        });
+                                } else {
+                                    methods.errCode2(
+                                        res,
+                                        `Can not addition information of user about bank payment with id = ${id}`
+                                    );
+                                }
+                            })
+                            .catch((err) => {
+                                methods.errCode1(res, err);
+                            });
+                    }
+
                 } else {
                     methods.errCode2(res, `User is not valid with id = ${id}`);
                 }
@@ -1143,6 +1151,27 @@ class UsersController {
             }
         });
     }
+
+    // [GET] /users/getRate/:numberBank
+    async getRatesOfUser(req, res){
+        try{
+            const {numberBank} = req.params
+            const getInfoPayment = Payments.findOne({accountNumber: numberBank})
+            const [rates] = await Promise.all([getInfoPayment])
+            if(rates){
+                dataCode(res, {
+                    rateDeposit: rates.rateDeposit,
+                    rateWithdraw: rates.rateWithdraw
+                })
+            }else{
+                errCode2(res, `Can not get rates as account number = ${numberBank} is not valid`)
+            }
+        }catch(err){
+            errCode1(res, err)
+        }
+    }
+
+
 }
 
 module.exports = new UsersController();

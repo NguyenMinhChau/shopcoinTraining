@@ -110,4 +110,7 @@ router.delete('/cancelWithdraw/:id', UsersContronller.cancelWithdraw);
 // [POST] /users/resendOTPWithdraw/:id
 router.post('/resendOTPWithdraw/:id', UsersContronller.resendOTPWithdraw);
 
+// [GET] /users/getRate/:numberBank
+router.get('/getRate/:numberBank', UsersContronller.getRatesOfUser)
+
 module.exports = router;
