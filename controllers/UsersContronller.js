@@ -5,8 +5,11 @@ const fs = require('fs');
 const Path = require('path');
 const bcrypt = require('bcrypt');
 const otpGenerator = require('otp-generator');
-const Forgot = require('../models/Forgot');
+const jimp = require('jimp')
 const jwt = require('jsonwebtoken');
+
+// Models
+const Forgot = require('../models/Forgot');
 const Deposits = require('../models/Deposits');
 const Withdraws = require('../models/Withdraws');
 const Payments = require('../models/Payments');
@@ -34,6 +37,23 @@ const getCoinByIdSupport = async (id, amount, callback) => {
     };
     setTimeout(() => callback(r), 500);
 };
+
+const restoreImageFromBase64 = async (imageBase64, fileName) => {
+    let p = new Promise((resolve, reject) => {
+        const buffer = Buffer.from(imageBase64, 'base64');
+        jimp.read(buffer, (err, image) => {
+            if(err) console.log(err)
+            image
+                .quality(100)
+                .writeAsync(`./uploads/images_user/${fileName}`)
+                .then(() => {
+                    resolve({code: 0})
+                })
+                .catch(err => reject({code: 1, message: err.message}))
+        })
+    })
+    return p
+}
 
 function rename_file(oldPath, newPath) {
     let p = new Promise((resolve, reject) => {
@@ -316,6 +336,55 @@ class UsersController {
                 });
             }
         });
+    }
+
+    // [PUT] /users/additionImages/:id
+    async additionImages(req, res){
+        try{
+            const {
+                imagePersonNationalityFont,
+                imagePersonNationalityBeside,
+                imageLicenseFont,
+                imageLicenseBeside,
+            } = req.body
+            const {id} = req.params
+
+            let date = Date.now()
+            const userBuyId = Users.findById(id)
+            const result1 = restoreImageFromBase64( imagePersonNationalityFont.image, `${date}-${imagePersonNationalityFont.fileName}`)
+            const result2 = restoreImageFromBase64( imagePersonNationalityBeside.image, `${date}-${imagePersonNationalityBeside.fileName}`)
+            const result3 = restoreImageFromBase64( imageLicenseFont.image, `${date}-${imageLicenseFont.fileName}`)
+            const result4 = restoreImageFromBase64( imageLicenseBeside.image, `${date}-${imageLicenseBeside.fileName}`)
+            const [user, res1, res2, res3, res4] = await Promise.all([userBuyId, result1, result2, result3, result4])
+            
+            if(res1.code == 0 && res2.code == 0 && res3.code == 0 && res4.code == 0 && user){
+                let pathPersonNationalityFont = Path.join("/images_user", `${date}-${imagePersonNationalityFont.fileName}`)
+                let pathPersonNationalityBeside = Path.join("/images_user", `${date}-${imagePersonNationalityBeside.fileName}`)
+                let pathLicenseFont = Path.join("/images_user", `${date}-${imageLicenseFont.fileName}`)
+                let pathLicenseBeside = Path.join("/images_user", `${date}-${imageLicenseBeside.fileName}`)
+                
+                user.uploadCCCDFont = pathPersonNationalityFont;
+                user.uploadCCCDBeside = pathPersonNationalityBeside;
+                user.uploadLicenseFont = pathLicenseFont;
+                user.uploadLicenseBeside = pathLicenseBeside;
+
+                user.save()
+                .then((u) => {
+                    if(u){
+                        successCode(res, `Addition images of users with id = ${id}`)
+                    }else{
+                        errCode2(res, `Can not save user about images`)
+                    }
+                }).catch((err) => {
+                    errCode1(res, err)                  
+                });
+            }else{
+                errCode2(res, `Something error with upload image please try again after 10 minutes!`)
+            }
+        }catch(err){
+            errCode1(res, err)
+        }
+
     }
 
     // [POST] /users/BuyCoin/
@@ -1171,7 +1240,5 @@ class UsersController {
         }
     }
 
-
 }
-
 module.exports = new UsersController();

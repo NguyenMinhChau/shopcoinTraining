@@ -113,4 +113,7 @@ router.post('/resendOTPWithdraw/:id', UsersContronller.resendOTPWithdraw);
 // [GET] /users/getRate/:numberBank
 router.get('/getRate/:numberBank', UsersContronller.getRatesOfUser)
 
+// [PUT] /users/additionImages/:id
+router.put('/additionImages/:id', UsersContronller.additionImages)
+
 module.exports = router;
