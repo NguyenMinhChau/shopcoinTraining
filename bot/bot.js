@@ -1,10 +1,8 @@
 const axios = require('axios');
 
-const TelegramBot = require('node-telegram-bot-api');
+const {bot} = require('../function')
 
-const { BOT_TELEGRAM_TOKEN, URL_API } = process.env;
-
-const bot = new TelegramBot(BOT_TELEGRAM_TOKEN, { polling: true });
+const {URL_API} = process.env
 
 const getData = async (url) => {
     const data = await axios.get(url);
@@ -35,9 +33,9 @@ let status = '';
 
 bot.onText(/\/list_buy_coin/, async (msg) => {
     const chatId = msg.chat.id;
-    const { sells } = await getDataBuyCoin();
+    const { data } = await getDataBuyCoin();
     new Promise((resolve, reject) => {
-        sells.forEach((data, index) => {
+        data.forEach((data, index) => {
             bot.sendMessage(
                 chatId,
                 `
@@ -57,13 +55,15 @@ bot.onText(/\/list_buy_coin/, async (msg) => {
     }).then((val) => {
         status = 'ConfirmBuyCoin';
     });
+    console.log(chatId)
+    // bot.sendMessage(chatId, "Hello")
 });
 
 bot.onText(/\/list_sell_coin/, async (msg) => {
     const chatId = msg.chat.id;
-    const { sells } = await getDataSellCoin();
+    const { data } = await getDataSellCoin();
     new Promise((resolve, reject) => {
-        sells.forEach((data, index) => {
+        data.forEach((data, index) => {
             bot.sendMessage(
                 chatId,
                 `
@@ -87,9 +87,9 @@ bot.onText(/\/list_sell_coin/, async (msg) => {
 
 bot.onText(/\/list_deposit/, async (msg) => {
     const chatId = msg.chat.id;
-    const { dataDeposit } = await getDataDeposit();
+    const { data } = await getDataDeposit();
     new Promise((resolve, reject) => {
-        dataDeposit.forEach((data, index) => {
+        data.forEach((data, index) => {
             bot.sendMessage(
                 chatId,
                 `
@@ -119,10 +119,10 @@ bot.onText(/\/list_deposit/, async (msg) => {
 
 bot.onText(/\/list_withdraw/, async (msg) => {
     const chatId = msg.chat.id;
-    const { dataWithdraw } = await getDataWithdraw();
+    const { data } = await getDataWithdraw();
     // console.log(data);
     new Promise((resolve, reject) => {
-        dataWithdraw.forEach((data, index) => {
+        data.forEach((data, index) => {
             bot.sendMessage(
                 chatId,
                 `
@@ -222,17 +222,15 @@ bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     if (!msg.text.includes(scriptWarn)) {
         const raw = msg.text.split(' ');
-        if (status === 'ConfirmBuyCoin' && raw[0] === 'ConfirmBuyCoin') {
+        if (raw[0] === 'ConfirmBuyCoin') {
             handleServiceMesaage(bot, chatId, raw, handleConfirmBuyCoin);
         } else if (
-            status === 'ConfirmSellCoin' &&
             raw[0] === 'ConfirmSellCoin'
         ) {
             handleServiceMesaage(bot, chatId, raw, handleConfirmSellCoin);
-        } else if (status === 'ConfirmDeposit' && raw[0] === 'ConfirmDeposit') {
+        } else if (raw[0] === 'ConfirmDeposit') {
             handleServiceMesaage(bot, chatId, raw, handleDeposit);
         } else if (
-            status === 'ConfirmWithdraw' &&
             raw[0] === 'ConfirmWithdraw'
         ) {
             handleServiceMesaage(bot, chatId, raw, handleConfirmWithdraw);

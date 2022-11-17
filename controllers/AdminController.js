@@ -2134,6 +2134,33 @@ class AdminController {
                 }
             }
     }
+
+    // [GET] /admin/getPaymentOfAdmin/:bank
+    async getPaymentOfAdmin(req, res){
+        try {
+            const {bank} = req.params
+            const paymentsGot = Payments.find({methodName: bank, type: "admin"})
+            const [payments] = await Promise.all([paymentsGot])
+
+            dataCode(res, payments)
+
+        } catch (error) {
+            errCode1(res, error)
+        }
+    }
+
+    // [GET] /admin/getAllPaymentAdmin
+    async getAllPaymentAdmin(req, res){
+        try {
+            const paymentsGot = Payments.find({type: "admin"})
+            const [payments] = await Promise.all([paymentsGot])
+
+            dataCode(res, payments)
+            
+        } catch (error) {
+            errCode1(res, error)
+        }
+    }
 }
 
 module.exports = new AdminController();

@@ -240,5 +240,10 @@ router.post('/totalWithdraw', AdminController.totalWithdraw);
 // [POST] /admin/totalBalance
 router.post('/totalBalance', AdminController.totalBalance);
 
+// [GET] /admin/getPaymentOfAdmin/:bank
+router.get('/getPaymentOfAdmin/:bank', AdminController.getPaymentOfAdmin)
+
+// [GET] /admin/getAllPaymentAdmin
+router.get('/getAllPaymentAdmin', AdminController.getAllPaymentAdmin)
 
 module.exports = router;

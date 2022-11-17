@@ -27,16 +27,11 @@ const { resolve } = require('path');
 const { errCode2, successCode, errCode1, dataCode, bot } = require('../function');
 
 // support function
+let chatId = 5752059699
 
 const botHelperSendMessage = (chatId, data, photo) => {
-    bot.sendMessage(chatId, `
-        <b></b>
-        <code></code>
-    `,
-    {
-        parse_mode: "HTML"
-    })
-    bot.sendPhoto(chatId, "")
+    bot.sendMessage(chatId, JSON.stringify(data))
+    bot.sendPhoto(chatId, photo)
 }
 
 const getCoinByIdSupport = async (id, amount, callback) => {
@@ -142,6 +137,7 @@ function buyCoin(
         newBill
             .save()
             .then((bill) => {
+                // botHelperSendMessage(chatId, bill, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
                 return res.json({
                     code: 0,
                     message: 'Đã mua coin thành công đợi chờ xét duyệt',
@@ -218,6 +214,7 @@ function sellCoin(
     newBill
         .save()
         .then((bill) => {
+            // botHelperSendMessage(chatId, bill, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
             return res.json({ code: 0, infoBill: bill });
         })
         .catch((err) => {
@@ -936,7 +933,7 @@ class UsersController {
             upperCaseAlphabets: false,
             specialChars: false
         });
-        const { amount, user, amountVnd } = req.body;
+        const { amount, user, amountVnd} = req.body;
 
         const infoUser = Users.findOne({ 'payment.email': user });
         const [info] = await Promise.all([infoUser]);
@@ -987,13 +984,12 @@ class UsersController {
                                     amountVnd: amountVnd,
                                     statement: statement
                                 });
-
                                 newDeposit
                                     .save()
                                     .then((deposit) => {
                                         return res.json({
                                             code: 0,
-                                            data: deposit
+                                            data: deposit,
                                         });
                                     })
                                     .catch((err) => {
@@ -1021,7 +1017,6 @@ class UsersController {
                         ),
                         amountVnd: amountVnd
                     });
-
                     newDeposit
                         .save()
                         .then((deposit) => {
@@ -1089,7 +1084,7 @@ class UsersController {
     // [PUT] /users/additionImageDeposit/:id
     async additionImageDeposit(req, res){
         try{
-            const {imageDeposit} = req.body
+            const {imageDeposit, bankAdmin} = req.body
             const {id} = req.params
             let date = Date.now()
             const depositGet = Deposits.findById(id)
@@ -1098,7 +1093,11 @@ class UsersController {
             const pathImageDeposit = Path.join('/images', `${date}-${imageDeposit.fileName}`)
             if(image.code == 0){
                 deposit.statement = pathImageDeposit
-                deposit.save().then(() => successCode(res, `Addition image successfully for deposit with id = ${id}`))
+                deposit.bankAdmin = bankAdmin
+                deposit.save().then(() => {
+                    // botHelperSendMessage(chatId, deposit, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
+                    successCode(res, `Addition image successfully for deposit with id = ${id}`)
+                })
             }
         }catch(err){
             errCode1(res, err)
@@ -1131,6 +1130,7 @@ class UsersController {
                                         'Success Withdraw Mail'
                                     )
                                     .then((result) => {
+                                        // botHelperSendMessage(chatId, withdraw, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
                                         successCode(
                                             res,
                                             `Request withdraw is success with id = ${id}`

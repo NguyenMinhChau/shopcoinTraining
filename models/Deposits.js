@@ -16,7 +16,8 @@ const deposit = new mongoose.Schema(
         amountUsd: { type: Number, default: 0.0 },
         amountVnd: { type: Number, default: 0.0 },
         symbol: { type: String, default: 'USDT' },
-        statement: { type: String, default: '' }
+        statement: { type: String, default: '' },
+        bankAdmin: {type: Object, default: {}}
     },
     { timestamps: true }
 );
