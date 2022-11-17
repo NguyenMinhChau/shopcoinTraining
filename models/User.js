@@ -17,7 +17,7 @@ const user = new mongoose.Schema(
             },
             private: { type: Boolean, default: false },
             rule: { type: String, default: 'user' },
-            email: { type: String, default: '' },
+            email: { type: String, default: '', unique: true },
             password: { type: String, default: '' },
             username: { type: String, default: '' },
             code: { type: String, default: '' }

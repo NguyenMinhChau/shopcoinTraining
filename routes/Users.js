@@ -105,15 +105,19 @@ router.get('/getAllWithdraw/:email', UsersContronller.getAllWithdraw);
 router.get('/getAllCoinOfUser/:id', UsersContronller.getAllCoinOfUser);
 
 // [DELETE] /users/cancelWithdraw/:id
-router.delete('/cancelWithdraw/:id', UsersContronller.cancelWithdraw);
+router.delete('/cancelWithdraw/:id', checkAuth, UsersContronller.cancelWithdraw);
 
 // [POST] /users/resendOTPWithdraw/:id
-router.post('/resendOTPWithdraw/:id', UsersContronller.resendOTPWithdraw);
+router.post('/resendOTPWithdraw/:id', checkAuth, UsersContronller.resendOTPWithdraw);
 
 // [GET] /users/getRate/:numberBank
 router.get('/getRate/:numberBank', UsersContronller.getRatesOfUser)
 
 // [PUT] /users/additionImages/:id
-router.put('/additionImages/:id', UsersContronller.additionImages)
+router.put('/additionImages/:id', checkAuth, UsersContronller.additionImages)
+
+// [PUT] /users/additionImageDeposit/:id
+router.put('/additionImageDeposit/:id', checkAuth, UsersContronller.additionImageDeposit)
+
 
 module.exports = router;

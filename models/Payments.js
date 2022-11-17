@@ -5,7 +5,7 @@ const payment = new mongoose.Schema(
         code: { type: String, default: '' },
         methodName: { type: String, default: '' },
         accountName: { type: String, default: '' },
-        accountNumber: { type: String, default: '' },
+        accountNumber: { type: String, default: '', unique: true },
         rateDeposit: { type: Number, default: 22000 },
         rateWithdraw: { type: Number, default: 21900 }
     },

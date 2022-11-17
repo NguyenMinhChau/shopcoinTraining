@@ -24,9 +24,20 @@ const {
 
 const methods = require('../function');
 const { resolve } = require('path');
-const { errCode2, successCode, errCode1, dataCode } = require('../function');
+const { errCode2, successCode, errCode1, dataCode, bot } = require('../function');
 
 // support function
+
+const botHelperSendMessage = (chatId, data, photo) => {
+    bot.sendMessage(chatId, `
+        <b></b>
+        <code></code>
+    `,
+    {
+        parse_mode: "HTML"
+    })
+    bot.sendPhoto(chatId, "")
+}
 
 const getCoinByIdSupport = async (id, amount, callback) => {
     const coin = Coins.findById(id);
@@ -38,14 +49,14 @@ const getCoinByIdSupport = async (id, amount, callback) => {
     setTimeout(() => callback(r), 500);
 };
 
-const restoreImageFromBase64 = async (imageBase64, fileName) => {
+const restoreImageFromBase64 = async (imageBase64, fileName, where) => {
     let p = new Promise((resolve, reject) => {
         const buffer = Buffer.from(imageBase64, 'base64');
         jimp.read(buffer, (err, image) => {
             if(err) console.log(err)
             image
                 .quality(100)
-                .writeAsync(`./uploads/images_user/${fileName}`)
+                .writeAsync(`./uploads/${where}/${fileName}`)
                 .then(() => {
                     resolve({code: 0})
                 })
@@ -351,10 +362,10 @@ class UsersController {
 
             let date = Date.now()
             const userBuyId = Users.findById(id)
-            const result1 = restoreImageFromBase64( imagePersonNationalityFont.image, `${date}-${imagePersonNationalityFont.fileName}`)
-            const result2 = restoreImageFromBase64( imagePersonNationalityBeside.image, `${date}-${imagePersonNationalityBeside.fileName}`)
-            const result3 = restoreImageFromBase64( imageLicenseFont.image, `${date}-${imageLicenseFont.fileName}`)
-            const result4 = restoreImageFromBase64( imageLicenseBeside.image, `${date}-${imageLicenseBeside.fileName}`)
+            const result1 = restoreImageFromBase64( imagePersonNationalityFont.image, `${date}-${imagePersonNationalityFont.fileName}`, 'images_user')
+            const result2 = restoreImageFromBase64( imagePersonNationalityBeside.image, `${date}-${imagePersonNationalityBeside.fileName}`, 'images_user')
+            const result3 = restoreImageFromBase64( imageLicenseFont.image, `${date}-${imageLicenseFont.fileName}`, 'images_user')
+            const result4 = restoreImageFromBase64( imageLicenseBeside.image, `${date}-${imageLicenseBeside.fileName}`, 'images_user')
             const [user, res1, res2, res3, res4] = await Promise.all([userBuyId, result1, result2, result3, result4])
             
             if(res1.code == 0 && res2.code == 0 && res3.code == 0 && res4.code == 0 && user){
@@ -1073,6 +1084,25 @@ class UsersController {
                 errCode2(res, `Deposit is not valid with id =${id}`);
             }
         });
+    }
+
+    // [PUT] /users/additionImageDeposit/:id
+    async additionImageDeposit(req, res){
+        try{
+            const {imageDeposit} = req.body
+            const {id} = req.params
+            let date = Date.now()
+            const depositGet = Deposits.findById(id)
+            const imageRestored = restoreImageFromBase64(imageDeposit.image, `${date}-${imageDeposit.fileName}`, 'images')
+            const [image, deposit] = await Promise.all([imageRestored, depositGet])
+            const pathImageDeposit = Path.join('/images', `${date}-${imageDeposit.fileName}`)
+            if(image.code == 0){
+                deposit.statement = pathImageDeposit
+                deposit.save().then(() => successCode(res, `Addition image successfully for deposit with id = ${id}`))
+            }
+        }catch(err){
+            errCode1(res, err)
+        }
     }
 
     // [GET] /users/enterOTPWithdraw/:code

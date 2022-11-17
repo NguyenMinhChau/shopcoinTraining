@@ -3,6 +3,13 @@ const Binance = require('node-binance-api');
 const { APIKEYSOCKET, APISECRETSOCKET } = process.env;
 const rateLimit = require('express-rate-limit');
 
+const TelegramBot = require('node-telegram-bot-api');
+
+const { BOT_TELEGRAM_TOKEN, URL_API } = process.env;
+
+const bot = new TelegramBot(BOT_TELEGRAM_TOKEN, { polling: true });
+
+
 let transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -81,5 +88,7 @@ module.exports = {
         let precision = 5;
         let factor = Math.pow(10, precision);
         return Math.round(number * factor) / factor;
-    }
+    }, 
+    bot
+
 };
