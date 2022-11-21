@@ -9,16 +9,28 @@ const { BOT_TELEGRAM_TOKEN, URL_API } = process.env;
 
 const bot = new TelegramBot(BOT_TELEGRAM_TOKEN, { polling: true });
 
+// let transporter = nodemailer.createTransport({
+//     service: 'gmail',
+//     auth: {
+//         type: 'OAuth2',
+//         user: process.env.MAIL_USER,
+//         pass: process.env.MAIL_PASS,
+//         clientId: process.env.CLIENT_ID,
+//         clientSecret: process.env.CLIENT_SECRET,
+//         refreshToken: process.env.REFRESH_TOKEN_MAIL,
+//         accessToken: "ya29.a0AeTM1ifU0N5t6sOIWlBCCoHDUPLFg_k95F2XRkopFMIZxYc9oOyaIS8SeM9e3HbqOVj5MSDg0AsW6JE2OUFRbZlADyPMCJA3oYUdc4F5i27Yfsz9UeY-56ZQ_tx3bjQnjO9RltfKKdd3wJUnQVIbFERskhpVaCgYKAbESARMSFQHWtWOmwtRAz5NHWpdy1W4jYX2Z6Q0163",
+//         expires: 1484314697598,
+//     }
+// });
 
 let transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: process.env.SERVICE_MAIL,
+    host: process.env.HOST,
+    port: process.env.PORT_MAIL,
+    secure: false,
     auth: {
-        type: 'OAuth2',
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-        clientId: process.env.CLIENT_ID,
-        clientSecret: process.env.CLIENT_SECRET,
-        refreshToken: process.env.REFRESH_TOKEN_MAIL
+        user: process.env.EMAIL,
+        pass: process.env.MAIL_PASS
     }
 });
 
@@ -85,10 +97,9 @@ module.exports = {
     appLimit,
 
     precisionRound: function (number) {
-        let precision = 5;
+        let precision = 10;
         let factor = Math.pow(10, precision);
         return Math.round(number * factor) / factor;
-    }, 
+    },
     bot
-
 };

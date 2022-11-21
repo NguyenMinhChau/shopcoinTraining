@@ -5,6 +5,7 @@ const Coins = require('./routes/Coins');
 const Authen = require('./routes/Authen');
 const Users = require('./routes/Users');
 const Ranks = require('./routes/Ranks');
+const Services = require('./routes/services');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
@@ -43,8 +44,8 @@ const limiter = rateLimit({
 app.set('conn', io);
 app.use(helmet());
 app.use(morgan('combined'));
-app.use(express.json({limit: '50mb'}));
-app.use(express.urlencoded({limit: '50mb'}));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb' }));
 app.use(cookieParser());
 app.use(cors(corOptions));
 app.use(express.static(path.resolve('./uploads')));
@@ -77,6 +78,7 @@ app.use('/users', Users);
 app.use('/authen', Authen);
 app.use('/ranks', Ranks);
 app.use('/rates', Rates);
+app.use('/services', Services);
 
 const DIR_UPLOADS = `./uploads`;
 const images = `${DIR_UPLOADS}/images`;

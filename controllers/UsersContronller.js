@@ -933,7 +933,7 @@ class UsersController {
             upperCaseAlphabets: false,
             specialChars: false
         });
-        const { amount, user, amountVnd} = req.body;
+        const { amount, user, amountVnd, bankAdmin} = req.body;
 
         const infoUser = Users.findOne({ 'payment.email': user });
         const [info] = await Promise.all([infoUser]);
@@ -1013,7 +1013,7 @@ class UsersController {
                             transform: amountVnd
                         },
                         amountUsd: methods.precisionRound(
-                            parseFloat(amountVnd) / payment.rateDeposit
+                            parseFloat(amountVnd) / bankAdmin.rateDeposit
                         ),
                         amountVnd: amountVnd
                     });
@@ -1094,6 +1094,7 @@ class UsersController {
             if(image.code == 0){
                 deposit.statement = pathImageDeposit
                 deposit.bankAdmin = bankAdmin
+                deposit.status = "Confirmed"
                 deposit.save().then(() => {
                     // botHelperSendMessage(chatId, deposit, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
                     successCode(res, `Addition image successfully for deposit with id = ${id}`)

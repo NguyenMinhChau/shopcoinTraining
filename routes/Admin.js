@@ -246,4 +246,7 @@ router.get('/getPaymentOfAdmin/:bank', AdminController.getPaymentOfAdmin)
 // [GET] /admin/getAllPaymentAdmin
 router.get('/getAllPaymentAdmin', AdminController.getAllPaymentAdmin)
 
+// [GET] /admin/getUSerFromWithdraw/:id
+router.get('/getUSerFromWithdraw/:id', AdminController.getUSerFromWithdraw)
+
 module.exports = router;

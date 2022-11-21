@@ -9,7 +9,7 @@ const fs = require('fs');
 const jwt_decoded = require('jwt-decode');
 
 const methods = require('../function');
-
+const mongoose = require('mongoose');
 // import model
 
 const User = require('../models/User');
@@ -24,8 +24,8 @@ const { resolve } = require('path');
 
 // support function
 const calculateAdd = async (total, value, callback) => {
-    let res = methods.precisionRound(parseFloat(total) + parseFloat(value))
-    console.log(res)
+    let res = methods.precisionRound(parseFloat(total) + parseFloat(value));
+    console.log(res);
     setTimeout(() => callback(res), 500);
 };
 
@@ -179,17 +179,23 @@ function handleAddCoinAuto(symbol, amount, user) {
                     );
                     resultAddCoinExist
                         .then((a) => {
-                            coin.total = methods.precisionRound(parseFloat(coin.total) + parseFloat(amount))
+                            coin.total = methods.precisionRound(
+                                parseFloat(coin.total) + parseFloat(amount)
+                            );
                             coin.save()
-                            .then((co) => {
-                                resolve({
-                                    code: 0,
-                                    message: `Successfully !!! Add coin to user with id = ${user._id}`
+                                .then((co) => {
+                                    resolve({
+                                        code: 0,
+                                        message: `Successfully !!! Add coin to user with id = ${user._id}`
+                                    });
+                                })
+                                .catch((err) => {
+                                    reject({
+                                        code: 1,
+                                        message:
+                                            'Can not save total of coin in add coin exist'
+                                    });
                                 });
-                            })
-                            .catch(err => {
-                                reject({ code: 1, message: "Can not save total of coin in add coin exist" });
-                            })
                         })
                         .catch((err) => {
                             reject({ code: 1, message: err.message });
@@ -202,17 +208,23 @@ function handleAddCoinAuto(symbol, amount, user) {
                     );
                     resultAddCoinNotExist
                         .then((res) => {
-                            coin.total = methods.precisionRound(parseFloat(coin.total) + parseFloat(amount))
+                            coin.total = methods.precisionRound(
+                                parseFloat(coin.total) + parseFloat(amount)
+                            );
                             coin.save()
-                            .then((co) => {
-                                resolve({
-                                    code: 0,
-                                    message: `Successfully !!! Add coin coin to user with id = ${user._id}`
+                                .then((co) => {
+                                    resolve({
+                                        code: 0,
+                                        message: `Successfully !!! Add coin coin to user with id = ${user._id}`
+                                    });
+                                })
+                                .catch((err) => {
+                                    reject({
+                                        code: 1,
+                                        message:
+                                            'Can not save total of coin in add coin not exist'
+                                    });
                                 });
-                            })
-                            .catch(err => {
-                                reject({ code: 1, message: "Can not save total of coin in add coin not exist" });
-                            })
                         })
                         .catch((err) => {
                             reject({ code: 1, message: err.message });
@@ -260,16 +272,17 @@ function handleSubCoinAuto(symbol, amount, user) {
                         );
                         resultSubCoinNotDisappear
                             .then((ress) => {
-                                coin.total = methods.precisionRound(parseFloat(coin.total) - parseFloat(amount))
-                                coin.save(s => {
+                                coin.total = methods.precisionRound(
+                                    parseFloat(coin.total) - parseFloat(amount)
+                                );
+                                coin.save((s) => {
                                     resolve({
                                         code: 0,
                                         message: `Sub coin Successfully when cancel buy coin of user with id = ${user._id}`
                                     });
-                                })
-                                .catch(err => {
+                                }).catch((err) => {
                                     reject({ code: 1, message: err.message });
-                                })
+                                });
                             })
                             .catch((err) => {
                                 reject({ code: 1, message: err.message });
@@ -282,17 +295,22 @@ function handleSubCoinAuto(symbol, amount, user) {
                         );
                         resultSubCoinDisappear
                             .then((ress) => {
-                                coin.total = methods.precisionRound(parseFloat(coin.total) - parseFloat(amount))
+                                coin.total = methods.precisionRound(
+                                    parseFloat(coin.total) - parseFloat(amount)
+                                );
                                 coin.save()
-                                .then(d => {
-                                    resolve({
-                                        code: 0,
-                                        message: `Sub coin Successfully when cancel buy coin !!! of user with id = ${user._id}`
+                                    .then((d) => {
+                                        resolve({
+                                            code: 0,
+                                            message: `Sub coin Successfully when cancel buy coin !!! of user with id = ${user._id}`
+                                        });
+                                    })
+                                    .catch((err) => {
+                                        reject({
+                                            code: 1,
+                                            message: err.message
+                                        });
                                     });
-                                })
-                                .catch(err => {
-                                    reject({ code: 1, message: err.message });
-                                })
                             })
                             .catch((err) => {
                                 reject({ code: 1, message: err.message });
@@ -331,7 +349,7 @@ class AdminController {
             const total = User.countDocuments();
             const allUser = User.find()
                 // .sort({ createdAt: 'desc' })
-                .sort({'payment.username': '1'})
+                .sort({ 'payment.username': '1' })
                 .skip(step)
                 .limit(typeShow);
             const [totalUser, all] = await Promise.all([total, allUser]);
@@ -1752,7 +1770,7 @@ class AdminController {
                     if (err) errCode1(res, err);
 
                     if (user) {
-                        if (status === 'Confirmed') {
+                        if (status === 'Completed') {
                             const new_balance = methods.precisionRound(
                                 parseFloat(user.Wallet.balance) +
                                     parseFloat(deposit.amountUsd)
@@ -2021,144 +2039,193 @@ class AdminController {
     }
 
     // [GET] /admin/totalDeposit
-    async totalDeposit(req, res){
-        const {from, to} = req.body
-        if(!from || !to){
-            const totalDep = Deposits.find()
-            const [deposits] = await Promise.all([totalDep])
-            if(deposits.length == 0){
-                errCode2(res, `No deposit !!`)
-            }else{
-                let total = 0
+    async totalDeposit(req, res) {
+        const { from, to } = req.body;
+        if (!from || !to) {
+            const totalDep = Deposits.find();
+            const [deposits] = await Promise.all([totalDep]);
+            if (deposits.length == 0) {
+                errCode2(res, `No deposit !!`);
+            } else {
+                let total = 0;
                 for (let i = 0; i < deposits.length; i++) {
-                    total = methods.precisionRound(parseFloat(total) + parseFloat(deposits[i].amountUsd))
+                    total = methods.precisionRound(
+                        parseFloat(total) + parseFloat(deposits[i].amountUsd)
+                    );
                 }
-                dataCode(res, total)
+                dataCode(res, total);
             }
-        }else{
-            let fromDate = new Date(from)
-            let toDate = new Date(to)
+        } else {
+            let fromDate = new Date(from);
+            let toDate = new Date(to);
             const totalDep = Deposits.find({
                 createdAt: {
                     $gte: fromDate,
                     $lt: toDate
                 }
-            })
-            const [deposits] = await Promise.all([totalDep])
-            if(deposits.length == 0){
-                errCode2(res, `No deposit !!`)
-            }else{
-                let total = 0
+            });
+            const [deposits] = await Promise.all([totalDep]);
+            if (deposits.length == 0) {
+                errCode2(res, `No deposit !!`);
+            } else {
+                let total = 0;
                 for (let i = 0; i < deposits.length; i++) {
-                    total = methods.precisionRound(parseFloat(total) + parseFloat(deposits[i].amountUsd))
+                    total = methods.precisionRound(
+                        parseFloat(total) + parseFloat(deposits[i].amountUsd)
+                    );
                 }
-                dataCode(res, total)
+                dataCode(res, total);
             }
         }
     }
 
     // [POST] /admin/totalWithdraw
-    async totalWithdraw(req, res){
-        try{
-            const {from, to} = req.body
-            if(!from || !to){
-                const totalWithdraw = Withdraws.find()
-                const [withdraws] = await Promise.all([totalWithdraw])
-                if(withdraws.length == 0){
-                    errCode2(res, `No Withdraw !!`)
-                }else{
-                    let total = 0
+    async totalWithdraw(req, res) {
+        try {
+            const { from, to } = req.body;
+            if (!from || !to) {
+                const totalWithdraw = Withdraws.find();
+                const [withdraws] = await Promise.all([totalWithdraw]);
+                if (withdraws.length == 0) {
+                    errCode2(res, `No Withdraw !!`);
+                } else {
+                    let total = 0;
                     for (let i = 0; i < withdraws.length; i++) {
-                        total = methods.precisionRound(parseFloat(total) + parseFloat(withdraws[i].amountUsd))
+                        total = methods.precisionRound(
+                            parseFloat(total) +
+                                parseFloat(withdraws[i].amountUsd)
+                        );
                     }
-                    dataCode(res, total)
+                    dataCode(res, total);
                 }
-            }else{
-                let fromDate = new Date(from)
-                let toDate = new Date(to)
+            } else {
+                let fromDate = new Date(from);
+                let toDate = new Date(to);
                 const totalWithdraw = Withdraws.find({
                     createdAt: {
                         $gte: fromDate,
                         $lt: toDate
                     }
-                })
-                const [withdraws] = await Promise.all([totalWithdraw])
-                if(withdraws.length == 0){
-                    errCode2(res, `No Withdraw !!`)
-                }else{
-                    let total = 0
+                });
+                const [withdraws] = await Promise.all([totalWithdraw]);
+                if (withdraws.length == 0) {
+                    errCode2(res, `No Withdraw !!`);
+                } else {
+                    let total = 0;
                     for (let i = 0; i < withdraws.length; i++) {
-                        total = methods.precisionRound(parseFloat(total) + parseFloat(withdraws[i].amountUsd))
+                        total = methods.precisionRound(
+                            parseFloat(total) +
+                                parseFloat(withdraws[i].amountUsd)
+                        );
                     }
-                    dataCode(res, total)
+                    dataCode(res, total);
                 }
             }
-        }catch(err){
-            errCode1(res, err)
+        } catch (err) {
+            errCode1(res, err);
         }
     }
 
     // [POST] /admin/totalBalance
-    async totalBalance(req, res){
-        const {from, to} = req.body
-            if(!from || !to){
-                const totalUser = User.find()
-                const [users] = await Promise.all([totalUser])
-                if(users.length == 0){
-                    errCode2(res, `No Balance of user !!`)
-                }else{
-                    let total = 0
-                    for (let i = 0; i < users.length; i++) {
-                        total = methods.precisionRound(parseFloat(total) + parseFloat(users[i].Wallet.balance))
-                    }
-                    dataCode(res, total)
+    async totalBalance(req, res) {
+        const { from, to } = req.body;
+        if (!from || !to) {
+            const totalUser = User.find();
+            const [users] = await Promise.all([totalUser]);
+            if (users.length == 0) {
+                errCode2(res, `No Balance of user !!`);
+            } else {
+                let total = 0;
+                for (let i = 0; i < users.length; i++) {
+                    total = methods.precisionRound(
+                        parseFloat(total) + parseFloat(users[i].Wallet.balance)
+                    );
                 }
-            }else{
-                let fromDate = new Date(from)
-                let toDate = new Date(to)
-                const totalUser = User.find({
-                    createdAt: {
-                        $gte: fromDate,
-                        $lt: toDate
-                    }
-                })
-                const [users] = await Promise.all([totalUser])
-                if(users.length == 0){
-                    errCode2(res, `No Balance of user !!`)
-                }else{
-                    let total = 0
-                    for (let i = 0; i < users.length; i++) {
-                        total = methods.precisionRound(parseFloat(total) + parseFloat(users[i].Wallet.balance))
-                    }
-                    dataCode(res, total)
-                }
+                dataCode(res, total);
             }
+        } else {
+            let fromDate = new Date(from);
+            let toDate = new Date(to);
+            const totalUser = User.find({
+                createdAt: {
+                    $gte: fromDate,
+                    $lt: toDate
+                }
+            });
+            const [users] = await Promise.all([totalUser]);
+            if (users.length == 0) {
+                errCode2(res, `No Balance of user !!`);
+            } else {
+                let total = 0;
+                for (let i = 0; i < users.length; i++) {
+                    total = methods.precisionRound(
+                        parseFloat(total) + parseFloat(users[i].Wallet.balance)
+                    );
+                }
+                dataCode(res, total);
+            }
+        }
     }
 
     // [GET] /admin/getPaymentOfAdmin/:bank
-    async getPaymentOfAdmin(req, res){
+    async getPaymentOfAdmin(req, res) {
         try {
-            const {bank} = req.params
-            const paymentsGot = Payments.find({methodName: bank, type: "admin"})
-            const [payments] = await Promise.all([paymentsGot])
+            const { bank } = req.params;
+            const paymentsGot = Payments.find({
+                methodName: bank,
+                type: 'admin'
+            });
+            const [payments] = await Promise.all([paymentsGot]);
 
-            dataCode(res, payments)
-
+            dataCode(res, payments);
         } catch (error) {
-            errCode1(res, error)
+            errCode1(res, error);
         }
     }
 
     // [GET] /admin/getAllPaymentAdmin
-    async getAllPaymentAdmin(req, res){
+    async getAllPaymentAdmin(req, res) {
         try {
-            const paymentsGot = Payments.find({type: "admin"})
-            const [payments] = await Promise.all([paymentsGot])
+            const paymentsGot = Payments.find({ type: 'admin' });
+            const [payments] = await Promise.all([paymentsGot]);
 
-            dataCode(res, payments)
-            
+            dataCode(res, payments);
         } catch (error) {
-            errCode1(res, error)
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /admin/getUSerFromWithdraw/:id
+    async getUSerFromWithdraw(req, res) {
+        try {
+            const { id } = req.params;
+            const lookUp = Withdraws.aggregate([
+                {
+                    $match: {
+                        _id: new mongoose.Types.ObjectId(id)
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'user',
+                        foreignField: 'payment.email',
+                        as: 'info'
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'payments',
+                        localField: 'method.accountNumber',
+                        foreignField: 'accountNumber',
+                        as: 'payment'
+                    }
+                }
+            ]);
+            const [result] = await Promise.all([lookUp]);
+            dataCode(res, result);
+        } catch (error) {
+            errCode1(res, error);
         }
     }
 }
