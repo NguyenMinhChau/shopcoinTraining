@@ -241,12 +241,15 @@ router.post('/totalWithdraw', AdminController.totalWithdraw);
 router.post('/totalBalance', AdminController.totalBalance);
 
 // [GET] /admin/getPaymentOfAdmin/:bank
-router.get('/getPaymentOfAdmin/:bank', AdminController.getPaymentOfAdmin)
+router.get('/getPaymentOfAdmin/:bank', AdminController.getPaymentOfAdmin);
 
 // [GET] /admin/getAllPaymentAdmin
-router.get('/getAllPaymentAdmin', AdminController.getAllPaymentAdmin)
+router.get('/getAllPaymentAdmin', AdminController.getAllPaymentAdmin);
 
 // [GET] /admin/getUSerFromWithdraw/:id
-router.get('/getUSerFromWithdraw/:id', AdminController.getUSerFromWithdraw)
+router.get('/getUSerFromWithdraw/:id', AdminController.getUSerFromWithdraw);
+
+// [GET] /admin/Commission
+router.get('/Commission', AdminController.getCommission);
 
 module.exports = router;

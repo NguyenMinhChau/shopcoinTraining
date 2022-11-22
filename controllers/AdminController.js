@@ -2356,6 +2356,18 @@ class AdminController {
             errCode1(res, error);
         }
     }
+
+    // [GET] /admin/Commission
+    async getCommission(req, res) {
+        try {
+            const commission = await Commission.findById(
+                process.env.ID_COMMISSION
+            );
+            dataCode(res, commission);
+        } catch (err) {
+            errCode1(res, err);
+        }
+    }
 }
 
 module.exports = new AdminController();
