@@ -21,6 +21,10 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 
+// import model
+const Commission = require('./models/Commission');
+const { errCode1 } = require('./function');
+
 const app = express();
 
 const httpServer = createServer(app);
@@ -41,9 +45,14 @@ const limiter = rateLimit({
     max: 100
 });
 
+const accessLogStream = fs.createWriteStream(
+    path.join(__dirname, 'access.log'),
+    { flags: 'a' }
+);
+
 app.set('conn', io);
 app.use(helmet());
-app.use(morgan('combined'));
+app.use(morgan('combined', { stream: accessLogStream }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb' }));
 app.use(cookieParser());
@@ -96,25 +105,34 @@ if (!fs.existsSync(images_user)) {
     fs.mkdirSync(images_user);
 }
 
-setInterval(() => {
-    // axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`).catch(err => {});
-    axios
-        .get(`${process.env.URL_API}/coins/updateHighLowAllCoin`)
-        .catch((err) => {});
-    // axios.get('http://localhost:4000/coins/updatePriceAllCoin').catch(err => {});
-    // axios
-    //     .get('http://localhost:4000/coins/updateHighLowAllCoin')
-    //     .catch((err) => {});
-}, 10000);
+const commission = new Commission();
+Commission.find({}, (err, comms) => {
+    if (err) errCode1(res, err);
 
-setInterval(() => {
-    // axios
-    //     .get('http://localhost:4000/coins/updatePriceAllCoin')
-    //     .catch((err) => {});
-    axios
-        .get(`${process.env.URL_API}/coins/updatePriceAllCoin`)
-        .catch((err) => {});
-}, 5 * 60 * 1000);
+    if (comms.length == 0) {
+        commission.save();
+    }
+});
+
+// setInterval(() => {
+//     // axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`).catch(err => {});
+//     axios
+//         .get(`${process.env.URL_API}/coins/updateHighLowAllCoin`)
+//         .catch((err) => {});
+//     // axios.get('http://localhost:4000/coins/updatePriceAllCoin').catch(err => {});
+//     // axios
+//     //     .get('http://localhost:4000/coins/updateHighLowAllCoin')
+//     //     .catch((err) => {});
+// }, 10000);
+
+// setInterval(() => {
+//     // axios
+//     //     .get('http://localhost:4000/coins/updatePriceAllCoin')
+//     //     .catch((err) => {});
+//     axios
+//         .get(`${process.env.URL_API}/coins/updatePriceAllCoin`)
+//         .catch((err) => {});
+// }, 5 * 60 * 1000);
 
 let port = process.env.PORT || 3000;
 httpServer.listen(port, () => console.log('Running at port ' + port));

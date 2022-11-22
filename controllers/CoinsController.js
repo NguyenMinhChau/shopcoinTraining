@@ -207,7 +207,7 @@ class CoinsController {
             const totalCoin = Coins.countDocuments();
             const allCoins = Coins.find()
                 // .sort({ createAt: 'desc' })
-                .sort({name: '1'})
+                .sort({ name: '1' })
                 .skip(step)
                 .limit(typeShow);
 
@@ -241,7 +241,8 @@ class CoinsController {
                 setInterval(() => {
                     axios
                         .get(
-                            `https://api.binance.com/api/v3/ticker/24hr?symbol=${c.symbol}`
+                            // `https://api.binance.com/api/v3/ticker/24hr?symbol=${c.symbol}`
+                            `https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${c.symbol}`
                         )
                         .then((result) => {
                             if (result.data) {
@@ -328,28 +329,28 @@ class CoinsController {
         successCode(res, `Update high low for all coins successfully`);
     }
     // [GET] /coins/getAmountCoinUserBuy
-    async getAmountCoinUserBuy(req, res){
-        try{
-            const {from, to} = req.body
-            let fromDate = new Date(from)
-            let toDate = new Date(to)
-            if(!fromDate || !toDate){
-                errCode2(res, `No date`)
+    async getAmountCoinUserBuy(req, res) {
+        try {
+            const { from, to } = req.body;
+            let fromDate = new Date(from);
+            let toDate = new Date(to);
+            if (!fromDate || !toDate) {
+                errCode2(res, `No date`);
             }
             const totalCoin = Coins.find({
                 createdAt: {
                     $gte: fromDate,
                     $lt: toDate
                 }
-            })
-            const [coins] = await Promise.all([totalCoin])
-            if(coins.length == 0){
-                errCode2(res, `No coin from ${fromDate} to ${toDate}`)
-            }else{
-                dataCode(res, coins)
+            });
+            const [coins] = await Promise.all([totalCoin]);
+            if (coins.length == 0) {
+                errCode2(res, `No coin from ${fromDate} to ${toDate}`);
+            } else {
+                dataCode(res, coins);
             }
-        }catch(err){
-            errCode1(res, err)
+        } catch (err) {
+            errCode1(res, err);
         }
     }
 }

@@ -5,7 +5,7 @@ const fs = require('fs');
 const Path = require('path');
 const bcrypt = require('bcrypt');
 const otpGenerator = require('otp-generator');
-const jimp = require('jimp')
+const jimp = require('jimp');
 const jwt = require('jsonwebtoken');
 
 // Models
@@ -24,15 +24,22 @@ const {
 
 const methods = require('../function');
 const { resolve } = require('path');
-const { errCode2, successCode, errCode1, dataCode, bot } = require('../function');
+const {
+    errCode2,
+    successCode,
+    errCode1,
+    dataCode,
+    bot,
+    precisionRound
+} = require('../function');
 
 // support function
-let chatId = 5752059699
+let chatId = 5752059699;
 
 const botHelperSendMessage = (chatId, data, photo) => {
-    bot.sendMessage(chatId, JSON.stringify(data))
-    bot.sendPhoto(chatId, photo)
-}
+    bot.sendMessage(chatId, JSON.stringify(data));
+    bot.sendPhoto(chatId, photo);
+};
 
 const getCoinByIdSupport = async (id, amount, callback) => {
     const coin = Coins.findById(id);
@@ -48,18 +55,18 @@ const restoreImageFromBase64 = async (imageBase64, fileName, where) => {
     let p = new Promise((resolve, reject) => {
         const buffer = Buffer.from(imageBase64, 'base64');
         jimp.read(buffer, (err, image) => {
-            if(err) console.log(err)
+            if (err) console.log(err);
             image
                 .quality(100)
                 .writeAsync(`./uploads/${where}/${fileName}`)
                 .then(() => {
-                    resolve({code: 0})
+                    resolve({ code: 0 });
                 })
-                .catch(err => reject({code: 1, message: err.message}))
-        })
-    })
-    return p
-}
+                .catch((err) => reject({ code: 1, message: err.message }));
+        });
+    });
+    return p;
+};
 
 function rename_file(oldPath, newPath) {
     let p = new Promise((resolve, reject) => {
@@ -78,10 +85,7 @@ function checkWallet(balance, payment) {
     return balance > payment;
 }
 
-function buyCoin(
-    req,
-    res,
-    fee,
+const createNewBill = async (
     gmailUser,
     amount,
     amountUsd,
@@ -90,37 +94,9 @@ function buyCoin(
     type,
     typeUser,
     rank,
-    coins,
-    user
-) {
-    const balance = user.Wallet.balance;
-
-    if (checkWallet(balance, amount * price)) {
-        let new_fee = 0;
-        let fee_rank = 0;
-
-        if (rank == 'Demo') {
-            fee_rank = 0;
-            new_fee = methods.precisionRound(
-                parseFloat(fee) - parseFloat(fee_rank)
-            );
-        } else if (rank == 'Standard') {
-            fee_rank = 0;
-            new_fee = methods.precisionRound(
-                parseFloat(fee) - parseFloat(fee_rank)
-            );
-        } else if (rank == 'Pro') {
-            fee_rank = 0.01;
-            new_fee = methods.precisionRound(
-                parseFloat(fee) - parseFloat(fee_rank)
-            );
-        } else if (rank == 'VIP') {
-            // for rank VIP
-            fee_rank = 0.02;
-            new_fee = methods.precisionRound(
-                parseFloat(fee) - parseFloat(fee_rank)
-            );
-        }
+    new_fee
+) => {
+    const result = new Promise((resolve, reject) => {
         const newBill = new Bills({
             fee: new_fee,
             buyer: {
@@ -138,23 +114,136 @@ function buyCoin(
             .save()
             .then((bill) => {
                 // botHelperSendMessage(chatId, bill, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
-                return res.json({
+                resolve({
                     code: 0,
                     message: 'Đã mua coin thành công đợi chờ xét duyệt',
                     billInfo: bill
                 });
             })
             .catch((err) => {
-                return res.json({ code: 1, message: err.message });
+                reject({ code: 1, message: err.message });
             });
+    });
+    return result;
+};
+
+const buyCoin = async (
+    req,
+    res,
+    user,
+    amount,
+    amountUsd,
+    symbol,
+    price,
+    type
+) => {
+    if (
+        checkWallet(
+            parseFloat(user.Wallet.balance),
+            parseFloat(amount * price)
+        ) == true
+    ) {
+        if (user.rank == 'DEMO') {
+            let fee = 0;
+            let new_fee = precisionRound(
+                parseFloat(user.fee) - parseFloat(fee)
+            );
+            const resultCreateBill = createNewBill(
+                user.payment.email,
+                amount,
+                amountUsd,
+                symbol,
+                price,
+                type,
+                user.payment.rule,
+                user.rank,
+                new_fee
+            );
+            resultCreateBill
+                .then((value) => {
+                    successCode(
+                        res,
+                        `Đã mua coin thành công chờ admin xét duyệt`
+                    );
+                })
+                .catch((err) => errCode1(res, err));
+        } else if (user.rank == 'STANDARD') {
+            let fee = 0;
+            let new_fee = precisionRound(
+                parseFloat(user.fee) - parseFloat(fee)
+            );
+            const resultCreateBill = await createNewBill(
+                user.payment.email,
+                amount,
+                amountUsd,
+                symbol,
+                price,
+                type,
+                user.payment.rule,
+                user.rank,
+                new_fee
+            );
+            resultCreateBill
+                .then((value) => {
+                    successCode(
+                        res,
+                        `Đã mua coin thành công chờ admin xét duyệt`
+                    );
+                })
+                .catch((err) => errCode1(res, err));
+        } else if (user.rank == 'PRO') {
+            let fee = 0.01;
+            let new_fee = precisionRound(
+                parseFloat(user.fee) - parseFloat(fee)
+            );
+            const resultCreateBill = createNewBill(
+                user.payment.email,
+                amount,
+                amountUsd,
+                symbol,
+                price,
+                type,
+                user.payment.rule,
+                user.rank,
+                new_fee
+            );
+            resultCreateBill
+                .then((value) => {
+                    successCode(
+                        res,
+                        `Đã mua coin thành công chờ admin xét duyệt`
+                    );
+                })
+                .catch((err) => errCode1(res, err));
+        } else if (user.rank == 'VIP') {
+            let fee = 0.02;
+            let new_fee = precisionRound(
+                parseFloat(user.fee) - parseFloat(fee)
+            );
+            const resultCreateBill = createNewBill(
+                user.payment.email,
+                amount,
+                amountUsd,
+                symbol,
+                price,
+                type,
+                user.payment.rule,
+                user.rank,
+                new_fee
+            );
+            resultCreateBill
+                .then((value) => {
+                    successCode(
+                        res,
+                        `Đã mua coin thành công chờ admin xét duyệt`
+                    );
+                })
+                .catch((err) => errCode1(res, err));
+        }
     } else {
-        return res.json({
-            code: 3,
-            message:
-                'Số tiền trong tài khoản của bạn hiện tại không đủ để thực hiện việc mua coin, vui lòng nạp thêm vào !!!'
-        });
+        errCode2(res, `Tài khoản không đủ để hoàn thành bước này !!!`);
     }
-}
+};
 
 function sellCoin(
     req,
@@ -347,58 +436,104 @@ class UsersController {
     }
 
     // [PUT] /users/additionImages/:id
-    async additionImages(req, res){
-        try{
+    async additionImages(req, res) {
+        try {
             const {
                 imagePersonNationalityFont,
                 imagePersonNationalityBeside,
                 imageLicenseFont,
-                imageLicenseBeside,
-            } = req.body
-            const {id} = req.params
+                imageLicenseBeside
+            } = req.body;
+            const { id } = req.params;
 
-            let date = Date.now()
-            const userBuyId = Users.findById(id)
-            const result1 = restoreImageFromBase64( imagePersonNationalityFont.image, `${date}-${imagePersonNationalityFont.fileName}`, 'images_user')
-            const result2 = restoreImageFromBase64( imagePersonNationalityBeside.image, `${date}-${imagePersonNationalityBeside.fileName}`, 'images_user')
-            const result3 = restoreImageFromBase64( imageLicenseFont.image, `${date}-${imageLicenseFont.fileName}`, 'images_user')
-            const result4 = restoreImageFromBase64( imageLicenseBeside.image, `${date}-${imageLicenseBeside.fileName}`, 'images_user')
-            const [user, res1, res2, res3, res4] = await Promise.all([userBuyId, result1, result2, result3, result4])
-            
-            if(res1.code == 0 && res2.code == 0 && res3.code == 0 && res4.code == 0 && user){
-                let pathPersonNationalityFont = Path.join("/images_user", `${date}-${imagePersonNationalityFont.fileName}`)
-                let pathPersonNationalityBeside = Path.join("/images_user", `${date}-${imagePersonNationalityBeside.fileName}`)
-                let pathLicenseFont = Path.join("/images_user", `${date}-${imageLicenseFont.fileName}`)
-                let pathLicenseBeside = Path.join("/images_user", `${date}-${imageLicenseBeside.fileName}`)
-                
+            let date = Date.now();
+            const userBuyId = Users.findById(id);
+            const result1 = restoreImageFromBase64(
+                imagePersonNationalityFont.image,
+                `${date}-${imagePersonNationalityFont.fileName}`,
+                'images_user'
+            );
+            const result2 = restoreImageFromBase64(
+                imagePersonNationalityBeside.image,
+                `${date}-${imagePersonNationalityBeside.fileName}`,
+                'images_user'
+            );
+            const result3 = restoreImageFromBase64(
+                imageLicenseFont.image,
+                `${date}-${imageLicenseFont.fileName}`,
+                'images_user'
+            );
+            const result4 = restoreImageFromBase64(
+                imageLicenseBeside.image,
+                `${date}-${imageLicenseBeside.fileName}`,
+                'images_user'
+            );
+            const [user, res1, res2, res3, res4] = await Promise.all([
+                userBuyId,
+                result1,
+                result2,
+                result3,
+                result4
+            ]);
+
+            if (
+                res1.code == 0 &&
+                res2.code == 0 &&
+                res3.code == 0 &&
+                res4.code == 0 &&
+                user
+            ) {
+                let pathPersonNationalityFont = Path.join(
+                    '/images_user',
+                    `${date}-${imagePersonNationalityFont.fileName}`
+                );
+                let pathPersonNationalityBeside = Path.join(
+                    '/images_user',
+                    `${date}-${imagePersonNationalityBeside.fileName}`
+                );
+                let pathLicenseFont = Path.join(
+                    '/images_user',
+                    `${date}-${imageLicenseFont.fileName}`
+                );
+                let pathLicenseBeside = Path.join(
+                    '/images_user',
+                    `${date}-${imageLicenseBeside.fileName}`
+                );
+
                 user.uploadCCCDFont = pathPersonNationalityFont;
                 user.uploadCCCDBeside = pathPersonNationalityBeside;
                 user.uploadLicenseFont = pathLicenseFont;
                 user.uploadLicenseBeside = pathLicenseBeside;
 
                 user.save()
-                .then((u) => {
-                    if(u){
-                        successCode(res, `Addition images of users with id = ${id}`)
-                    }else{
-                        errCode2(res, `Can not save user about images`)
-                    }
-                }).catch((err) => {
-                    errCode1(res, err)                  
-                });
-            }else{
-                errCode2(res, `Something error with upload image please try again after 10 minutes!`)
+                    .then((u) => {
+                        if (u) {
+                            successCode(
+                                res,
+                                `Addition images of users with id = ${id}`
+                            );
+                        } else {
+                            errCode2(res, `Can not save user about images`);
+                        }
+                    })
+                    .catch((err) => {
+                        errCode1(res, err);
+                    });
+            } else {
+                errCode2(
+                    res,
+                    `Something error with upload image please try again after 10 minutes!`
+                );
             }
-        }catch(err){
-            errCode1(res, err)
+        } catch (err) {
+            errCode1(res, err);
         }
-
     }
 
     // [POST] /users/BuyCoin/
-    BuyCoin(req, res) {
+    async BuyCoin(req, res) {
         const { gmailUser, amount, amountUsd, symbol, price, type } = req.body;
-        Users.findOne({ 'payment.email': gmailUser }, (err, user) => {
+        Users.findOne({ 'payment.email': gmailUser }, async (err, user) => {
             if (err) {
                 return res.json({ code: 2, message: err.message });
             }
@@ -409,27 +544,8 @@ class UsersController {
                 });
             }
 
-            // return res.json({code: 1, message: "OK", data: user})
-            const typeUser = user.payment.rule,
-                rank = user.rank,
-                coins = user.coins,
-                fee = user.fee;
-
-            buyCoin(
-                req,
-                res,
-                fee,
-                gmailUser,
-                amount,
-                amountUsd,
-                symbol,
-                price,
-                type,
-                typeUser,
-                rank,
-                coins,
-                user
-            );
+            buyCoin(req, res, user, amount, amountUsd, symbol, price, type);
+            // return res.json({ code: 1, message: 'OK', data: user });
         });
     }
 
@@ -678,12 +794,16 @@ class UsersController {
                 }
 
                 if (user) {
-
-                    const checkPaymentPre = Payments.findOne({accountNumber: accountNumber})
-                    const [checkPayment] = await Promise.all([checkPaymentPre])
-                    if(checkPayment){
-                        errCode2(res, `Payment with number account = ${accountNumber} is valid`)
-                    }else{
+                    const checkPaymentPre = Payments.findOne({
+                        accountNumber: accountNumber
+                    });
+                    const [checkPayment] = await Promise.all([checkPaymentPre]);
+                    if (checkPayment) {
+                        errCode2(
+                            res,
+                            `Payment with number account = ${accountNumber} is valid`
+                        );
+                    } else {
                         let infoBank = user.payment.bank;
                         infoBank.bankName = bankName;
                         infoBank.name = nameAccount;
@@ -718,7 +838,6 @@ class UsersController {
                                 methods.errCode1(res, err);
                             });
                     }
-
                 } else {
                     methods.errCode2(res, `User is not valid with id = ${id}`);
                 }
@@ -933,7 +1052,7 @@ class UsersController {
             upperCaseAlphabets: false,
             specialChars: false
         });
-        const { amount, user, amountVnd, bankAdmin} = req.body;
+        const { amount, user, amountVnd, bankAdmin } = req.body;
 
         const infoUser = Users.findOne({ 'payment.email': user });
         const [info] = await Promise.all([infoUser]);
@@ -989,7 +1108,7 @@ class UsersController {
                                     .then((deposit) => {
                                         return res.json({
                                             code: 0,
-                                            data: deposit,
+                                            data: deposit
                                         });
                                     })
                                     .catch((err) => {
@@ -1082,26 +1201,39 @@ class UsersController {
     }
 
     // [PUT] /users/additionImageDeposit/:id
-    async additionImageDeposit(req, res){
-        try{
-            const {imageDeposit, bankAdmin} = req.body
-            const {id} = req.params
-            let date = Date.now()
-            const depositGet = Deposits.findById(id)
-            const imageRestored = restoreImageFromBase64(imageDeposit.image, `${date}-${imageDeposit.fileName}`, 'images')
-            const [image, deposit] = await Promise.all([imageRestored, depositGet])
-            const pathImageDeposit = Path.join('/images', `${date}-${imageDeposit.fileName}`)
-            if(image.code == 0){
-                deposit.statement = pathImageDeposit
-                deposit.bankAdmin = bankAdmin
-                deposit.status = "Confirmed"
+    async additionImageDeposit(req, res) {
+        try {
+            const { imageDeposit, bankAdmin } = req.body;
+            const { id } = req.params;
+            let date = Date.now();
+            const depositGet = Deposits.findById(id);
+            const imageRestored = restoreImageFromBase64(
+                imageDeposit.image,
+                `${date}-${imageDeposit.fileName}`,
+                'images'
+            );
+            const [image, deposit] = await Promise.all([
+                imageRestored,
+                depositGet
+            ]);
+            const pathImageDeposit = Path.join(
+                '/images',
+                `${date}-${imageDeposit.fileName}`
+            );
+            if (image.code == 0) {
+                deposit.statement = pathImageDeposit;
+                deposit.bankAdmin = bankAdmin;
+                deposit.status = 'Confirmed';
                 deposit.save().then(() => {
                     // botHelperSendMessage(chatId, deposit, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
-                    successCode(res, `Addition image successfully for deposit with id = ${id}`)
-                })
+                    successCode(
+                        res,
+                        `Addition image successfully for deposit with id = ${id}`
+                    );
+                });
             }
-        }catch(err){
-            errCode1(res, err)
+        } catch (err) {
+            errCode1(res, err);
         }
     }
 
@@ -1253,23 +1385,27 @@ class UsersController {
     }
 
     // [GET] /users/getRate/:numberBank
-    async getRatesOfUser(req, res){
-        try{
-            const {numberBank} = req.params
-            const getInfoPayment = Payments.findOne({accountNumber: numberBank})
-            const [rates] = await Promise.all([getInfoPayment])
-            if(rates){
+    async getRatesOfUser(req, res) {
+        try {
+            const { numberBank } = req.params;
+            const getInfoPayment = Payments.findOne({
+                accountNumber: numberBank
+            });
+            const [rates] = await Promise.all([getInfoPayment]);
+            if (rates) {
                 dataCode(res, {
                     rateDeposit: rates.rateDeposit,
                     rateWithdraw: rates.rateWithdraw
-                })
-            }else{
-                errCode2(res, `Can not get rates as account number = ${numberBank} is not valid`)
+                });
+            } else {
+                errCode2(
+                    res,
+                    `Can not get rates as account number = ${numberBank} is not valid`
+                );
             }
-        }catch(err){
-            errCode1(res, err)
+        } catch (err) {
+            errCode1(res, err);
         }
     }
-
 }
 module.exports = new UsersController();

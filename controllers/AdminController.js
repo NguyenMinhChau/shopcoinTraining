@@ -10,8 +10,8 @@ const jwt_decoded = require('jwt-decode');
 
 const methods = require('../function');
 const mongoose = require('mongoose');
-// import model
 
+// import model
 const User = require('../models/User');
 const Coins = require('../models/Coins');
 const Payments = require('../models/Payments');
@@ -19,6 +19,9 @@ const Withdraws = require('../models/Withdraws');
 const Deposits = require('../models/Deposits');
 const Bills = require('../models/Bills');
 const Rank = require('../models/Ranks');
+const Commission = require('../models/Commission');
+
+// import function
 const { mail, dataCode } = require('../function');
 const { resolve } = require('path');
 
@@ -973,12 +976,69 @@ class AdminController {
                                                 if (u) {
                                                     bill.status = status;
                                                     bill.save()
-                                                        .then((b) => {
+                                                        .then(async (b) => {
                                                             if (b) {
-                                                                successCode(
-                                                                    res,
-                                                                    `Confirmed the bill with type buyCoin successfully with id = ${prepare.id}`
-                                                                );
+                                                                const commision =
+                                                                    Commission.findById(
+                                                                        process
+                                                                            .env
+                                                                            .ID_COMMISSION
+                                                                    );
+                                                                const [comm] =
+                                                                    await Promise.all(
+                                                                        [
+                                                                            commision
+                                                                        ]
+                                                                    );
+                                                                if (comm) {
+                                                                    const commissionRes =
+                                                                        comm;
+                                                                    commissionRes.commission =
+                                                                        methods.precisionRound(
+                                                                            parseFloat(
+                                                                                commissionRes.commission
+                                                                            ) +
+                                                                                parseFloat(
+                                                                                    prepare.amount
+                                                                                ) *
+                                                                                    parseFloat(
+                                                                                        prepare.price
+                                                                                    ) *
+                                                                                    parseFloat(
+                                                                                        prepare.fee
+                                                                                    )
+                                                                        );
+                                                                    commissionRes
+                                                                        .save()
+                                                                        .then(
+                                                                            (
+                                                                                result
+                                                                            ) => {
+                                                                                successCode(
+                                                                                    res,
+                                                                                    `Confirmed the bill with type buyCoin successfully with id = ${prepare.id}`
+                                                                                );
+                                                                            }
+                                                                        )
+                                                                        .catch(
+                                                                            (
+                                                                                err
+                                                                            ) => {
+                                                                                errCode1(
+                                                                                    res,
+                                                                                    err
+                                                                                );
+                                                                            }
+                                                                        );
+                                                                } else {
+                                                                    console.log(
+                                                                        comm
+                                                                    );
+                                                                    errCode2(
+                                                                        res,
+                                                                        `Can not find commision`
+                                                                    );
+                                                                }
                                                             } else {
                                                                 errCode2(
                                                                     res,
@@ -1073,11 +1133,79 @@ class AdminController {
                                                 if (u) {
                                                     bill.status = status;
                                                     bill.save()
-                                                        .then((b) => {
-                                                            successCode(
-                                                                res,
-                                                                `Successfully cancel buy coin with id = ${id}`
-                                                            );
+                                                        .then(async (b) => {
+                                                            const commission =
+                                                                Commission.findById(
+                                                                    process.env
+                                                                        .ID_COMMISSION
+                                                                );
+                                                            const [comm] =
+                                                                await Promise.all(
+                                                                    [commission]
+                                                                );
+
+                                                            if (comm) {
+                                                                const commissionRes =
+                                                                    comm;
+                                                                commissionRes.commission =
+                                                                    methods.precisionRound(
+                                                                        parseFloat(
+                                                                            commissionRes.commission
+                                                                        ) -
+                                                                            parseFloat(
+                                                                                prepare.amount
+                                                                            ) *
+                                                                                parseFloat(
+                                                                                    prepare.price
+                                                                                ) *
+                                                                                parseFloat(
+                                                                                    prepare.fee
+                                                                                )
+                                                                    );
+                                                                console.log(
+                                                                    methods.precisionRound(
+                                                                        parseFloat(
+                                                                            commissionRes.commission
+                                                                        ) -
+                                                                            parseFloat(
+                                                                                prepare.amount
+                                                                            ) *
+                                                                                parseFloat(
+                                                                                    prepare.price
+                                                                                ) *
+                                                                                parseFloat(
+                                                                                    prepare.fee
+                                                                                )
+                                                                    )
+                                                                );
+                                                                commissionRes
+                                                                    .save()
+                                                                    .then(
+                                                                        (
+                                                                            result
+                                                                        ) => {
+                                                                            successCode(
+                                                                                res,
+                                                                                `Successfully cancel buy coin with id = ${id}`
+                                                                            );
+                                                                        }
+                                                                    )
+                                                                    .catch(
+                                                                        (
+                                                                            err
+                                                                        ) => {
+                                                                            errCode1(
+                                                                                res,
+                                                                                err
+                                                                            );
+                                                                        }
+                                                                    );
+                                                            } else {
+                                                                errCode2(
+                                                                    res,
+                                                                    `Can not find commission`
+                                                                );
+                                                            }
                                                         })
                                                         .catch((err) => {
                                                             errCode1(req, err);

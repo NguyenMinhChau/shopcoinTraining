@@ -7,7 +7,7 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const { BOT_TELEGRAM_TOKEN, URL_API } = process.env;
 
-const bot = new TelegramBot(BOT_TELEGRAM_TOKEN, { polling: true });
+const bot = new TelegramBot(BOT_TELEGRAM_TOKEN);
 
 // let transporter = nodemailer.createTransport({
 //     service: 'gmail',
