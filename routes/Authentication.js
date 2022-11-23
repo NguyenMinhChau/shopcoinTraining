@@ -13,4 +13,10 @@ router.post('/register', AuthenticationController.register);
 // [POST] /authentication/login
 router.post('/login', AuthenticationController.register);
 
+// [POST] /admin/refreshToken
+router.post('/refreshToken', AuthenticationController.refreshToken);
+
+// [POST] /authentication/logout
+router.post('/logout', AuthenticationController.logout);
+
 module.exports = router;

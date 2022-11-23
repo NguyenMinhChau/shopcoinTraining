@@ -115,5 +115,53 @@ class AuthenticationController {
             });
         });
     }
+
+    // [POST] /admin/refreshToken
+    refreshToken(req, res) {
+        const refreshToken = req.cookies.jwt;
+        if (refreshToken) {
+            // const {id, email} = req.body
+            jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
+                if (err) {
+                    errCode1(res, err);
+                } else {
+                    const token = jwt.sign(
+                        { id: decoded.id, email: decoded.email },
+                        process.env.JWT_SECRET,
+                        {
+                            expiresIn: '30m'
+                        }
+                    );
+                    const refreshToken = jwt.sign(
+                        { id: decoded.id, email: decoded.email },
+                        process.env.JWT_SECRET,
+                        {
+                            expiresIn: '1d'
+                        }
+                    );
+
+                    res.cookie('jwt', refreshToken, {
+                        httpOnly: true,
+                        sameSite: 'strict',
+                        secure: false,
+                        maxAge: 24 * 60 * 1000 * 60
+                    });
+
+                    return res.json({ code: 0, newtoken: token });
+                    // console.log(decoded)
+                    // return res.json("OK")
+                }
+            });
+        } else {
+            return res.json('No jwt');
+        }
+    }
+
+    // [POST] /authentication/logout
+    logout(req, res, next) {
+        // req.session.destroy();
+        res.clearCookie('jwt');
+        errCode2(res, `Logout`);
+    }
 }
 module.exports = new AuthenticationController();

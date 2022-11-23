@@ -17,4 +17,13 @@ router.get('/getRate', RateController.getRate);
 // [GET] /admin/updateRate
 router.get('/updateRate', RateController.updateRate);
 
+// [GET] /admin/getUser/:id
+router.get('/getUser/:id', AdminController.getUser);
+
+// [GET] /admin/getPaymentAdmin
+router.get('/getPaymentAdmin', AdminController.getPaymentAdmin);
+
+// [GET] /admin/getPayment/:id
+router.get('/getPayment/:id', AdminController.getPayment);
+
 module.exports = router;
