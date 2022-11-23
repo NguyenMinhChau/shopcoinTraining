@@ -41,10 +41,10 @@ const addUSD = async (user, amountUSD) => {
 
 const subUSD = async (user, amountUSD) => {
     const p = new Promise((resolve, reject) => {
-        if ((!checkBalance(user.Wallet.balance), amountUSD)) {
+        if (!(checkBalance(user.Wallet.balance), amountUSD)) {
             reject({
                 code: 1,
-                message: `Tài khoản của khách hàng hiện tại không đủ để trừ đi USD với ví: ${user.Wallet.balance} và trừ đi: $${amountUSD}`
+                message: `Tài khoản của khách hàng hiện tại không đủ để trừ đi USD với ví: ${user.Wallet.balance} và trừ đi: ${amountUSD}`
             });
         }
 
@@ -82,20 +82,6 @@ class AdminController {
         }
     }
 
-    // [GET] /admin/getUser/:id
-    getUser(req, res) {
-        const { id } = req.params;
-        User.findById(id, (err, user) => {
-            if (err) errCode1(res, err);
-
-            if (user) {
-                dataCode(res, user);
-            } else {
-                errCode2(res, `User is not valid with id = ${id}`);
-            }
-        });
-    }
-
     // [GET] /admin/getPaymentAdmin
     async getPaymentAdmin(req, res, next) {
         try {
@@ -108,6 +94,30 @@ class AdminController {
             ]);
             const [payments] = await Promise.all([getPaymentAdminResult]);
             dataCode(res, payments);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // -------------------------------------- get By id ------------------------------------------------
+
+    // [GET] /admin/getDeposit/:id
+    async getDeposit(req, res, next) {
+        try {
+            const { id } = req.params;
+            const deposit = await Deposit.findById(id);
+            dataCode(res, deposit);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /admin/getWithdraw/:id
+    async getWithdraw(req, res, next) {
+        try {
+            const { id } = req.params;
+            const withdraw = await Withdraw.findById(id);
+            dataCode(res, withdraw);
         } catch (error) {
             errCode1(res, error);
         }
@@ -132,6 +142,22 @@ class AdminController {
         }
     }
 
+    // [GET] /admin/getUser/:id
+    getUser(req, res) {
+        const { id } = req.params;
+        User.findById(id, (err, user) => {
+            if (err) errCode1(res, err);
+
+            if (user) {
+                dataCode(res, user);
+            } else {
+                errCode2(res, `User is not valid with id = ${id}`);
+            }
+        });
+    }
+
+    // -------------------------------------- get By id ------------------------------------------------
+
     // -------------------------------------- handle function ------------------------------------------------
 
     // [POST] /handleBuyUSD/:id
@@ -149,14 +175,17 @@ class AdminController {
             ]);
             const [depositFound] = await Promise.all([depositFind]);
             const depositFinal = depositFound[0];
-            const user = await User.findById(depositFinal.user);
-
+            const userFind = User.findOne({
+                'payment.email': depositFinal.user
+            });
+            const [user] = await Promise.all([userFind]);
             if (status == 'Completed') {
                 const addUSDResult = addUSD(user, depositFinal.amountUsd);
                 addUSDResult
-                    .then((value) => {
-                        depositFinal.status = status;
-                        depositFinal
+                    .then(async (value) => {
+                        const deposit = await Deposit.findById(id);
+                        deposit.status = status;
+                        deposit
                             .save()
                             .then(() => {
                                 successCode(
@@ -170,9 +199,10 @@ class AdminController {
             } else if (status == 'Canceled') {
                 const subUSDResult = subUSD(user, depositFinal.amountUsd);
                 subUSDResult
-                    .then((value) => {
-                        depositFinal.status = status;
-                        depositFinal
+                    .then(async (value) => {
+                        const deposit = await Deposit.findById(id);
+                        deposit.status = status;
+                        deposit
                             .save()
                             .then(() => {
                                 successCode(
@@ -184,8 +214,9 @@ class AdminController {
                     })
                     .catch((err) => errCode1(res, err));
             } else {
-                depositFinal.status = status;
-                depositFinal
+                const deposit = await Deposit.findById(id);
+                deposit.status = status;
+                deposit
                     .save()
                     .then(() => {
                         successCode(
@@ -219,9 +250,10 @@ class AdminController {
             if (status == 'Completed') {
                 const subUSDResult = subUSD(user, withdrawFinal.amountUsd);
                 subUSDResult
-                    .then((value) => {
-                        withdrawFinal.status = status;
-                        withdrawFinal
+                    .then(async (value) => {
+                        const withdraw = await Withdraw.findById(id);
+                        withdraw.status = status;
+                        withdraw
                             .save()
                             .then(() => {
                                 successCode(
@@ -235,9 +267,10 @@ class AdminController {
             } else if (status == 'Canceled') {
                 const addUSDResult = addUSD(user, withdrawFinal.amountUsd);
                 addUSDResult
-                    .then((value) => {
-                        withdrawFinal.status = status;
-                        withdrawFinal
+                    .then(async (value) => {
+                        const withdraw = await Withdraw.findById(id);
+                        withdraw.status = status;
+                        withdraw
                             .save()
                             .then(() => {
                                 successCode(
@@ -249,8 +282,9 @@ class AdminController {
                     })
                     .catch((err) => errCode1(res, err));
             } else {
-                withdrawFinal.status = status;
-                withdrawFinal
+                const withdraw = await Withdraw.findById(id);
+                withdraw.status = status;
+                withdraw
                     .save()
                     .then(() => {
                         successCode(
@@ -455,7 +489,10 @@ class AdminController {
                         parseFloat(total) + parseFloat(users[i].Wallet.balance)
                     );
                 }
-                dataCode(res, total);
+                dataCode(res, {
+                    users: users,
+                    total: total
+                });
             }
         } else {
             let fromDate = new Date(from);
@@ -476,11 +513,49 @@ class AdminController {
                         parseFloat(total) + parseFloat(users[i].Wallet.balance)
                     );
                 }
-                dataCode(res, total);
+                dataCode(res, {
+                    users: users,
+                    total: total
+                });
             }
         }
     }
 
     // -------------------------------------- get total ------------------------------------------------
+
+    // [POST] /admin/giveUSD/:id
+    async giveUSD(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { usd } = req.body;
+            const user = await User.findById(id);
+
+            if (usd > 0) {
+                addUSD(user, usd)
+                    .then((result) => {
+                        successCode(
+                            res,
+                            `Đã tặng usd cho user với email: ${user.payment.email}`
+                        );
+                    })
+                    .catch((err) => {
+                        errCode1(res, err);
+                    });
+            } else {
+                subUSD(user, Math.abs(usd))
+                    .then((result) => {
+                        successCode(
+                            res,
+                            `Đã trừ usd cho user với email: ${user.payment.email}`
+                        );
+                    })
+                    .catch((err) => {
+                        errCode1(res, err);
+                    });
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
 }
 module.exports = new AdminController();

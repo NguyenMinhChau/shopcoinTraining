@@ -11,7 +11,7 @@ const { verifyPermission, verifyToken } = require('../auth/checkAuth');
 router.post('/register', AuthenticationController.register);
 
 // [POST] /authentication/login
-router.post('/login', AuthenticationController.register);
+router.post('/login', AuthenticationController.login);
 
 // [POST] /admin/refreshToken
 router.post('/refreshToken', AuthenticationController.refreshToken);

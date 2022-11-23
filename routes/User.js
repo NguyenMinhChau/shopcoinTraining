@@ -10,8 +10,8 @@ const { verifyPermission, verifyToken } = require('../auth/checkAuth');
 // [POST] /users/BuyUSD/:id
 router.post('/BuyUSD/:id', UserController.BuyUSD);
 
-// [POST] /users/additionImageDeposit/:id
-router.post('/additionImageDeposit/:id', UserController.additionImageDeposit);
+// [PUT] /users/additionImageDeposit/:id
+router.put('/additionImageDeposit/:id', UserController.additionImageDeposit);
 
 // [POST] /users/SellUSD/:id
 router.post('/SellUSD/:id', UserController.sellUSD);

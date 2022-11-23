@@ -29,10 +29,20 @@ router.get('/getPayment/:id', AdminController.getPayment);
 // ------------------- handle services ----------------
 
 // [PUT] /admin/handleSellUSD/:id
-router.put('/handleSellUSD/:id', AdminController.handleSellUSD);
+router.put(
+    '/handleSellUSD/:id',
+    verifyToken,
+    verifyPermission(['admin', 'manager']),
+    AdminController.handleSellUSD
+);
 
 // [PUT] /admin/handleBuyUSD/:id
-router.put('/handleBuyUSD/:id', AdminController.handleBuyUSD);
+router.put(
+    '/handleBuyUSD/:id',
+    verifyToken,
+    verifyPermission(['admin', 'manager']),
+    AdminController.handleBuyUSD
+);
 
 // ------------------- handle services ----------------
 
@@ -52,13 +62,28 @@ router.get('/getAllUser', AdminController.getAllUser);
 // ------------------- delete services ----------------
 
 // [DELETE] /admin/deleteUser/:id
-router.delete('/deleteUser/:id', AdminController.deleteUser);
+router.delete(
+    '/deleteUser/:id',
+    verifyToken,
+    verifyPermission(['admin']),
+    AdminController.deleteUser
+);
 
 // [DELETE] /admin/deleteWithdraw/:id
-router.delete('/deleteWithdraw/:id', AdminController.deleteWithdraw);
+router.delete(
+    '/deleteWithdraw/:id',
+    verifyToken,
+    verifyPermission(['admin']),
+    AdminController.deleteWithdraw
+);
 
 // [DELETE] /admin/deleteDeposit/:id
-router.delete('/deleteDeposit/:id', AdminController.deleteDeposit);
+router.delete(
+    '/deleteDeposit/:id',
+    verifyToken,
+    verifyPermission(['admin']),
+    AdminController.deleteDeposit
+);
 
 // ------------------- delete services ----------------
 
@@ -74,5 +99,19 @@ router.get('/totalWithdraw', AdminController.totalWithdraw);
 router.get('/totalBalance', AdminController.totalBalance);
 
 // -------------------------------------- get total ------------------------------------------------
+
+// [POST] /admin/giveUSD/:id
+router.post(
+    '/giveUSD/:id',
+    verifyToken,
+    verifyPermission(['admin']),
+    AdminController.giveUSD
+);
+
+// [GET] /admin/getDeposit/:id
+router.get('/getDeposit/:id', AdminController.getDeposit);
+
+// [GET] /admin/getWithdraw/:id
+router.get('/getWithdraw/:id', AdminController.getWithdraw);
 
 module.exports = router;

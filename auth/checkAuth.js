@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const Users = require('../models/User');
 
-const { errCode1, errCode2 } = require('../functions');
+const { errCode1, errCode2, dataCode } = require('../functions');
 
 const verifyToken = async (req, res, next) => {
     const token =
@@ -13,13 +13,14 @@ const verifyToken = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const listForAccess = ['admin'];
         if (decoded) {
-            req.user = decoded;
             let { email } = decoded;
 
-            const user = await Users.find({ 'payment.email': email });
+            const user = await Users.findOne({ 'payment.email': email });
             if (user) {
-                if (user.payment.rule === 'admin' || user.blockUser === false) {
+                if (user.payment.rule == 'admin' || user.blockUser == false) {
+                    req.user = user;
                     next();
                 } else {
                     errCode2(
@@ -39,16 +40,12 @@ const verifyToken = async (req, res, next) => {
 const verifyPermission = (permissions) => {
     return (req, res, next) => {
         const user = req.user;
-        if (!user) {
-            errCode2(res, `User not found!`);
-        }
-
         const rule = user.payment.rule;
         if (!permissions.includes(rule)) {
             errCode2(res, `You don't have permission to access this api !!`);
+        } else {
+            next();
         }
-
-        next();
     };
 };
 

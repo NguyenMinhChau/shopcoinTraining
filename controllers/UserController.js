@@ -51,19 +51,24 @@ const restoreImageFromBase64 = async (imageBase64, fileName, where) => {
     return p;
 };
 
-const uyUSDSupport = async (amountUSD, amountVnd, email) => {
-    const p = new Promise((resolve, reject) => {
+const buyUSDSupport = async (amountUSD, amountVnd, email) => {
+    const p = new Promise(async (resolve, reject) => {
         const code = otpGenerate.generate(4, {
             specialChars: false,
             lowerCaseAlphabets: false,
             upperCaseAlphabets: false
         });
-
+        const user = await Users.findOne({ 'payment.email': email });
         const deposit = new Deposit({
             code: code,
             user: email,
             amountUsd: amountUSD,
-            amountVnd: amountVnd
+            amountVnd: amountVnd,
+            method: {
+                accountName: user.payment.bank.name,
+                accountNumber: user.payment.bank.account,
+                methodName: user.payment.bank.bankName
+            }
         });
 
         deposit
