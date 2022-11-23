@@ -114,4 +114,12 @@ router.get('/getDeposit/:id', AdminController.getDeposit);
 // [GET] /admin/getWithdraw/:id
 router.get('/getWithdraw/:id', AdminController.getWithdraw);
 
+// [PUT] /admin/blockAndUnBlock/:id
+router.put(
+    '/blockAndUnBlock/:id',
+    verifyToken,
+    verifyPermission(['admin', 'manager']),
+    AdminController.blockAndUnBlock
+);
+
 module.exports = router;

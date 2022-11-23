@@ -557,5 +557,28 @@ class AdminController {
             errCode1(res, error);
         }
     }
+
+    // [PUT] /admin/blockAndUnBlock/:id
+    async blockAndUnBlock(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+            const user = await User.findById(id);
+            user.blockUser = status;
+            user.save()
+                .then((result) => {
+                    if (status == 'true') {
+                        successCode(res, `Blocked user successfully`);
+                    } else {
+                        successCode(res, `UnBlocked user successfully`);
+                    }
+                })
+                .catch((err) => {
+                    errCode1(res, err);
+                });
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
 }
 module.exports = new AdminController();
