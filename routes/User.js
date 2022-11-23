@@ -37,4 +37,10 @@ router.put('/additionBankInfo/:id', UserController.additionBankInfo);
 // [PUT] /users/getOTP/:token
 router.put('/getOTP/:token', UserController.getOTP);
 
+// [GET] /users/getPaymentByEmail/:email
+router.get('/getPaymentByEmail/:email', UserController.getPaymentByEmail);
+
+// [GET] /users/getWithdrawByEmail/:email
+router.get('/getWithdrawByEmail/:email', UserController.getWithdrawByEmail);
+
 module.exports = router;

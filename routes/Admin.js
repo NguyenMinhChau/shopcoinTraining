@@ -26,4 +26,10 @@ router.get('/getPaymentAdmin', AdminController.getPaymentAdmin);
 // [GET] /admin/getPayment/:id
 router.get('/getPayment/:id', AdminController.getPayment);
 
+// [PUT] /admin/handleSellUSD/:id
+router.put('/handleSellUSD/:id', AdminController.handleSellUSD);
+
+// [PUT] /admin/handleBuyUSD/:id
+router.put('/handleBuyUSD/:id', AdminController.handleBuyUSD);
+
 module.exports = router;

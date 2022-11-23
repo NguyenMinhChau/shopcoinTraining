@@ -4,6 +4,7 @@ const jimp = require('jimp');
 const fs = require('fs');
 const Path = require('path');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 // import models
 const Deposit = require('../models/Deposit');
@@ -50,7 +51,7 @@ const restoreImageFromBase64 = async (imageBase64, fileName, where) => {
     return p;
 };
 
-const buyUSDSupport = async (amountUSD, amountVnd, email) => {
+const uyUSDSupport = async (amountUSD, amountVnd, email) => {
     const p = new Promise((resolve, reject) => {
         const code = otpGenerate.generate(4, {
             specialChars: false,
@@ -67,10 +68,11 @@ const buyUSDSupport = async (amountUSD, amountVnd, email) => {
 
         deposit
             .save()
-            .then(() => {
+            .then((deposit) => {
                 resolve({
                     code: 0,
-                    message: `Mua USD thành công chờ quản lý xét duyệt`
+                    message: `Mua USD thành công chờ quản lý xét duyệt`,
+                    data: deposit
                 });
             })
             .catch((err) => {
@@ -105,7 +107,12 @@ const sellUSDSupport = async (amountUSD, amountVnd, email, user) => {
             code: code,
             user: email,
             amountUsd: amountUSD,
-            amountVnd: amountVnd
+            amountVnd: amountVnd,
+            method: {
+                accountName: user.payment.bank.name,
+                accountNumber: user.payment.bank.account,
+                methodName: user.payment.bank.bankName
+            }
         });
 
         withdraw
@@ -508,7 +515,7 @@ class UserController {
                 );
                 resultBuyUSD
                     .then((value) => {
-                        successCode(res, value.message);
+                        dataCode(res, value.data);
                     })
                     .catch((err) => errCode1(res, err));
             } else {
@@ -591,10 +598,7 @@ class UserController {
 
                                 otp.save()
                                     .then((result) => {
-                                        successCode(
-                                            res,
-                                            `Đã tạo hoá đơn vui lòng nhập OTP được gửi về mail`
-                                        );
+                                        dataCode(res, withdraw);
                                     })
                                     .catch((err) => {
                                         errCode1(res, err);
@@ -712,6 +716,44 @@ class UserController {
             }
         });
         // mail(email, )
+    }
+
+    // [GET] /users/getPaymentByEmail/:email
+    async getPaymentByEmail(req, res, next) {
+        try {
+            const { email } = req.params;
+            const getPaymentsByEmailResult = Deposit.aggregate([
+                {
+                    $match: {
+                        user: email
+                    }
+                }
+            ]);
+
+            const [payments] = await Promise.all([getPaymentsByEmailResult]);
+            dataCode(res, payments);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /users/getWithdrawByEmail/:email
+    async getWithdrawByEmail(req, res, next) {
+        try {
+            const { email } = req.params;
+            const getWithdrawByEmailResult = Withdraw.aggregate([
+                {
+                    $match: {
+                        user: email
+                    }
+                }
+            ]);
+
+            const [withdraws] = await Promise.all([getWithdrawByEmailResult]);
+            dataCode(res, withdraws);
+        } catch (error) {
+            errCode1(res, error);
+        }
     }
 }
 
