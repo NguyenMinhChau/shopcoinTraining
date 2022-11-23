@@ -32,4 +32,13 @@ router.put('/handleSellUSD/:id', AdminController.handleSellUSD);
 // [PUT] /admin/handleBuyUSD/:id
 router.put('/handleBuyUSD/:id', AdminController.handleBuyUSD);
 
+// [GET] /admin/getAllDeposit
+router.get('/getAllDeposit', AdminController.getAllDeposit);
+
+// [GET] /admin/getAllWithdraw
+router.get('/getAllWithdraw', AdminController.getAllWithdraw);
+
+// [GET] /admin/getAllUser
+router.get('/getAllUser', AdminController.getAllUser);
+
 module.exports = router;

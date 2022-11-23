@@ -132,6 +132,8 @@ class AdminController {
         }
     }
 
+    // -------------------------------------- handle function ------------------------------------------------
+
     // [POST] /handleBuyUSD/:id
     async handleBuyUSD(req, res, next) {
         try {
@@ -262,5 +264,44 @@ class AdminController {
             errCode1(res, error);
         }
     }
+
+    // -------------------------------------- handle function ------------------------------------------------
+
+    // -------------------------------------- get All ------------------------------------------------
+
+    // [GET] /admin/getAllDeposit
+    async getAllDeposit(req, res, next) {
+        try {
+            const getAllDepositResult = await Deposit.find();
+
+            dataCode(res, getAllDepositResult);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /admin/getAllWithdraw
+    async getAllWithdraw(req, res, next) {
+        try {
+            const getAllWithdrawResult = await Withdraw.find();
+
+            dataCode(res, getAllWithdrawResult);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /admin/getAllUser
+    async getAllUser(req, res, next) {
+        try {
+            const getAllUserResult = await User.find();
+
+            dataCode(res, getAllUserResult);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // -------------------------------------- get All ------------------------------------------------
 }
 module.exports = new AdminController();
