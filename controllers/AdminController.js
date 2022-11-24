@@ -8,6 +8,8 @@ const User = require('../models/User');
 const Payment = require('../models/Payments');
 const Deposit = require('../models/Deposit');
 const Withdraw = require('../models/Withdraw');
+const Rate = require('../models/Rate');
+const Commission = require('../models/Commission');
 
 // import functions
 const {
@@ -67,6 +69,43 @@ const subUSD = async (user, amountUSD) => {
             });
     });
 
+    return p;
+};
+
+const addCommission = async (comm) => {
+    const p = new Promise(async (resolve, reject) => {
+        const commission = await Commission.findOne({});
+        // console.log(commission);
+        commission.commission = precisionRound(
+            parseFloat(commission.commission) + parseFloat(comm)
+        );
+        commission
+            .save()
+            .then((result) => {
+                resolve({ code: 0, message: 'Đã cộng commission' });
+            })
+            .catch((err) => {
+                reject({ code: 1, message: err.message });
+            });
+    });
+    return p;
+};
+
+const subCommission = async (comm) => {
+    const p = new Promise(async (resolve, reject) => {
+        const commission = await Commission.findOne({});
+        commission.commission = precisionRound(
+            parseFloat(commission.commission) - parseFloat(comm)
+        );
+        commission
+            .save()
+            .then((result) => {
+                resolve({ code: 0, message: 'Đã trừ commission' });
+            })
+            .catch((err) => {
+                reject({ code: 1, message: err.message });
+            });
+    });
     return p;
 };
 
@@ -193,10 +232,16 @@ class AdminController {
                         deposit
                             .save()
                             .then(() => {
-                                successCode(
-                                    res,
-                                    `Đã thêm USD cho khách hàng !!`
-                                );
+                                addCommission(deposit.commission)
+                                    .then((result) => {
+                                        successCode(
+                                            res,
+                                            `Đã thêm USD cho khách hàng !!`
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
                             })
                             .catch((err) => errCode1(res, err));
                     })
@@ -210,10 +255,16 @@ class AdminController {
                         deposit
                             .save()
                             .then(() => {
-                                successCode(
-                                    res,
-                                    `Đã trừ USD cho khách hàng trong từ chối giao dịch này !!`
-                                );
+                                subCommission(deposit.commission)
+                                    .then((result) => {
+                                        successCode(
+                                            res,
+                                            `Đã trừ USD cho khách hàng trong từ chối giao dịch này !!`
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
                             })
                             .catch((err) => errCode1(res, err));
                     })
@@ -263,10 +314,16 @@ class AdminController {
                         withdraw
                             .save()
                             .then(() => {
-                                successCode(
-                                    res,
-                                    `Đã trừ USD cho khách hàng trong từ chối giao dịch này !!`
-                                );
+                                addCommission(withdraw.commission)
+                                    .then((result) => {
+                                        successCode(
+                                            res,
+                                            `Đã bán USD thành công !!`
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
                             })
                             .catch((err) => errCode1(res, err));
                     })
@@ -280,10 +337,16 @@ class AdminController {
                         withdraw
                             .save()
                             .then(() => {
-                                successCode(
-                                    res,
-                                    `Đã thêm USD cho khách hàng !!`
-                                );
+                                subCommission(withdraw.commission)
+                                    .then((result) => {
+                                        successCode(
+                                            res,
+                                            `Đã từ chối bán USD này thành công đã trả lại USD cho khách hàng !!`
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
                             })
                             .catch((err) => errCode1(res, err));
                     })
@@ -509,8 +572,7 @@ class AdminController {
 
     // [POST] /admin/totalBalance
     async totalBalance(req, res) {
-        const { from, to } = req.body;
-        if (!from || !to) {
+        try {
             const totalUser = User.find();
             const [users] = await Promise.all([totalUser]);
             if (users.length == 0) {
@@ -534,37 +596,8 @@ class AdminController {
                     totalUser: lenOfUserHaveBalance
                 });
             }
-        } else {
-            let fromDate = new Date(from);
-            let toDate = new Date(to);
-            const totalUser = User.find({
-                createdAt: {
-                    $gte: fromDate,
-                    $lt: toDate
-                }
-            });
-            const [users] = await Promise.all([totalUser]);
-            if (users.length == 0) {
-                errCode2(res, `No Balance of user !!`);
-            } else {
-                let total = 0;
-                for (let i = 0; i < users.length; i++) {
-                    total = precisionRound(
-                        parseFloat(total) + parseFloat(users[i].Wallet.balance)
-                    );
-                }
-                const userHaveBalance = users.filter((user) => {
-                    if (parseFloat(user.Wallet.balance) > 0) {
-                        return user;
-                    }
-                });
-                const lenOfUserHaveBalance = userHaveBalance.length;
-                dataCode(res, {
-                    total: total,
-                    users: userHaveBalance,
-                    totalUser: lenOfUserHaveBalance
-                });
-            }
+        } catch (error) {
+            errCode1(res, error);
         }
     }
 
@@ -715,6 +748,40 @@ class AdminController {
                 .catch((err) => {
                     errCode1(res, err);
                 });
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [PUT] /admin/updateRateBuySell
+    async updateRateBuySell(req, res, next) {
+        try {
+            const rateGot = await Rate.find({});
+            const rate = rateGot[0];
+            const { percent } = req.body;
+            rate.rate = percent;
+            rate.save()
+                .then((result) => {
+                    successCode(
+                        res,
+                        `Thay đổi tỉ giá thành công với tỉ lệ là: ${result.rate}`
+                    );
+                })
+                .catch((err) => {
+                    errCode1(res, err);
+                });
+            // const commission = await Commission.findOne({});
+            // dataCode(res, commission);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /admin/getCommission
+    async getCommission(req, res, next) {
+        try {
+            const commission = await Commission.findOne({});
+            dataCode(res, commission);
         } catch (error) {
             errCode1(res, error);
         }

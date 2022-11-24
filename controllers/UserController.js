@@ -21,13 +21,15 @@ const {
     errCode2,
     successCode,
     dataCode,
-    mail
+    mail,
+    precisionRound
 } = require('../functions');
 const {
     withdrawMail,
     withdrawSuccess,
     confirmWithdraw
 } = require('../mailform/withdrawForm');
+const Commission = require('../models/Commission');
 
 // support function
 const checkBalance = (balanceNow, balanceAdd) => {
@@ -51,7 +53,7 @@ const restoreImageFromBase64 = async (imageBase64, fileName, where) => {
     return p;
 };
 
-const buyUSDSupport = async (amountUSD, amountVnd, email) => {
+const buyUSDSupport = async (amountUSD, amountVnd, email, commission) => {
     const p = new Promise(async (resolve, reject) => {
         const code = otpGenerate.generate(4, {
             specialChars: false,
@@ -68,7 +70,8 @@ const buyUSDSupport = async (amountUSD, amountVnd, email) => {
                 accountName: user.payment.bank.name,
                 accountNumber: user.payment.bank.account,
                 methodName: user.payment.bank.bankName
-            }
+            },
+            commission: commission
         });
 
         deposit
@@ -88,7 +91,13 @@ const buyUSDSupport = async (amountUSD, amountVnd, email) => {
     return p;
 };
 
-const sellUSDSupport = async (amountUSD, amountVnd, email, user) => {
+const sellUSDSupport = async (
+    amountUSD,
+    amountVnd,
+    email,
+    user,
+    commission
+) => {
     const p = new Promise((resolve, reject) => {
         const code = otpGenerate.generate(4, {
             specialChars: false,
@@ -117,7 +126,8 @@ const sellUSDSupport = async (amountUSD, amountVnd, email, user) => {
                 accountName: user.payment.bank.name,
                 accountNumber: user.payment.bank.account,
                 methodName: user.payment.bank.bankName
-            }
+            },
+            commission: commission
         });
 
         withdraw
@@ -510,13 +520,27 @@ class UserController {
             const { id } = req.params;
             const { amountUSD, amountVnd } = req.body;
             const userFind = Users.findById(id);
-            const [user] = await Promise.all([userFind]);
+            const rateFind = Rate.findOne({});
+            const [user, rate] = await Promise.all([userFind, rateFind]);
 
             if (user) {
+                const finalVND = precisionRound(
+                    parseFloat(amountUSD) *
+                        parseFloat(rate.transfer) *
+                        parseFloat(1 - parseFloat(rate.rate))
+                );
+
+                const commission = precisionRound(
+                    parseFloat(amountUSD) *
+                        parseFloat(rate.transfer) *
+                        parseFloat(rate.rate)
+                );
+
                 const resultBuyUSD = buyUSDSupport(
                     amountUSD,
-                    amountVnd,
-                    user.payment.email
+                    finalVND,
+                    user.payment.email,
+                    commission
                 );
                 resultBuyUSD
                     .then((value) => {
@@ -573,14 +597,27 @@ class UserController {
             const { id } = req.params;
             const { amountUSD, amountVnd } = req.body;
             const userFind = Users.findById(id);
-            const [user] = await Promise.all([userFind]);
+            const rateFind = Rate.findOne({});
+            const [user, rate] = await Promise.all([userFind, rateFind]);
 
             if (user) {
+                const finalVND = precisionRound(
+                    parseFloat(amountUSD) *
+                        parseFloat(rate.transfer) *
+                        parseFloat(1 - parseFloat(rate.rate))
+                );
+
+                const commission = precisionRound(
+                    parseFloat(amountUSD) *
+                        parseFloat(rate.transfer) *
+                        parseFloat(rate.rate)
+                );
                 const resultSellUSD = sellUSDSupport(
                     amountUSD,
-                    amountVnd,
+                    finalVND,
                     user.payment.email,
-                    user
+                    user,
+                    commission
                 );
                 resultSellUSD
                     .then((withdraw) => {

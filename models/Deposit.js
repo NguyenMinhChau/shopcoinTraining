@@ -16,7 +16,8 @@ const deposit = new Schema(
         amountVnd: { type: Number, default: 0.0 },
         symbol: { type: String, default: 'USD' },
         statement: { type: String, default: '' },
-        bankAdmin: { type: Object, default: {} }
+        bankAdmin: { type: Object, default: {} },
+        commission: { type: Number, default: 0 }
     },
     { timestamps: true }
 );

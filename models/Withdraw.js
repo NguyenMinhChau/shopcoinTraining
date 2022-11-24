@@ -13,7 +13,8 @@ const withdraw = new Schema(
         user: { type: String, default: '' },
         amountUsd: { type: Number, default: 0 },
         amountVnd: { type: Number, default: 0 },
-        symbol: { type: String, default: 'USD' }
+        symbol: { type: String, default: 'USD' },
+        commission: { type: Number, default: 0 }
     },
     { timestamps: true }
 );

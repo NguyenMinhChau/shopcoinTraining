@@ -17,6 +17,7 @@ const User = require('./routes/User');
 
 // import models
 const Rate = require('./models/Rate');
+const Commission = require('./models/Commission');
 
 const app = express();
 
@@ -88,6 +89,15 @@ Rate.find({}, (err, rates) => {
     if (rates.length == 0) {
         const rate = new Rate();
         rate.save();
+    }
+});
+
+Commission.find({}, (err, commissions) => {
+    if (err) return res.json({ err });
+
+    if (commissions.length == 0) {
+        const commission = new Commission();
+        commission.save();
     }
 });
 

@@ -146,4 +146,15 @@ router.put(
     AdminController.updateRankUser
 );
 
+// [PUT] /admin/updateRateBuySell
+router.put(
+    '/updateRateBuySell',
+    verifyToken,
+    verifyPermission(['admin', 'manager']),
+    AdminController.updateRateBuySell
+);
+
+// [GET] /admin/getCommission
+router.get('/getCommission', AdminController.getCommission);
+
 module.exports = router;
