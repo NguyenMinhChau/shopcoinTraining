@@ -122,4 +122,28 @@ router.put(
     AdminController.blockAndUnBlock
 );
 
+// [PUT] /admin/changePWD/:id
+router.put(
+    '/changePWD/:id',
+    verifyToken,
+    verifyPermission(['admin', 'manager']),
+    AdminController.changePWD
+);
+
+// [PUT] /admin/refreshPWD/:id
+router.put(
+    '/refreshPWD/:id',
+    verifyToken,
+    verifyPermission(['admin', 'manager']),
+    AdminController.refreshPWD
+);
+
+// [PUT] /admin/updateRankUser/:id
+router.put(
+    '/updateRankUser/:id',
+    verifyToken,
+    verifyPermission(['admin', 'manager']),
+    AdminController.updateRankUser
+);
+
 module.exports = router;
