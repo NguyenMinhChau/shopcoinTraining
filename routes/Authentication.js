@@ -7,11 +7,15 @@ const AuthenticationController = require('../controllers/AuthenticationControlle
 // import check authentication
 const { verifyPermission, verifyToken } = require('../auth/checkAuth');
 
+// validators
+const registerValidator = require('./validators/RegisterValidation');
+const LoginValidator = require('./validators/LoginValidator');
+
 // [POST] /authentication/register
-router.post('/register', AuthenticationController.register);
+router.post('/register', registerValidator, AuthenticationController.register);
 
 // [POST] /authentication/login
-router.post('/login', AuthenticationController.login);
+router.post('/login', LoginValidator, AuthenticationController.login);
 
 // [POST] /admin/refreshToken
 router.post('/refreshToken', AuthenticationController.refreshToken);

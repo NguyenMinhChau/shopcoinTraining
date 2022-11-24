@@ -16,9 +16,14 @@ const user = new Schema(
             },
             private: { type: Boolean, default: false },
             rule: { type: String, default: 'user' },
-            email: { type: String, default: '', unique: true },
-            password: { type: String, default: '' },
-            username: { type: String, default: '' },
+            email: {
+                type: String,
+                default: '',
+                unique: true,
+                required: true
+            },
+            password: { type: String, default: '', required: true },
+            username: { type: String, default: '', required: true },
             code: { type: String, default: '' }
         },
         rank: { type: String, default: 'Standard' },
