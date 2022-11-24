@@ -1,5 +1,7 @@
 // import libs
 const { default: mongoose } = require('mongoose');
+const bcrypt = require('bcrypt');
+const otpGenerate = require('otp-generator');
 
 // import models
 const User = require('../models/User');
@@ -13,8 +15,11 @@ const {
     errCode2,
     dataCode,
     successCode,
-    precisionRound
+    precisionRound,
+    mail
 } = require('../functions');
+
+const { refreshPWD } = require('../mailform/refreshPWD');
 
 // functions support
 const checkBalance = (balance, money) => {
@@ -158,7 +163,7 @@ class AdminController {
 
     // -------------------------------------- get By id ------------------------------------------------
 
-    // -------------------------------------- handle function ------------------------------------------------
+    // -------------------------------------- handle function ------------------------------------------
 
     // [POST] /handleBuyUSD/:id
     async handleBuyUSD(req, res, next) {
@@ -299,16 +304,24 @@ class AdminController {
         }
     }
 
-    // -------------------------------------- handle function ------------------------------------------------
+    // -------------------------------------- handle function -------------------------------------------
 
-    // -------------------------------------- get All ------------------------------------------------
+    // -------------------------------------- get All ---------------------------------------------------
 
     // [GET] /admin/getAllDeposit
     async getAllDeposit(req, res, next) {
         try {
-            const getAllDepositResult = await Deposit.find();
+            const getAllDepositResult = Deposit.find();
+            const totalDeposit = Deposit.countDocuments();
+            const [total, deposits] = await Promise.all([
+                totalDeposit,
+                getAllDepositResult
+            ]);
 
-            dataCode(res, getAllDepositResult);
+            dataCode(res, {
+                deposits: deposits,
+                total: total
+            });
         } catch (error) {
             errCode1(res, error);
         }
@@ -317,9 +330,18 @@ class AdminController {
     // [GET] /admin/getAllWithdraw
     async getAllWithdraw(req, res, next) {
         try {
-            const getAllWithdrawResult = await Withdraw.find();
+            const getAllWithdrawResult = Withdraw.find();
+            const totalWithdraws = Withdraw.countDocuments();
 
-            dataCode(res, getAllWithdrawResult);
+            const [total, withdraws] = await Promise.all([
+                totalWithdraws,
+                getAllWithdrawResult
+            ]);
+
+            dataCode(res, {
+                withdraws: withdraws,
+                total: total
+            });
         } catch (error) {
             errCode1(res, error);
         }
@@ -328,15 +350,24 @@ class AdminController {
     // [GET] /admin/getAllUser
     async getAllUser(req, res, next) {
         try {
-            const getAllUserResult = await User.find();
+            const getAllUserResult = User.find();
+            const totalUsers = User.countDocuments();
 
-            dataCode(res, getAllUserResult);
+            const [total, users] = await Promise.all([
+                totalUsers,
+                getAllUserResult
+            ]);
+
+            dataCode(res, {
+                users: users,
+                total: total
+            });
         } catch (error) {
             errCode1(res, error);
         }
     }
 
-    // -------------------------------------- get All ------------------------------------------------
+    // -------------------------------------- get All ---------------------------------------------------
 
     // -------------------------------------- delete All ------------------------------------------------
 
@@ -572,6 +603,98 @@ class AdminController {
                     } else {
                         successCode(res, `UnBlocked user successfully`);
                     }
+                })
+                .catch((err) => {
+                    errCode1(res, err);
+                });
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [PUT] /admin/changePWD/:id
+    async changePWD(req, res, next) {
+        try {
+            const { newPWD } = req.body;
+            const { id } = req.params;
+            const user = await User.findById(id);
+
+            bcrypt
+                .hash(newPWD, 10)
+                .then((hash) => {
+                    user.payment.password = hash;
+                    user.save()
+                        .then((result) => {
+                            successCode(
+                                res,
+                                `Change password of user successfully with email: ${user.payment.email}`
+                            );
+                        })
+                        .catch((err) => {
+                            errCode1(res, err);
+                        });
+                })
+                .catch((err) => {
+                    errCode1(res, err);
+                });
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [PUT] /admin/refreshPWD/:id
+    async refreshPWD(req, res, next) {
+        try {
+            const { id } = req.params;
+            const newPWD = otpGenerate.generate(8);
+            const user = await User.findById(id);
+            bcrypt
+                .hash(newPWD, 10)
+                .then((hash) => {
+                    user.payment.password = hash;
+                    user.save()
+                        .then((result) => {
+                            mail(
+                                user.payment.email,
+                                refreshPWD(user.payment.email, newPWD),
+                                'Refresh Password'
+                            )
+                                .then(() => {
+                                    successCode(
+                                        res,
+                                        `Refresh Password of user with email: ${user.payment.email} successfully`
+                                    );
+                                })
+                                .catch((err) => {
+                                    errCode1(res, err);
+                                });
+                        })
+                        .catch((err) => {
+                            errCode1(res, err);
+                        });
+                })
+                .catch((err) => {
+                    errCode1(res, err);
+                });
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [PUT] /admin/updateRankUser/:id
+    async updateRankUser(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { rank } = req.body;
+            const user = await User.findById(id);
+
+            user.rank = rank;
+            user.save()
+                .then((result) => {
+                    successCode(
+                        res,
+                        `Update rank user with email: ${user.payment.email} successfully`
+                    );
                 })
                 .catch((err) => {
                     errCode1(res, err);

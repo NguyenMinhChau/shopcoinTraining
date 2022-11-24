@@ -8,6 +8,7 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 
 // routes
 const Authentication = require('./routes/Authentication');
@@ -79,6 +80,15 @@ Rate.find({}, (err, rates) => {
         rate.save();
     }
 });
+
+setInterval(() => {
+    const url = 'http://localhost:4000/admin/updateRate';
+    const url1 = `${process.env.URL}/admin/updateRate`;
+    axios
+        .get(url)
+        .then()
+        .catch((err) => {});
+}, 5 * 60 * 1000);
 
 // routes
 app.use('/authentication', Authentication);
