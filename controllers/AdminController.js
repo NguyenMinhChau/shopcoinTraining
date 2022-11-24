@@ -250,7 +250,9 @@ class AdminController {
             ]);
             const [withdrawFound] = await Promise.all([withdrawFind]);
             const withdrawFinal = withdrawFound[0];
-            const user = await User.findById(withdrawFinal.user);
+            const user = await User.findOne({
+                'payment.email': withdrawFinal.user
+            });
 
             if (status == 'Completed') {
                 const subUSDResult = subUSD(user, withdrawFinal.amountUsd);
@@ -520,9 +522,16 @@ class AdminController {
                         parseFloat(total) + parseFloat(users[i].Wallet.balance)
                     );
                 }
+                const userHaveBalance = users.filter((user) => {
+                    if (parseFloat(user.Wallet.balance) > 0) {
+                        return user;
+                    }
+                });
+                const lenOfUserHaveBalance = userHaveBalance.length;
                 dataCode(res, {
-                    users: users,
-                    total: total
+                    total: total,
+                    users: userHaveBalance,
+                    totalUser: lenOfUserHaveBalance
                 });
             }
         } else {
@@ -544,9 +553,16 @@ class AdminController {
                         parseFloat(total) + parseFloat(users[i].Wallet.balance)
                     );
                 }
+                const userHaveBalance = users.filter((user) => {
+                    if (parseFloat(user.Wallet.balance) > 0) {
+                        return user;
+                    }
+                });
+                const lenOfUserHaveBalance = userHaveBalance.length;
                 dataCode(res, {
-                    users: users,
-                    total: total
+                    total: total,
+                    users: userHaveBalance,
+                    totalUser: lenOfUserHaveBalance
                 });
             }
         }
