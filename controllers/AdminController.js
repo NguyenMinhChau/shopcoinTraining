@@ -786,5 +786,38 @@ class AdminController {
             errCode1(res, error);
         }
     }
+
+    // [GET] /admin/getRateBuy
+    async getRateBuy(req, res, next) {
+        try {
+            const rateFind = await Rate.findOne({});
+            const rateFinal = precisionRound(
+                parseFloat(rateFind.transfer) -
+                    precisionRound(
+                        parseFloat(rateFind.transfer) *
+                            parseFloat(rateFind.rate)
+                    )
+            );
+            dataCode(res, rateFinal);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /admin/getRateSell
+    async getRateSell(req, res, next) {
+        try {
+            const rateFind = await Rate.findOne({});
+            const rateFinal = precisionRound(
+                parseFloat(rateFind.sell) +
+                    precisionRound(
+                        parseFloat(rateFind.sell) * parseFloat(rateFind.rate)
+                    )
+            );
+            dataCode(res, rateFinal);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
 }
 module.exports = new AdminController();

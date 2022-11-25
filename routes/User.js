@@ -43,4 +43,16 @@ router.get('/getPaymentByEmail/:email', UserController.getPaymentByEmail);
 // [GET] /users/getWithdrawByEmail/:email
 router.get('/getWithdrawByEmail/:email', UserController.getWithdrawByEmail);
 
+// [GET] /users/getAllDepositsByEmail/:email
+router.get(
+    '/getAllDepositsByEmail/:email',
+    UserController.getAllDepositsByEmail
+);
+
+// [GET] /users/getAllWithdrawByEmail/:email
+router.get(
+    '/getAllWithdrawByEmail/:email',
+    UserController.getAllWithdrawByEmail
+);
+
 module.exports = router;

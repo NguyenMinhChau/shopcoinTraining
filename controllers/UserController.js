@@ -797,6 +797,50 @@ class UserController {
             errCode1(res, error);
         }
     }
+
+    // [GET] /users/getAllWithdrawByEmail/:email
+    async getAllWithdrawByEmail(req, res, next) {
+        try {
+            const { email } = req.params;
+            const withdrawsFind = Withdraw.aggregate([
+                {
+                    $match: {
+                        user: email
+                    }
+                }
+            ]);
+            const [withdraws] = await Promise.all([withdrawsFind]);
+            if (withdraws.length > 0) {
+                dataCode(res, withdraws);
+            } else {
+                successCode(res, `No withdraw of user with email: ${email}`);
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /users/getAllDepositsByEmail/:email
+    async getAllDepositsByEmail(req, res, next) {
+        try {
+            const { email } = req.params;
+            const depositsFind = Deposit.aggregate([
+                {
+                    $match: {
+                        user: email
+                    }
+                }
+            ]);
+            const [deposits] = await Promise.all([depositsFind]);
+            if (deposits.length > 0) {
+                dataCode(res, deposits);
+            } else {
+                successCode(res, `No withdraw of user with email: ${email}`);
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
 }
 
 module.exports = new UserController();

@@ -89,14 +89,14 @@ router.delete(
 
 // -------------------------------------- get total ------------------------------------------------
 
-// [GET] /admin/totalDeposit
-router.get('/totalDeposit', AdminController.totalDeposit);
+// [POST] /admin/totalDeposit
+router.post('/totalDeposit', AdminController.totalDeposit);
 
 // [POST] /admin/totalWithdraw
-router.get('/totalWithdraw', AdminController.totalWithdraw);
+router.post('/totalWithdraw', AdminController.totalWithdraw);
 
 // [POST] /admin/totalBalance
-router.get('/totalBalance', AdminController.totalBalance);
+router.post('/totalBalance', AdminController.totalBalance);
 
 // -------------------------------------- get total ------------------------------------------------
 
@@ -156,5 +156,11 @@ router.put(
 
 // [GET] /admin/getCommission
 router.get('/getCommission', AdminController.getCommission);
+
+// [GET] /admin/getRateBuy
+router.get('/getRateBuy', AdminController.getRateBuy);
+
+// [GET] /admin/getRateSell
+router.get('/getRateSell', AdminController.getRateSell);
 
 module.exports = router;
