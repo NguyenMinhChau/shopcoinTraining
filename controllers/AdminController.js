@@ -24,6 +24,7 @@ const Commission = require('../models/Commission');
 // import function
 const { mail, dataCode } = require('../function');
 const { resolve } = require('path');
+const RateWithdrawDeposit = require('../models/RateWithdrawDeposit');
 
 // support function
 const calculateAdd = async (total, value, callback) => {
@@ -2352,6 +2353,28 @@ class AdminController {
             dataCode(res, commission);
         } catch (err) {
             errCode1(res, err);
+        }
+    }
+
+    // [PUT] /admin/changeRates
+    async changeRates(req, res) {
+        const { rateDeposit, rateWithdraw } = req.body;
+        try {
+            const rateFindDepositWithdraw = await RateWithdrawDeposit.findOne(
+                {}
+            );
+            rateFindDepositWithdraw.rateDeposit = rateDeposit;
+            rateFindDepositWithdraw.rateWithdraw = rateWithdraw;
+            rateFindDepositWithdraw
+                .save()
+                .then((result) => {
+                    successCode(res, `Update successfully rates`);
+                })
+                .catch((err) => {
+                    errCode1(res, err);
+                });
+        } catch (error) {
+            errCode1(res, error);
         }
     }
 }

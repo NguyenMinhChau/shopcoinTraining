@@ -14,6 +14,7 @@ const Deposits = require('../models/Deposits');
 const Withdraws = require('../models/Withdraws');
 const Payments = require('../models/Payments');
 const Otps = require('../models/OTP');
+const rateWithdrawDeposit = require('../models/RateWithdrawDeposit');
 
 const { validationResult } = require('express-validator');
 const {
@@ -23,7 +24,6 @@ const {
 } = require('../mailform/withdrawForm');
 
 const methods = require('../function');
-const { resolve } = require('path');
 const {
     errCode2,
     successCode,
@@ -1055,7 +1055,11 @@ class UsersController {
         const { amount, user, amountVnd, bankAdmin } = req.body;
 
         const infoUser = Users.findOne({ 'payment.email': user });
-        const [info] = await Promise.all([infoUser]);
+        const rateFindDepositWithdraw = rateWithdrawDeposit.findOne({});
+        const [info, rates] = await Promise.all([
+            infoUser,
+            rateFindDepositWithdraw
+        ]);
         const { account } = info.payment.bank;
         Payments.findOne({ accountNumber: account }, (err, payment) => {
             if (err) errCode1(res, err);
@@ -1098,7 +1102,7 @@ class UsersController {
                                     },
                                     amountUsd: methods.precisionRound(
                                         parseFloat(amountVnd) /
-                                            payment.rateDeposit
+                                            rates.rateDeposit
                                     ),
                                     amountVnd: amountVnd,
                                     statement: statement
@@ -1294,9 +1298,12 @@ class UsersController {
         });
 
         const { user, amountUsd } = req.body;
-
+        const rateFindWithdrawDeposit = rateWithdrawDeposit.findOne({});
         const infoUser = Users.findOne({ 'payment.email': user });
-        const [info] = await Promise.all([infoUser]);
+        const [info, rates] = await Promise.all([
+            infoUser,
+            rateFindWithdrawDeposit
+        ]);
         const { account } = info.payment.bank;
 
         Payments.findOne({ accountNumber: account }, (err, payment) => {
@@ -1304,7 +1311,7 @@ class UsersController {
 
             if (payment) {
                 const money = methods.precisionRound(
-                    parseFloat(amountUsd) * parseFloat(payment.rateWithdraw)
+                    parseFloat(amountUsd) * parseFloat(rates.rateWithdraw)
                 );
                 const newWithdraw = new Withdraws({
                     user: user,

@@ -23,6 +23,8 @@ const morgan = require('morgan');
 
 // import model
 const Commission = require('./models/Commission');
+const rateWithdrawDeposit = require('./models/RateWithdrawDeposit');
+
 const { errCode1 } = require('./function');
 
 const app = express();
@@ -111,6 +113,15 @@ Commission.find({}, (err, comms) => {
 
     if (comms.length == 0) {
         commission.save();
+    }
+});
+
+const newRate = new rateWithdrawDeposit();
+rateWithdrawDeposit.find({}, (err, rate) => {
+    if (err) errCode1(res, err);
+
+    if (rate.length == 0) {
+        newRate.save();
     }
 });
 

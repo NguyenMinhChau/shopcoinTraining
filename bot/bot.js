@@ -1,8 +1,8 @@
 const axios = require('axios');
 
-const {bot} = require('../function')
+const { bot } = require('../function');
 
-const {URL_API} = process.env
+const { URL_API } = process.env;
 
 const getData = async (url) => {
     const data = await axios.get(url);
@@ -55,7 +55,7 @@ bot.onText(/\/list_buy_coin/, async (msg) => {
     }).then((val) => {
         status = 'ConfirmBuyCoin';
     });
-    console.log(chatId)
+    console.log(chatId);
     // bot.sendMessage(chatId, "Hello")
 });
 
@@ -197,7 +197,7 @@ const handleConfirmWithdraw = async (id, status) => {
     return handleService(status, `${URL_API}/admin/handleWithdrawBot/${id}`);
 };
 
-const handleServiceMesaage = async (bot, chatId, raw, def) => {
+const handleServiceMessage = async (bot, chatId, raw, def) => {
     const idOrder = raw[1];
     const statusOrder = raw[2];
 
@@ -223,17 +223,13 @@ bot.on('message', async (msg) => {
     if (!msg.text.includes(scriptWarn)) {
         const raw = msg.text.split(' ');
         if (raw[0] === 'ConfirmBuyCoin') {
-            handleServiceMesaage(bot, chatId, raw, handleConfirmBuyCoin);
-        } else if (
-            raw[0] === 'ConfirmSellCoin'
-        ) {
-            handleServiceMesaage(bot, chatId, raw, handleConfirmSellCoin);
+            handleServiceMessage(bot, chatId, raw, handleConfirmBuyCoin);
+        } else if (raw[0] === 'ConfirmSellCoin') {
+            handleServiceMessage(bot, chatId, raw, handleConfirmSellCoin);
         } else if (raw[0] === 'ConfirmDeposit') {
-            handleServiceMesaage(bot, chatId, raw, handleDeposit);
-        } else if (
-            raw[0] === 'ConfirmWithdraw'
-        ) {
-            handleServiceMesaage(bot, chatId, raw, handleConfirmWithdraw);
+            handleServiceMessage(bot, chatId, raw, handleDeposit);
+        } else if (raw[0] === 'ConfirmWithdraw') {
+            handleServiceMessage(bot, chatId, raw, handleConfirmWithdraw);
         }
     }
 });
