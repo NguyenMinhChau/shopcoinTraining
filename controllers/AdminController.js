@@ -2256,42 +2256,28 @@ class AdminController {
 
     // [POST] /admin/totalBalance
     async totalBalance(req, res) {
-        const { from, to } = req.body;
-        if (!from || !to) {
-            const totalUser = User.find();
-            const [users] = await Promise.all([totalUser]);
-            if (users.length == 0) {
-                errCode2(res, `No Balance of user !!`);
-            } else {
-                let total = 0;
-                for (let i = 0; i < users.length; i++) {
-                    total = methods.precisionRound(
-                        parseFloat(total) + parseFloat(users[i].Wallet.balance)
-                    );
-                }
-                dataCode(res, total);
-            }
+        const totalUser = User.find();
+        const [users] = await Promise.all([totalUser]);
+        if (users.length == 0) {
+            errCode2(res, `No Balance of user !!`);
         } else {
-            let fromDate = new Date(from);
-            let toDate = new Date(to);
-            const totalUser = User.find({
-                createdAt: {
-                    $gte: fromDate,
-                    $lt: toDate
+            let total = 0;
+            for (let i = 0; i < users.length; i++) {
+                total = methods.precisionRound(
+                    parseFloat(total) + parseFloat(users[i].Wallet.balance)
+                );
+            }
+            const userHaveBalance = users.filter((user) => {
+                if (parseFloat(user.Wallet.balance) > 0) {
+                    return user;
                 }
             });
-            const [users] = await Promise.all([totalUser]);
-            if (users.length == 0) {
-                errCode2(res, `No Balance of user !!`);
-            } else {
-                let total = 0;
-                for (let i = 0; i < users.length; i++) {
-                    total = methods.precisionRound(
-                        parseFloat(total) + parseFloat(users[i].Wallet.balance)
-                    );
-                }
-                dataCode(res, total);
-            }
+            const lenOfUserHaveBalance = userHaveBalance.length;
+            dataCode(res, {
+                users: userHaveBalance,
+                total: total,
+                totalUSer: lenOfUserHaveBalance
+            });
         }
     }
 

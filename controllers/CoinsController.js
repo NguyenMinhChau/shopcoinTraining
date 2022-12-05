@@ -230,6 +230,7 @@ class CoinsController {
         const { id } = req.params;
         const io = methods.getSocket(req, res);
         // const binance = methods.getBinance(req, res);
+        const listExcept = ['CAKEUSDT', 'MINAUSDT', 'TFUELUSDT'];
         Coins.findById(id, (err, c) => {
             if (err) errCode1(res, err);
             // return res.status(404).json({ code: 1, message: err.message });
@@ -238,19 +239,42 @@ class CoinsController {
                 // binance.futuresMiniTickerStream(c.symbol, (data) => {
                 //     io.emit('send-data-coin', data);
                 // });
-                setInterval(() => {
-                    axios
-                        .get(
-                            // `https://api.binance.com/api/v3/ticker/24hr?symbol=${c.symbol}`
-                            `https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${c.symbol}`
-                        )
-                        .then((result) => {
-                            if (result.data) {
-                                io.emit(`send-data-${c.symbol}`, result.data);
-                            }
-                        })
-                        .catch((err) => {});
-                }, 1000);
+                if (listExcept.includes(c.symbol)) {
+                    setInterval(() => {
+                        axios
+                            .get(
+                                `https://api.binance.com/api/v3/ticker/24hr?symbol=${c.symbol}`
+                            )
+                            .then((result) => {
+                                if (result.data) {
+                                    const data = {
+                                        symbol: result.data.symbol,
+                                        price: result.data.lastPrice
+                                    };
+                                    io.emit(`send-data-${c.symbol}`, data);
+                                }
+                            })
+                            .catch((err) => {});
+                    }, 1000);
+                } else {
+                    setInterval(() => {
+                        axios
+                            .get(
+                                // `https://api.binance.com/api/v3/ticker/24hr?symbol=${c.symbol}`
+                                // `https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${c.symbol}`
+                                `https://fapi.binance.com/fapi/v1/ticker/price?symbol=${c.symbol}`
+                            )
+                            .then((result) => {
+                                if (result.data) {
+                                    io.emit(
+                                        `send-data-${c.symbol}`,
+                                        result.data
+                                    );
+                                }
+                            })
+                            .catch((err) => {});
+                    }, 1000);
+                }
 
                 return res.json({ code: 0, message: 'Success', data: c });
             } else {
@@ -280,27 +304,44 @@ class CoinsController {
     async updatePriceAllCoin(req, res) {
         const allCoins = Coins.find();
         const [coins] = await Promise.all([allCoins]);
+        const listExcept = ['CAKEUSDT', 'MINAUSDT', 'TFUELUSDT'];
         coins.forEach((coin) => {
-            axios
-                .get(
-                    // `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin.symbol}`
-                    `https://fapi.binance.com/fapi/v1/ticker/price?symbol=${coin.symbol}`
-                )
-                .then((result) => {
-                    let data = result.data;
-                    if (data) {
-                        // data.forEach((c) => {
-                        //     if (c.symbol == coin.symbol) {
-                        //         // console.log(c);
-                        //         coin.price = c.price;
-                        //         coin.save().catch((err) => console.log(err));
-                        //     }
-                        // });
-                        coin.price = data.price;
-                        coin.save().catch((err) => console.log(err));
-                    }
-                })
-                .catch((err) => {});
+            if (listExcept.includes(coin.symbol)) {
+                axios
+                    .get(
+                        `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin.symbol}`
+                        // `https://fapi.binance.com/fapi/v1/ticker/price?symbol=${coin.symbol}`
+                    )
+                    .then((result) => {
+                        let data = result.data;
+                        if (data) {
+                            coin.price = data.lastPrice;
+                            coin.save().catch((err) => console.log(err));
+                        }
+                    })
+                    .catch((err) => {});
+            } else {
+                axios
+                    .get(
+                        // `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin.symbol}`
+                        `https://fapi.binance.com/fapi/v1/ticker/price?symbol=${coin.symbol}`
+                    )
+                    .then((result) => {
+                        let data = result.data;
+                        if (data) {
+                            // data.forEach((c) => {
+                            //     if (c.symbol == coin.symbol) {
+                            //         // console.log(c);
+                            //         coin.price = c.price;
+                            //         coin.save().catch((err) => console.log(err));
+                            //     }
+                            // });
+                            coin.price = data.price;
+                            coin.save().catch((err) => console.log(err));
+                        }
+                    })
+                    .catch((err) => {});
+            }
             // coin.price = parseFloat(0)
             // coin.save()
         });
@@ -331,24 +372,28 @@ class CoinsController {
     // [GET] /coins/getAmountCoinUserBuy
     async getAmountCoinUserBuy(req, res) {
         try {
-            const { from, to } = req.body;
-            let fromDate = new Date(from);
-            let toDate = new Date(to);
-            if (!fromDate || !toDate) {
-                errCode2(res, `No date`);
-            }
-            const totalCoin = Coins.find({
-                createdAt: {
-                    $gte: fromDate,
-                    $lt: toDate
+            // const { from, to } = req.body;
+            // let fromDate = new Date(from);
+            // let toDate = new Date(to);
+            // if (!fromDate || !toDate) {
+            //     errCode2(res, `No date`);
+            // }
+            const totalCoin = Coins.find({});
+            const [coins] = await Promise.all([totalCoin]);
+            // if (coins.length == 0) {
+            //     errCode2(res, `No coin from ${fromDate} to ${toDate}`);
+            // } else {
+            const coinsFound = coins.filter((coin) => {
+                if (coin.total > 0) {
+                    return coin;
                 }
             });
-            const [coins] = await Promise.all([totalCoin]);
-            if (coins.length == 0) {
-                errCode2(res, `No coin from ${fromDate} to ${toDate}`);
-            } else {
-                dataCode(res, coins);
-            }
+            const lenCoins = coinsFound.length;
+            dataCode(res, {
+                coins: coinsFound,
+                total: lenCoins
+            });
+            // }
         } catch (err) {
             errCode1(res, err);
         }
