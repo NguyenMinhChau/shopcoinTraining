@@ -1136,7 +1136,8 @@ class UsersController {
                             transform: amountVnd
                         },
                         amountUsd: methods.precisionRound(
-                            parseFloat(amountVnd) / bankAdmin.rateDeposit
+                            parseFloat(amountVnd) /
+                                parseFloat(rates.rateDeposit)
                         ),
                         amountVnd: amountVnd
                     });

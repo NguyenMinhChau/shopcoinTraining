@@ -252,4 +252,10 @@ router.get('/getUSerFromWithdraw/:id', AdminController.getUSerFromWithdraw);
 // [GET] /admin/Commission
 router.get('/Commission', AdminController.getCommission);
 
+// [PUT] /admin/changeRates
+router.put('/changeRates', checkAuth, checkAdmin, AdminController.changeRates);
+
+// [GET] /admin/getRates
+router.get('/getRates', AdminController.getRates);
+
 module.exports = router;

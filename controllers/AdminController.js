@@ -2377,6 +2377,18 @@ class AdminController {
             errCode1(res, error);
         }
     }
+
+    // [GET] /admin/getRates
+    async getRates(req, res) {
+        try {
+            const rateFindDepositWithdraw = await RateWithdrawDeposit.findOne(
+                {}
+            );
+            dataCode(res, rateFindDepositWithdraw);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
 }
 
 module.exports = new AdminController();
