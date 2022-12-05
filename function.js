@@ -77,6 +77,9 @@ module.exports = {
 
     getSocket: function (req, res) {
         const io = req.app.get('conn');
+        io.on('connection', (socket) => {
+            console.log('connected socket!');
+        });
         return io;
     },
 

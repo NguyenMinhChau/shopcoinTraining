@@ -61,10 +61,6 @@ app.use(cookieParser());
 app.use(cors(corOptions));
 app.use(express.static(path.resolve('./uploads')));
 
-if (process.env.TYPE === 'product') {
-    app.use(limiter);
-}
-
 switch (process.env.TYPE) {
     case 'product':
         // for product
