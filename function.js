@@ -67,7 +67,7 @@ module.exports = {
         return p;
     },
 
-    getBinance: function (req, res) {
+    getBinance: function () {
         const binance = new Binance().options({
             APIKEY: APIKEYSOCKET,
             APISECRET: APISECRETSOCKET

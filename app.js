@@ -122,24 +122,37 @@ rateWithdrawDeposit.find({}, (err, rate) => {
 });
 
 // setInterval(() => {
-//     // axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`).catch(err => {});
-//     axios
-//         .get(`${process.env.URL_API}/coins/updateHighLowAllCoin`)
-//         .catch((err) => {});
-//     // axios.get('http://localhost:4000/coins/updatePriceAllCoin').catch(err => {});
-//     // axios
-//     //     .get('http://localhost:4000/coins/updateHighLowAllCoin')
-//     //     .catch((err) => {});
-// }, 10000);
+//     fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=MINAUSDT`)
+//         .then((res) => res.json())
+//         .then((coin) => console.log(coin))
+//         .catch((err) => console.log(err));
+// }, 1000);
+// can use for price socket
+// const binance = require('./function').getBinance();
+// binance.futuresMarkPriceStream('BTCUSDT', async (coin) => {
+//     const data = {
+//         symbol: coin.symbol,
+//         price: coin.markPrice,
+//         indexPrice: coin.indexPrice
+//     };
+//     console.log(data);
+// });
 
 setInterval(() => {
+    // axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`).catch(err => {});
     axios
-        .get('http://localhost:4000/coins/updatePriceAllCoin')
+        .get(`${process.env.URL_API}/coins/updateHighLowAllCoin`)
         .catch((err) => {});
+}, 60 * 60 * 1000);
+
+setInterval(() => {
     // axios
-    //     .get(`${process.env.URL_API}/coins/updatePriceAllCoin`)
+    //     .get('http://localhost:4000/coins/updatePriceAllCoin')
     //     .catch((err) => {});
-}, 1000);
+    axios
+        .get(`${process.env.URL_API}/coins/updatePriceAllCoin`)
+        .catch((err) => {});
+}, 5 * 60 * 1000);
 
 let port = process.env.PORT || 3000;
 httpServer.listen(port, () => console.log('Running at port ' + port));
