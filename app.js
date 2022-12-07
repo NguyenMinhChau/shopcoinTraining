@@ -120,6 +120,7 @@ rateWithdrawDeposit.find({}, (err, rate) => {
         newRate.save();
     }
 });
+require('./services/socket.prices')(io);
 
 // setInterval(() => {
 //     fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=MINAUSDT`)

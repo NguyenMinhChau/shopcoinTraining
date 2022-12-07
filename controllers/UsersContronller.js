@@ -32,6 +32,7 @@ const {
     bot,
     precisionRound
 } = require('../function');
+const { default: axios } = require('axios');
 
 // support function
 let chatId = 5752059699;
@@ -1228,7 +1229,7 @@ class UsersController {
             if (image.code == 0) {
                 deposit.statement = pathImageDeposit;
                 deposit.bankAdmin = bankAdmin;
-                deposit.status = 'Confirmed';
+                // deposit.status = 'Confirmed';
                 deposit.save().then(() => {
                     // botHelperSendMessage(chatId, deposit, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
                     successCode(
@@ -1269,10 +1270,23 @@ class UsersController {
                                     )
                                     .then((result) => {
                                         // botHelperSendMessage(chatId, withdraw, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
-                                        successCode(
-                                            res,
-                                            `Request withdraw is success with id = ${id}`
-                                        );
+                                        axios
+                                            .put(
+                                                // `${URL_API}/admin/handleWithdrawBot/${withdraw._id}`,
+                                                `http://localhost:4000/admin/handleWithdrawBot/${withdraw._id}`,
+                                                {
+                                                    status: 'Confirmed'
+                                                }
+                                            )
+                                            .then(() => {
+                                                successCode(
+                                                    res,
+                                                    `Request withdraw is success with id = ${id}`
+                                                );
+                                            })
+                                            .catch((err) => {
+                                                errCode1(res, err);
+                                            });
                                     })
                                     .catch((err) => {
                                         errCode1(res, err);

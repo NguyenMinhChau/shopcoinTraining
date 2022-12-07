@@ -1899,63 +1899,15 @@ class AdminController {
                     if (err) errCode1(res, err);
 
                     if (user) {
-                        if (status === 'Completed') {
-                            const new_balance = methods.precisionRound(
-                                parseFloat(user.Wallet.balance) +
-                                    parseFloat(deposit.amountUsd)
-                            );
-                            user.Wallet.balance = new_balance;
-                            user.Wallet.deposit = methods.precisionRound(
-                                parseFloat(user.Wallet.deposit) +
-                                    parseFloat(deposit.amountUsd)
-                            );
-                            user.save()
-                                .then((u) => {
-                                    if (u) {
-                                        deposit.status = status;
-                                        deposit.updatedAt = new Date();
-                                        deposit
-                                            .save()
-                                            .then((d) => {
-                                                if (d) {
-                                                    successCode(
-                                                        res,
-                                                        `Confirmed deposit with id = ${id}`
-                                                    );
-                                                } else {
-                                                    errCode2(
-                                                        res,
-                                                        `Can not save the status of deposit with id = ${id}`
-                                                    );
-                                                }
-                                            })
-                                            .catch((err) => {
-                                                errCode1(res, err);
-                                            });
-                                    } else {
-                                        errCode2(
-                                            res,
-                                            `User balance and deposit is not saved with email = ${user.payment.email}`
-                                        );
-                                    }
-                                })
-                                .catch((err) => {
-                                    errCode1(res, err);
-                                });
-                        } else if (status === 'Canceled') {
-                            const new_balance = methods.precisionRound(
-                                parseFloat(user.Wallet.balance) -
-                                    parseFloat(deposit.amountUsd)
-                            );
-                            if (new_balance < 0) {
-                                errCode2(
-                                    res,
-                                    `Can not Canceled the deposit of user because the money of this user is not enough`
+                        if (status === 'Confirmed') {
+                            if (deposit.status == 'On hold') {
+                                const new_balance = methods.precisionRound(
+                                    parseFloat(user.Wallet.balance) +
+                                        parseFloat(deposit.amountUsd)
                                 );
-                            } else {
                                 user.Wallet.balance = new_balance;
                                 user.Wallet.deposit = methods.precisionRound(
-                                    parseFloat(user.Wallet.deposit) -
+                                    parseFloat(user.Wallet.deposit) +
                                         parseFloat(deposit.amountUsd)
                                 );
                                 user.save()
@@ -1969,7 +1921,7 @@ class AdminController {
                                                     if (d) {
                                                         successCode(
                                                             res,
-                                                            `Canceled deposit with id = ${id}`
+                                                            `Confirmed deposit with id = ${id}`
                                                         );
                                                     } else {
                                                         errCode2(
@@ -1991,6 +1943,69 @@ class AdminController {
                                     .catch((err) => {
                                         errCode1(res, err);
                                     });
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Order Deposit is not valid for Completed`
+                                );
+                            }
+                        } else if (status === 'Canceled') {
+                            if (deposit.status == 'Confirmed') {
+                                const new_balance = methods.precisionRound(
+                                    parseFloat(user.Wallet.balance) -
+                                        parseFloat(deposit.amountUsd)
+                                );
+                                if (new_balance < 0) {
+                                    errCode2(
+                                        res,
+                                        `Can not Canceled the deposit of user because the money of this user is not enough`
+                                    );
+                                } else {
+                                    user.Wallet.balance = new_balance;
+                                    user.Wallet.deposit =
+                                        methods.precisionRound(
+                                            parseFloat(user.Wallet.deposit) -
+                                                parseFloat(deposit.amountUsd)
+                                        );
+                                    user.save()
+                                        .then((u) => {
+                                            if (u) {
+                                                deposit.status = status;
+                                                deposit.updatedAt = new Date();
+                                                deposit
+                                                    .save()
+                                                    .then((d) => {
+                                                        if (d) {
+                                                            successCode(
+                                                                res,
+                                                                `Canceled deposit with id = ${id}`
+                                                            );
+                                                        } else {
+                                                            errCode2(
+                                                                res,
+                                                                `Can not save the status of deposit with id = ${id}`
+                                                            );
+                                                        }
+                                                    })
+                                                    .catch((err) => {
+                                                        errCode1(res, err);
+                                                    });
+                                            } else {
+                                                errCode2(
+                                                    res,
+                                                    `User balance and deposit is not saved with email = ${user.payment.email}`
+                                                );
+                                            }
+                                        })
+                                        .catch((err) => {
+                                            errCode1(res, err);
+                                        });
+                                }
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Order Deposit is not valid for Canceled`
+                                );
                             }
                         } else {
                             deposit.status = status;
@@ -2041,20 +2056,78 @@ class AdminController {
 
                         if (user) {
                             if (status === 'Confirmed') {
-                                const new_balance = methods.precisionRound(
-                                    parseFloat(user.Wallet.balance) -
-                                        parseFloat(withdraw.amountUsd)
-                                );
-                                if (new_balance < 0) {
+                                if (withdraw.status == 'On hold') {
+                                    const new_balance = methods.precisionRound(
+                                        parseFloat(user.Wallet.balance) -
+                                            parseFloat(withdraw.amountUsd)
+                                    );
+                                    if (new_balance < 0) {
+                                        errCode2(
+                                            res,
+                                            `Can not Confirmed the withdraw of user because the money of this user is not enough`
+                                        );
+                                    } else {
+                                        user.Wallet.balance = new_balance;
+                                        user.Wallet.withdraw =
+                                            methods.precisionRound(
+                                                parseFloat(
+                                                    user.Wallet.withdraw
+                                                ) +
+                                                    parseFloat(
+                                                        withdraw.amountUsd
+                                                    )
+                                            );
+                                        user.save()
+                                            .then((u) => {
+                                                if (u) {
+                                                    withdraw.status = status;
+                                                    withdraw.updatedAt =
+                                                        new Date();
+                                                    withdraw
+                                                        .save()
+                                                        .then((d) => {
+                                                            if (d) {
+                                                                successCode(
+                                                                    res,
+                                                                    `Confirmed withdraw with id = ${id}`
+                                                                );
+                                                            } else {
+                                                                errCode2(
+                                                                    res,
+                                                                    `Can not save the status of withdraw with id = ${id}`
+                                                                );
+                                                            }
+                                                        })
+                                                        .catch((err) => {
+                                                            errCode1(res, err);
+                                                        });
+                                                } else {
+                                                    errCode2(
+                                                        res,
+                                                        `User balance and withdraw is not saved with email = ${user.payment.email}`
+                                                    );
+                                                }
+                                            })
+                                            .catch((err) => {
+                                                errCode1(res, err);
+                                            });
+                                    }
+                                } else {
                                     errCode2(
                                         res,
-                                        `Can not Confirmed the withdraw of user because the money of this user is not enough`
+                                        'Withdraw is not valid for Confirmed'
                                     );
-                                } else {
+                                }
+                            } else if (status === 'Canceled') {
+                                if (withdraw.status == 'Confirmed') {
+                                    const new_balance = methods.precisionRound(
+                                        parseFloat(user.Wallet.balance) +
+                                            parseFloat(withdraw.amountUsd)
+                                    );
                                     user.Wallet.balance = new_balance;
                                     user.Wallet.withdraw =
                                         methods.precisionRound(
-                                            parseFloat(user.Wallet.withdraw) +
+                                            parseFloat(user.Wallet.withdraw) -
                                                 parseFloat(withdraw.amountUsd)
                                         );
                                     user.save()
@@ -2068,7 +2141,7 @@ class AdminController {
                                                         if (d) {
                                                             successCode(
                                                                 res,
-                                                                `Confirmed withdraw with id = ${id}`
+                                                                `Canceled withdraw with id = ${id}`
                                                             );
                                                         } else {
                                                             errCode2(
@@ -2090,50 +2163,18 @@ class AdminController {
                                         .catch((err) => {
                                             errCode1(res, err);
                                         });
-                                }
-                            } else if (status === 'Canceled') {
-                                const new_balance = methods.precisionRound(
-                                    parseFloat(user.Wallet.balance) +
-                                        parseFloat(withdraw.amountUsd)
-                                );
-                                user.Wallet.balance = new_balance;
-                                user.Wallet.withdraw = methods.precisionRound(
-                                    parseFloat(user.Wallet.withdraw) -
-                                        parseFloat(withdraw.amountUsd)
-                                );
-                                user.save()
-                                    .then((u) => {
-                                        if (u) {
-                                            withdraw.status = status;
-                                            withdraw.updatedAt = new Date();
-                                            withdraw
-                                                .save()
-                                                .then((d) => {
-                                                    if (d) {
-                                                        successCode(
-                                                            res,
-                                                            `Canceled withdraw with id = ${id}`
-                                                        );
-                                                    } else {
-                                                        errCode2(
-                                                            res,
-                                                            `Can not save the status of withdraw with id = ${id}`
-                                                        );
-                                                    }
-                                                })
-                                                .catch((err) => {
-                                                    errCode1(res, err);
-                                                });
-                                        } else {
-                                            errCode2(
+                                } else {
+                                    withdraw.status = status;
+                                    withdraw
+                                        .save()
+                                        .then((res) => {
+                                            successCode(
                                                 res,
-                                                `User balance and withdraw is not saved with email = ${user.payment.email}`
+                                                `Canceled this order`
                                             );
-                                        }
-                                    })
-                                    .catch((err) => {
-                                        errCode1(res, err);
-                                    });
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                }
                             } else {
                                 withdraw.status = status;
                                 withdraw.updatedAt = new Date();

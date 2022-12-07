@@ -14,18 +14,6 @@ const {
 const { default: axios } = require('axios');
 const User = require('../models/User');
 
-const binance = getBinance();
-
-const getCoinByIdSupport = async (id, amount, callback) => {
-    const coin = Coins.findById(id);
-    const [c] = await Promise.all([coin]);
-    let r = {
-        amount: amount,
-        coin: c
-    };
-    setTimeout(() => callback(r), 500);
-};
-
 class CoinsController {
     // [POST] /coins/add
     addCoin(req, res) {
@@ -234,50 +222,14 @@ class CoinsController {
     }
 
     // [GET] /coins/getCoin/:id
-    getCoin(req, res) {
+    async getCoin(req, res) {
         const { id } = req.params;
-        const io = methods.getSocket(req, res);
-        const listExcept = ['CAKEUSDT', 'MINAUSDT', 'TFUELUSDT'];
-        Coins.findById(id, (err, c) => {
-            if (err) errCode1(res, err);
-
-            if (c) {
-                if (listExcept.includes(c.symbol)) {
-                    setInterval(() => {
-                        axios
-                            .get(
-                                `https://api.binance.com/api/v3/ticker/24hr?symbol=${c.symbol}`
-                            )
-                            .then((result) => {
-                                if (result.data) {
-                                    const data = {
-                                        symbol: result.data.symbol,
-                                        price: result.data.lastPrice
-                                    };
-                                    io.emit(`send-data-${c.symbol}`, data);
-                                }
-                            })
-                            .catch((err) => {});
-                    }, 1000);
-                } else {
-                    binance.futuresMarkPriceStream(c.symbol, async (coin) => {
-                        const data = {
-                            symbol: coin.symbol,
-                            price: coin.markPrice,
-                            indexPrice: coin.indexPrice
-                        };
-                        io.emit(`send-data-${c.symbol}`, data);
-                    });
-                }
-
-                return res.json({ code: 0, message: 'Success', data: c });
-            } else {
-                return res.status(500).json({
-                    code: 2,
-                    message: `Không tìm thấy coin từ id ${id}`
-                });
-            }
-        });
+        try {
+            const coinFound = await Coins.findById(id);
+            dataCode(res, coinFound);
+        } catch (error) {
+            errCode1(res, err);
+        }
     }
 
     // [GET] /coins/getCoinSymbol/:symbol
