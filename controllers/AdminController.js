@@ -22,7 +22,7 @@ const Rank = require('../models/Ranks');
 const Commission = require('../models/Commission');
 
 // import function
-const { mail, dataCode } = require('../function');
+const { mail, dataCode, precisionRound } = require('../function');
 const { resolve } = require('path');
 const RateWithdrawDeposit = require('../models/RateWithdrawDeposit');
 
@@ -279,14 +279,19 @@ function handleSubCoinAuto(symbol, amount, user) {
                                 coin.total = methods.precisionRound(
                                     parseFloat(coin.total) - parseFloat(amount)
                                 );
-                                coin.save((s) => {
-                                    resolve({
-                                        code: 0,
-                                        message: `Sub coin Successfully when cancel buy coin of user with id = ${user._id}`
+                                coin.save()
+                                    .then((s) => {
+                                        resolve({
+                                            code: 0,
+                                            message: `Sub coin Successfully when cancel buy coin of user with id = ${user._id}`
+                                        });
+                                    })
+                                    .catch((err) => {
+                                        reject({
+                                            code: 1,
+                                            message: err.message
+                                        });
                                     });
-                                }).catch((err) => {
-                                    reject({ code: 1, message: err.message });
-                                });
                             })
                             .catch((err) => {
                                 reject({ code: 1, message: err.message });
@@ -915,362 +920,516 @@ class AdminController {
     }
 
     // [PUT] /admin/handleBuyCoin/:id
-    handleBuyCoin(req, res) {
+    // handleBuyCoin(req, res) {
+    //     const { id } = req.params;
+    //     const { status } = req.body;
+
+    //     if (status === 'Confirmed') {
+    //         const query = {
+    //             _id: id,
+    //             status: 'On hold',
+    //             type: 'BuyCoin',
+    //         };
+
+    //         Bills.findOne(query, (err, bill) => {
+    //             if (err) errCode1(res, err);
+
+    //             if (bill) {
+    //                 let emailUser = bill.buyer.gmailUSer;
+    //                 User.findOne(
+    //                     { 'payment.email': emailUser },
+    //                     (err, user) => {
+    //                         if (err)
+    //                             return res
+    //                                 .status(404)
+    //                                 .json({ code: 1, message: err.message });
+
+    //                         if (user) {
+    //                             let prepare = {
+    //                                 id: bill._id,
+    //                                 amount: bill.amount,
+    //                                 symbol: bill.symbol,
+    //                                 fee: bill.fee,
+    //                                 price: bill.price,
+    //                             };
+    //                             let result = handleAddCoinAuto(
+    //                                 prepare.symbol,
+    //                                 prepare.amount,
+    //                                 user
+    //                             );
+    //                             result
+    //                                 .then((val) => {
+    //                                     user.Wallet.balance =
+    //                                         methods.precisionRound(
+    //                                             parseFloat(
+    //                                                 user.Wallet.balance
+    //                                             ) -
+    //                                                 methods.precisionRound(
+    //                                                     parseFloat(
+    //                                                         prepare.amount
+    //                                                     ) *
+    //                                                         parseFloat(
+    //                                                             prepare.price
+    //                                                         ) *
+    //                                                         (1 +
+    //                                                             parseFloat(
+    //                                                                 prepare.fee
+    //                                                             ))
+    //                                                 )
+    //                                         );
+    //                                     user.save()
+    //                                         .then((u) => {
+    //                                             if (u) {
+    //                                                 bill.status = status;
+    //                                                 bill.save()
+    //                                                     .then(async (b) => {
+    //                                                         if (b) {
+    //                                                             const commision =
+    //                                                                 Commission.findById(
+    //                                                                     process
+    //                                                                         .env
+    //                                                                         .ID_COMMISSION
+    //                                                                 );
+    //                                                             const [comm] =
+    //                                                                 await Promise.all(
+    //                                                                     [
+    //                                                                         commision,
+    //                                                                     ]
+    //                                                                 );
+    //                                                             if (comm) {
+    //                                                                 const commissionRes =
+    //                                                                     comm;
+    //                                                                 commissionRes.commission =
+    //                                                                     methods.precisionRound(
+    //                                                                         parseFloat(
+    //                                                                             commissionRes.commission
+    //                                                                         ) +
+    //                                                                             parseFloat(
+    //                                                                                 prepare.amount
+    //                                                                             ) *
+    //                                                                                 parseFloat(
+    //                                                                                     prepare.price
+    //                                                                                 ) *
+    //                                                                                 parseFloat(
+    //                                                                                     prepare.fee
+    //                                                                                 )
+    //                                                                     );
+    //                                                                 commissionRes
+    //                                                                     .save()
+    //                                                                     .then(
+    //                                                                         (
+    //                                                                             result
+    //                                                                         ) => {
+    //                                                                             successCode(
+    //                                                                                 res,
+    //                                                                                 `Confirmed the bill with type buyCoin successfully with id = ${prepare.id}`
+    //                                                                             );
+    //                                                                         }
+    //                                                                     )
+    //                                                                     .catch(
+    //                                                                         (
+    //                                                                             err
+    //                                                                         ) => {
+    //                                                                             errCode1(
+    //                                                                                 res,
+    //                                                                                 err
+    //                                                                             );
+    //                                                                         }
+    //                                                                     );
+    //                                                             } else {
+    //                                                                 console.log(
+    //                                                                     comm
+    //                                                                 );
+    //                                                                 errCode2(
+    //                                                                     res,
+    //                                                                     `Can not find commision`
+    //                                                                 );
+    //                                                             }
+    //                                                         } else {
+    //                                                             errCode2(
+    //                                                                 res,
+    //                                                                 `Bill status is not save with id = ${prepare.id}`
+    //                                                             );
+    //                                                         }
+    //                                                     })
+    //                                                     .catch((err) => {
+    //                                                         errCode1(res, err);
+    //                                                     });
+    //                                             } else {
+    //                                                 errCode2(
+    //                                                     res,
+    //                                                     `Can not save sub the balance of user with id = ${user._id}`
+    //                                                 );
+    //                                             }
+    //                                         })
+    //                                         .catch((err) => {
+    //                                             errCode1(res, err);
+    //                                         });
+    //                                 })
+    //                                 .catch((err) => {
+    //                                     errCode1(res, err);
+    //                                 });
+    //                         } else {
+    //                             errCode2(
+    //                                 res,
+    //                                 `User is not valid with id = ${user._id}`
+    //                             );
+    //                         }
+    //                     }
+    //                 );
+    //             } else {
+    //                 errCode2(
+    //                     res,
+    //                     `Bill of buy coin is not exist with id = ${id}`
+    //                 );
+    //             }
+    //         });
+    //     } else if (status === 'Canceled') {
+    //         const query = {
+    //             _id: id,
+    //             status: 'Confirmed',
+    //             type: 'BuyCoin',
+    //         };
+
+    //         Bills.findOne(query, (err, bill) => {
+    //             if (err) errCode1(res, err);
+
+    //             if (bill) {
+    //                 let emailUser = bill.buyer.gmailUSer;
+    //                 User.findOne(
+    //                     { 'payment.email': emailUser },
+    //                     (err, user) => {
+    //                         if (err)
+    //                             return res
+    //                                 .status(404)
+    //                                 .json({ code: 1, message: err.message });
+
+    //                         if (user) {
+    //                             let prepare = {
+    //                                 id: bill._id,
+    //                                 amount: bill.amount,
+    //                                 symbol: bill.symbol,
+    //                                 fee: bill.fee,
+    //                                 price: bill.price,
+    //                             };
+
+    //                             let resultCanCel = handleSubCoinAuto(
+    //                                 prepare.symbol,
+    //                                 prepare.amount,
+    //                                 user
+    //                             );
+    //                             resultCanCel
+    //                                 .then((ress) => {
+    //                                     user.Wallet.balance =
+    //                                         methods.precisionRound(
+    //                                             parseFloat(
+    //                                                 user.Wallet.balance
+    //                                             ) +
+    //                                                 methods.precisionRound(
+    //                                                     parseFloat(
+    //                                                         prepare.amount
+    //                                                     ) *
+    //                                                         parseFloat(
+    //                                                             prepare.price
+    //                                                         )
+    //                                                 )
+    //                                         );
+    //                                     user.save()
+    //                                         .then((u) => {
+    //                                             if (u) {
+    //                                                 bill.status = status;
+    //                                                 bill.save()
+    //                                                     .then(async (b) => {
+    //                                                         const commission =
+    //                                                             Commission.findById(
+    //                                                                 process.env
+    //                                                                     .ID_COMMISSION
+    //                                                             );
+    //                                                         const [comm] =
+    //                                                             await Promise.all(
+    //                                                                 [commission]
+    //                                                             );
+
+    //                                                         if (comm) {
+    //                                                             const commissionRes =
+    //                                                                 comm;
+    //                                                             commissionRes.commission =
+    //                                                                 methods.precisionRound(
+    //                                                                     parseFloat(
+    //                                                                         commissionRes.commission
+    //                                                                     ) -
+    //                                                                         parseFloat(
+    //                                                                             prepare.amount
+    //                                                                         ) *
+    //                                                                             parseFloat(
+    //                                                                                 prepare.price
+    //                                                                             ) *
+    //                                                                             parseFloat(
+    //                                                                                 prepare.fee
+    //                                                                             )
+    //                                                                 );
+    //                                                             // console.log(
+    //                                                             //     methods.precisionRound(
+    //                                                             //         parseFloat(
+    //                                                             //             commissionRes.commission
+    //                                                             //         ) -
+    //                                                             //             parseFloat(
+    //                                                             //                 prepare.amount
+    //                                                             //             ) *
+    //                                                             //                 parseFloat(
+    //                                                             //                     prepare.price
+    //                                                             //                 ) *
+    //                                                             //                 parseFloat(
+    //                                                             //                     prepare.fee
+    //                                                             //                 )
+    //                                                             //     )
+    //                                                             // );
+    //                                                             commissionRes
+    //                                                                 .save()
+    //                                                                 .then(
+    //                                                                     (
+    //                                                                         result
+    //                                                                     ) => {
+    //                                                                         successCode(
+    //                                                                             res,
+    //                                                                             `Successfully cancel buy coin with id = ${id}`
+    //                                                                         );
+    //                                                                     }
+    //                                                                 )
+    //                                                                 .catch(
+    //                                                                     (
+    //                                                                         err
+    //                                                                     ) => {
+    //                                                                         errCode1(
+    //                                                                             res,
+    //                                                                             err
+    //                                                                         );
+    //                                                                     }
+    //                                                                 );
+    //                                                         } else {
+    //                                                             errCode2(
+    //                                                                 res,
+    //                                                                 `Can not find commission`
+    //                                                             );
+    //                                                         }
+    //                                                     })
+    //                                                     .catch((err) => {
+    //                                                         errCode1(req, err);
+    //                                                     });
+    //                                             } else {
+    //                                                 errCode2(
+    //                                                     res,
+    //                                                     `Can not save user with email ${emailUser}`
+    //                                                 );
+    //                                             }
+    //                                         })
+    //                                         .catch((err) => {
+    //                                             errCode1(res, err);
+    //                                         });
+    //                                 })
+    //                                 .catch((err) => {
+    //                                     errCode1(res, err);
+    //                                 });
+    //                         } else {
+    //                             errCode2(
+    //                                 res,
+    //                                 `User is not valid with email = ${emailUser}`
+    //                             );
+    //                         }
+    //                     }
+    //                 );
+    //             } else {
+    //                 errCode2(
+    //                     res,
+    //                     `Bill with type buy is not valid with id = ${id}`
+    //                 );
+    //             }
+    //         });
+    //     } else {
+    //         const query = {
+    //             _id: id,
+    //             type: 'BuyCoin',
+    //         };
+    //         Bills.findOne(query, (err, bill) => {
+    //             if (err) errCode1(res, err);
+
+    //             if (bill) {
+    //                 bill.status = status;
+    //                 bill.save()
+    //                     .then((b) => {
+    //                         if (b) {
+    //                             successCode(
+    //                                 res,
+    //                                 `Change status of bill type buyCoin with id = ${id}`
+    //                             );
+    //                         } else {
+    //                             errCode2(
+    //                                 res,
+    //                                 `Can not save status bill with id = ${id}`
+    //                             );
+    //                         }
+    //                     })
+    //                     .catch((err) => {
+    //                         errCode1(res, err);
+    //                     });
+    //             } else {
+    //                 errCode2(res, `Bill is not valid with id = ${id}`);
+    //             }
+    //         });
+    //     }
+    // }
+
+    // [PUT] /admin/handleBuyCoin/:id
+    async handleBuyCoin(req, res) {
         const { id } = req.params;
         const { status } = req.body;
-
-        if (status === 'Confirmed') {
-            const query = {
-                _id: id,
-                status: 'On hold',
-                type: 'BuyCoin'
-            };
-
-            Bills.findOne(query, (err, bill) => {
-                if (err) errCode1(res, err);
-
-                if (bill) {
-                    let emailUser = bill.buyer.gmailUSer;
-                    User.findOne(
-                        { 'payment.email': emailUser },
-                        (err, user) => {
-                            if (err)
-                                return res
-                                    .status(404)
-                                    .json({ code: 1, message: err.message });
-
-                            if (user) {
-                                let prepare = {
-                                    id: bill._id,
-                                    amount: bill.amount,
-                                    symbol: bill.symbol,
-                                    fee: bill.fee,
-                                    price: bill.price
-                                };
-                                let result = handleAddCoinAuto(
-                                    prepare.symbol,
-                                    prepare.amount,
-                                    user
-                                );
-                                result
-                                    .then((val) => {
-                                        user.Wallet.balance =
-                                            methods.precisionRound(
-                                                parseFloat(
-                                                    user.Wallet.balance
-                                                ) -
-                                                    methods.precisionRound(
-                                                        parseFloat(
-                                                            prepare.amount
-                                                        ) *
-                                                            parseFloat(
-                                                                prepare.price
-                                                            ) *
-                                                            (1 +
-                                                                parseFloat(
-                                                                    prepare.fee
-                                                                ))
-                                                    )
-                                            );
-                                        user.save()
-                                            .then((u) => {
-                                                if (u) {
-                                                    bill.status = status;
-                                                    bill.save()
-                                                        .then(async (b) => {
-                                                            if (b) {
-                                                                const commision =
-                                                                    Commission.findById(
-                                                                        process
-                                                                            .env
-                                                                            .ID_COMMISSION
-                                                                    );
-                                                                const [comm] =
-                                                                    await Promise.all(
-                                                                        [
-                                                                            commision
-                                                                        ]
-                                                                    );
-                                                                if (comm) {
-                                                                    const commissionRes =
-                                                                        comm;
-                                                                    commissionRes.commission =
-                                                                        methods.precisionRound(
-                                                                            parseFloat(
-                                                                                commissionRes.commission
-                                                                            ) +
-                                                                                parseFloat(
-                                                                                    prepare.amount
-                                                                                ) *
-                                                                                    parseFloat(
-                                                                                        prepare.price
-                                                                                    ) *
-                                                                                    parseFloat(
-                                                                                        prepare.fee
-                                                                                    )
-                                                                        );
-                                                                    commissionRes
-                                                                        .save()
-                                                                        .then(
-                                                                            (
-                                                                                result
-                                                                            ) => {
-                                                                                successCode(
-                                                                                    res,
-                                                                                    `Confirmed the bill with type buyCoin successfully with id = ${prepare.id}`
-                                                                                );
-                                                                            }
-                                                                        )
-                                                                        .catch(
-                                                                            (
-                                                                                err
-                                                                            ) => {
-                                                                                errCode1(
-                                                                                    res,
-                                                                                    err
-                                                                                );
-                                                                            }
-                                                                        );
-                                                                } else {
-                                                                    console.log(
-                                                                        comm
-                                                                    );
-                                                                    errCode2(
-                                                                        res,
-                                                                        `Can not find commision`
-                                                                    );
-                                                                }
-                                                            } else {
-                                                                errCode2(
-                                                                    res,
-                                                                    `Bill status is not save with id = ${prepare.id}`
-                                                                );
-                                                            }
-                                                        })
-                                                        .catch((err) => {
-                                                            errCode1(res, err);
-                                                        });
-                                                } else {
-                                                    errCode2(
-                                                        res,
-                                                        `Can not save sub the balance of user with id = ${user._id}`
-                                                    );
-                                                }
-                                            })
-                                            .catch((err) => {
-                                                errCode1(res, err);
-                                            });
-                                    })
-                                    .catch((err) => {
-                                        errCode1(res, err);
-                                    });
-                            } else {
-                                errCode2(
-                                    res,
-                                    `User is not valid with id = ${user._id}`
-                                );
-                            }
-                        }
-                    );
-                } else {
-                    errCode2(
-                        res,
-                        `Bill of buy coin is not exist with id = ${id}`
-                    );
-                }
+        try {
+            const orderBuy = await Bills.findById(id);
+            const user = await User.findOne({
+                'payment.email': orderBuy.buyer.gmailUSer
             });
-        } else if (status === 'Canceled') {
-            const query = {
-                _id: id,
-                status: 'Confirmed',
-                type: 'BuyCoin'
-            };
 
-            Bills.findOne(query, (err, bill) => {
-                if (err) errCode1(res, err);
+            if (status == 'Confirmed') {
+                if (orderBuy.status == 'On hold') {
+                    // dataCode(res, orderBuy);
+                    // dataCode(res, user);
+                    let prepare = {
+                        id: orderBuy._id,
+                        amount: orderBuy.amount,
+                        symbol: orderBuy.symbol,
+                        fee: orderBuy.fee,
+                        price: orderBuy.price
+                    };
+                    // dataCode(res, prepare);
+                    let result = handleAddCoinAuto(
+                        prepare.symbol,
+                        prepare.amount,
+                        user
+                    );
 
-                if (bill) {
-                    let emailUser = bill.buyer.gmailUSer;
-                    User.findOne(
-                        { 'payment.email': emailUser },
-                        (err, user) => {
-                            if (err)
-                                return res
-                                    .status(404)
-                                    .json({ code: 1, message: err.message });
-
-                            if (user) {
-                                let prepare = {
-                                    id: bill._id,
-                                    amount: bill.amount,
-                                    symbol: bill.symbol,
-                                    fee: bill.fee,
-                                    price: bill.price
-                                };
-
-                                let resultCanCel = handleSubCoinAuto(
-                                    prepare.symbol,
-                                    prepare.amount,
-                                    user
-                                );
-                                resultCanCel
-                                    .then((ress) => {
-                                        user.Wallet.balance =
-                                            methods.precisionRound(
-                                                parseFloat(
-                                                    user.Wallet.balance
-                                                ) +
-                                                    methods.precisionRound(
-                                                        parseFloat(
-                                                            prepare.amount
-                                                        ) *
-                                                            parseFloat(
-                                                                prepare.price
-                                                            )
-                                                    )
-                                            );
-                                        user.save()
-                                            .then((u) => {
-                                                if (u) {
-                                                    bill.status = status;
-                                                    bill.save()
-                                                        .then(async (b) => {
-                                                            const commission =
-                                                                Commission.findById(
-                                                                    process.env
-                                                                        .ID_COMMISSION
-                                                                );
-                                                            const [comm] =
-                                                                await Promise.all(
-                                                                    [commission]
-                                                                );
-
-                                                            if (comm) {
-                                                                const commissionRes =
-                                                                    comm;
-                                                                commissionRes.commission =
-                                                                    methods.precisionRound(
-                                                                        parseFloat(
-                                                                            commissionRes.commission
-                                                                        ) -
-                                                                            parseFloat(
-                                                                                prepare.amount
-                                                                            ) *
-                                                                                parseFloat(
-                                                                                    prepare.price
-                                                                                ) *
-                                                                                parseFloat(
-                                                                                    prepare.fee
-                                                                                )
-                                                                    );
-                                                                console.log(
-                                                                    methods.precisionRound(
-                                                                        parseFloat(
-                                                                            commissionRes.commission
-                                                                        ) -
-                                                                            parseFloat(
-                                                                                prepare.amount
-                                                                            ) *
-                                                                                parseFloat(
-                                                                                    prepare.price
-                                                                                ) *
-                                                                                parseFloat(
-                                                                                    prepare.fee
-                                                                                )
-                                                                    )
-                                                                );
-                                                                commissionRes
-                                                                    .save()
-                                                                    .then(
-                                                                        (
-                                                                            result
-                                                                        ) => {
-                                                                            successCode(
-                                                                                res,
-                                                                                `Successfully cancel buy coin with id = ${id}`
-                                                                            );
-                                                                        }
-                                                                    )
-                                                                    .catch(
-                                                                        (
-                                                                            err
-                                                                        ) => {
-                                                                            errCode1(
-                                                                                res,
-                                                                                err
-                                                                            );
-                                                                        }
-                                                                    );
-                                                            } else {
-                                                                errCode2(
-                                                                    res,
-                                                                    `Can not find commission`
-                                                                );
-                                                            }
-                                                        })
-                                                        .catch((err) => {
-                                                            errCode1(req, err);
-                                                        });
-                                                } else {
-                                                    errCode2(
+                    result
+                        .then(() => {
+                            let balanceAfter = precisionRound(
+                                parseFloat(user.Wallet.balance) -
+                                    precisionRound(
+                                        parseFloat(prepare.amount) *
+                                            parseFloat(prepare.price) *
+                                            (1 + parseFloat(prepare.fee))
+                                    )
+                            );
+                            user.Wallet.balance = balanceAfter;
+                            user.save()
+                                .then(async () => {
+                                    const commission =
+                                        await Commission.findById(
+                                            process.env.ID_COMMISSION
+                                        );
+                                    const commisionAfter = precisionRound(
+                                        parseFloat(commission.commission) +
+                                            precisionRound(
+                                                parseFloat(prepare.amount) *
+                                                    parseFloat(prepare.price) *
+                                                    parseFloat(prepare.fee)
+                                            )
+                                    );
+                                    commission.commission = commisionAfter;
+                                    commission
+                                        .save()
+                                        .then(() => {
+                                            orderBuy.status = status;
+                                            orderBuy
+                                                .save()
+                                                .then(() => {
+                                                    successCode(
                                                         res,
-                                                        `Can not save user with email ${emailUser}`
+                                                        `Confirmed the order buy with id = ${id}`
                                                     );
-                                                }
-                                            })
-                                            .catch((err) => {
-                                                errCode1(res, err);
-                                            });
-                                    })
-                                    .catch((err) => {
-                                        errCode1(res, err);
-                                    });
-                            } else {
-                                errCode2(
-                                    res,
-                                    `User is not valid with email = ${emailUser}`
-                                );
-                            }
-                        }
-                    );
-                } else {
-                    errCode2(
-                        res,
-                        `Bill with type buy is not valid with id = ${id}`
-                    );
-                }
-            });
-        } else {
-            const query = {
-                _id: id,
-                type: 'BuyCoin'
-            };
-            Bills.findOne(query, (err, bill) => {
-                if (err) errCode1(res, err);
-
-                if (bill) {
-                    bill.status = status;
-                    bill.save()
-                        .then((b) => {
-                            if (b) {
-                                successCode(
-                                    res,
-                                    `Change status of bill type buyCoin with id = ${id}`
-                                );
-                            } else {
-                                errCode2(
-                                    res,
-                                    `Can not save status bill with id = ${id}`
-                                );
-                            }
+                                                })
+                                                .catch((err) => {
+                                                    errCode1(res, err);
+                                                });
+                                        })
+                                        .catch((err) => {
+                                            errCode1(res, err);
+                                        });
+                                })
+                                .catch((err) => {
+                                    errCode1(res, err);
+                                });
                         })
                         .catch((err) => {
                             errCode1(res, err);
                         });
                 } else {
-                    errCode2(res, `Bill is not valid with id = ${id}`);
+                    errCode2(
+                        res,
+                        `Order buy is not valid with status on hold for confirmed`
+                    );
                 }
-            });
+            } else if (status === 'Canceled') {
+                if (orderBuy.status == 'Confirmed') {
+                    let prepare = {
+                        id: orderBuy._id,
+                        amount: orderBuy.amount,
+                        symbol: orderBuy.symbol,
+                        fee: orderBuy.fee,
+                        price: orderBuy.price
+                    };
+
+                    let resultCanCel = handleSubCoinAuto(
+                        prepare.symbol,
+                        prepare.amount,
+                        user
+                    );
+                    resultCanCel
+                        .then(() => {
+                            let balanceAfter = precisionRound(
+                                parseFloat(user.Wallet.balance) +
+                                    precisionRound(
+                                        parseFloat(prepare.amount) *
+                                            parseFloat(prepare.price)
+                                    )
+                            );
+                            user.Wallet.balance = balanceAfter;
+                            user.save()
+                                .then(() => {
+                                    orderBuy.status = status;
+                                    orderBuy
+                                        .save()
+                                        .then(() => {
+                                            successCode(
+                                                res,
+                                                `Canceled successfully order buy and paid money to customer with id order = ${id}`
+                                            );
+                                        })
+                                        .catch((err) => {
+                                            errCode1(res, err);
+                                        });
+                                })
+                                .catch((err) => [errCode1(res, err)]);
+                        })
+                        .catch((err) => {
+                            errCode1(res, err);
+                        });
+                } else {
+                    orderBuy.status = status;
+                    orderBuy
+                        .save()
+                        .then(() => {
+                            successCode(
+                                res,
+                                `Canceled the order buy successfully with id = ${id}`
+                            );
+                        })
+                        .catch((err) => {
+                            errCode1(res, err);
+                        });
+                }
+            } else {
+            }
+            // dataCode(res, orderBuy);
+        } catch (error) {
+            errCode1(res, error);
         }
     }
 

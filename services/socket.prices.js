@@ -54,10 +54,7 @@ module.exports = async (io) => {
                 }
             })
             .reduce((prev, after) => {
-                prev.push({
-                    symbol: after.symbol,
-                    price: after.price
-                });
+                prev.push(after);
                 return prev;
             }, []);
         coinResult.forEach((data) => {
