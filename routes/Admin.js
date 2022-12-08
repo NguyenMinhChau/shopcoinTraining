@@ -218,7 +218,7 @@ router.put(
 );
 
 // [PUT] /admin/handleDepositBot/:id
-router.put('/handleDepositBot/:id', AdminController.handleDeposit);
+router.put('/handleDepositBot/:id', AdminController.handle_deposit_v2);
 
 // [PUT] /admin/handleWithdraw/:id
 router.put(
@@ -263,5 +263,8 @@ router.get('/getRates', AdminController.getRates);
 
 // // [PUT] /admin/testHandleDeposit/:id
 // router.put('/testHandleDeposit/:id', AdminController.handle_deposit_v2);
+
+// [PUT] /admin/testHandleSellCoin/:id
+router.put('/testHandleSellCoin/:id', AdminController.handle_sell_coin_v2);
 
 module.exports = router;

@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const bill = new mongoose.Schema(
     {
         fee: { type: Number, default: 0 },
-        status: { type: String, default: 'On hold' },
+        status: { type: String, default: 'Pending' },
         buyer: {
             type: {
                 typeUser: { type: String, default: 'user' },

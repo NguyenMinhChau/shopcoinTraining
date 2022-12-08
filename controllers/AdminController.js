@@ -1285,147 +1285,202 @@ class AdminController {
         const { status } = req.body;
         try {
             const orderBuy = await Bills.findById(id);
-            const user = await User.findOne({
-                'payment.email': orderBuy.buyer.gmailUSer
-            });
+            if (!orderBuy) {
+                errCode2(res, `Order buy is not valid with id = ${id}`);
+            } else {
+                if (orderBuy.type == 'BuyCoin') {
+                    const user = await User.findOne({
+                        'payment.email': orderBuy.buyer.gmailUSer
+                    });
+                    if (!user) {
+                        errCode2(
+                            res,
+                            `User is not valid with email:  ${orderBuy.buyer.gmailUSer}`
+                        );
+                    } else {
+                        if (status == 'Completed') {
+                            if (orderBuy.status == 'Pending') {
+                                // dataCode(res, orderBuy);
+                                // dataCode(res, user);
+                                let prepare = {
+                                    id: orderBuy._id,
+                                    amount: orderBuy.amount,
+                                    symbol: orderBuy.symbol,
+                                    fee: orderBuy.fee,
+                                    price: orderBuy.price
+                                };
+                                // dataCode(res, prepare);
+                                let result = handleAddCoinAuto(
+                                    prepare.symbol,
+                                    prepare.amount,
+                                    user
+                                );
 
-            if (status == 'Confirmed') {
-                if (orderBuy.status == 'On hold') {
-                    // dataCode(res, orderBuy);
-                    // dataCode(res, user);
-                    let prepare = {
-                        id: orderBuy._id,
-                        amount: orderBuy.amount,
-                        symbol: orderBuy.symbol,
-                        fee: orderBuy.fee,
-                        price: orderBuy.price
-                    };
-                    // dataCode(res, prepare);
-                    let result = handleAddCoinAuto(
-                        prepare.symbol,
-                        prepare.amount,
-                        user
-                    );
-
-                    result
-                        .then(() => {
-                            let balanceAfter = precisionRound(
-                                parseFloat(user.Wallet.balance) -
-                                    precisionRound(
-                                        parseFloat(prepare.amount) *
-                                            parseFloat(prepare.price) *
-                                            (1 + parseFloat(prepare.fee))
-                                    )
-                            );
-                            user.Wallet.balance = balanceAfter;
-                            user.save()
-                                .then(async () => {
-                                    const commission =
-                                        await Commission.findById(
-                                            process.env.ID_COMMISSION
+                                result
+                                    .then(() => {
+                                        let balanceAfter = precisionRound(
+                                            parseFloat(user.Wallet.balance) -
+                                                precisionRound(
+                                                    parseFloat(prepare.amount) *
+                                                        parseFloat(
+                                                            prepare.price
+                                                        ) *
+                                                        (1 +
+                                                            parseFloat(
+                                                                prepare.fee
+                                                            ))
+                                                )
                                         );
-                                    const commisionAfter = precisionRound(
-                                        parseFloat(commission.commission) +
-                                            precisionRound(
-                                                parseFloat(prepare.amount) *
-                                                    parseFloat(prepare.price) *
-                                                    parseFloat(prepare.fee)
-                                            )
-                                    );
-                                    commission.commission = commisionAfter;
-                                    commission
-                                        .save()
-                                        .then(() => {
-                                            orderBuy.status = status;
-                                            orderBuy
-                                                .save()
-                                                .then(() => {
-                                                    successCode(
-                                                        res,
-                                                        `Confirmed the order buy with id = ${id}`
+                                        user.Wallet.balance = balanceAfter;
+                                        user.save()
+                                            .then(async () => {
+                                                const commission =
+                                                    await Commission.findById(
+                                                        process.env
+                                                            .ID_COMMISSION
                                                     );
-                                                })
-                                                .catch((err) => {
-                                                    errCode1(res, err);
-                                                });
-                                        })
-                                        .catch((err) => {
-                                            errCode1(res, err);
-                                        });
-                                })
-                                .catch((err) => {
-                                    errCode1(res, err);
-                                });
-                        })
-                        .catch((err) => {
-                            errCode1(res, err);
-                        });
+                                                const commisionAfter =
+                                                    precisionRound(
+                                                        parseFloat(
+                                                            commission.commission
+                                                        ) +
+                                                            precisionRound(
+                                                                parseFloat(
+                                                                    prepare.amount
+                                                                ) *
+                                                                    parseFloat(
+                                                                        prepare.price
+                                                                    ) *
+                                                                    parseFloat(
+                                                                        prepare.fee
+                                                                    )
+                                                            )
+                                                    );
+                                                commission.commission =
+                                                    commisionAfter;
+                                                commission
+                                                    .save()
+                                                    .then(() => {
+                                                        orderBuy.status =
+                                                            status;
+                                                        orderBuy
+                                                            .save()
+                                                            .then(() => {
+                                                                successCode(
+                                                                    res,
+                                                                    `Confirmed the order buy with id = ${id}`
+                                                                );
+                                                            })
+                                                            .catch((err) => {
+                                                                errCode1(
+                                                                    res,
+                                                                    err
+                                                                );
+                                                            });
+                                                    })
+                                                    .catch((err) => {
+                                                        errCode1(res, err);
+                                                    });
+                                            })
+                                            .catch((err) => {
+                                                errCode1(res, err);
+                                            });
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Can not execute this command because it is not enough condition for ${status}. Please pending first.`
+                                );
+                            }
+                        } else if (status === 'Canceled') {
+                            if (orderBuy.status == 'Completed') {
+                                let prepare = {
+                                    id: orderBuy._id,
+                                    amount: orderBuy.amount,
+                                    symbol: orderBuy.symbol,
+                                    fee: orderBuy.fee,
+                                    price: orderBuy.price
+                                };
+
+                                let resultCanCel = handleSubCoinAuto(
+                                    prepare.symbol,
+                                    prepare.amount,
+                                    user
+                                );
+                                resultCanCel
+                                    .then(() => {
+                                        let balanceAfter = precisionRound(
+                                            parseFloat(user.Wallet.balance) +
+                                                precisionRound(
+                                                    parseFloat(prepare.amount) *
+                                                        parseFloat(
+                                                            prepare.price
+                                                        )
+                                                )
+                                        );
+                                        user.Wallet.balance = balanceAfter;
+                                        user.save()
+                                            .then(() => {
+                                                orderBuy.status = status;
+                                                orderBuy
+                                                    .save()
+                                                    .then(() => {
+                                                        successCode(
+                                                            res,
+                                                            `Canceled successfully order buy and paid money to customer with id order = ${id}`
+                                                        );
+                                                    })
+                                                    .catch((err) => {
+                                                        errCode1(res, err);
+                                                    });
+                                            })
+                                            .catch((err) => [
+                                                errCode1(res, err)
+                                            ]);
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Can not execute this command because it is not enough condition for ${status}. Please Completed first.`
+                                );
+                            }
+                        } else if (status == 'Pending') {
+                            if (orderBuy.status == 'Canceled') {
+                                orderBuy.status = status;
+                                orderBuy
+                                    .save()
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `${status} successfully for order buy with id = ${id}`
+                                        );
+                                    })
+                                    .catch((err) => errCode1(res, err));
+                            } else {
+                                errCode2(
+                                    res,
+                                    `${status} failed for order buy with id = ${id}. Please canceled first.`
+                                );
+                            }
+                        } else {
+                            errCode2(
+                                res,
+                                `${status} is not support for order buy coin`
+                            );
+                        }
+                    }
                 } else {
                     errCode2(
                         res,
-                        `Order buy is not valid with status on hold for confirmed`
+                        `Order buy coin is not valid with id = ${id}`
                     );
                 }
-            } else if (status === 'Canceled') {
-                if (orderBuy.status == 'Confirmed') {
-                    let prepare = {
-                        id: orderBuy._id,
-                        amount: orderBuy.amount,
-                        symbol: orderBuy.symbol,
-                        fee: orderBuy.fee,
-                        price: orderBuy.price
-                    };
-
-                    let resultCanCel = handleSubCoinAuto(
-                        prepare.symbol,
-                        prepare.amount,
-                        user
-                    );
-                    resultCanCel
-                        .then(() => {
-                            let balanceAfter = precisionRound(
-                                parseFloat(user.Wallet.balance) +
-                                    precisionRound(
-                                        parseFloat(prepare.amount) *
-                                            parseFloat(prepare.price)
-                                    )
-                            );
-                            user.Wallet.balance = balanceAfter;
-                            user.save()
-                                .then(() => {
-                                    orderBuy.status = status;
-                                    orderBuy
-                                        .save()
-                                        .then(() => {
-                                            successCode(
-                                                res,
-                                                `Canceled successfully order buy and paid money to customer with id order = ${id}`
-                                            );
-                                        })
-                                        .catch((err) => {
-                                            errCode1(res, err);
-                                        });
-                                })
-                                .catch((err) => [errCode1(res, err)]);
-                        })
-                        .catch((err) => {
-                            errCode1(res, err);
-                        });
-                } else {
-                    orderBuy.status = status;
-                    orderBuy
-                        .save()
-                        .then(() => {
-                            successCode(
-                                res,
-                                `Canceled the order buy successfully with id = ${id}`
-                            );
-                        })
-                        .catch((err) => {
-                            errCode1(res, err);
-                        });
-                }
-            } else {
             }
             // dataCode(res, orderBuy);
         } catch (error) {
@@ -1662,6 +1717,181 @@ class AdminController {
                     errCode2(res, `Bill is not valid with id = ${id}`);
                 }
             });
+        }
+    }
+    // [PUT] /admin/testHandleSellCoin/:id
+    async handle_sell_coin_v2(req, res, next) {
+        const { id } = req.params;
+        const { status } = req.body;
+        try {
+            if (status == undefined) {
+                throw {
+                    code: 1,
+                    message: 'No status for this event handle sell coin'
+                };
+            } else {
+                const orderSell = await Bills.findById(id);
+                if (!orderSell) {
+                    errCode2(res, `Oder sell is not valid with id = ${id}`);
+                } else {
+                    if (orderSell.type == 'SellCoin') {
+                        const user = await User.findOne({
+                            'payment.email': orderSell.buyer.gmailUSer
+                        });
+                        if (!user) {
+                            errCode2(
+                                res,
+                                `User is not valid with email: ${orderSell.buyer.gmailUSer}`
+                            );
+                        } else {
+                            let balance_user = parseFloat(user.Wallet.balance);
+                            if (status == 'Completed') {
+                                if (orderSell.status == 'Pending') {
+                                    let prepare = {
+                                        id: orderSell._id,
+                                        amount: orderSell.amount,
+                                        symbol: orderSell.symbol,
+                                        fee: orderSell.fee,
+                                        price: orderSell.price
+                                    };
+                                    let resultSubCoin = handleSubCoinAuto(
+                                        prepare.symbol,
+                                        prepare.amount,
+                                        user
+                                    );
+                                    resultSubCoin
+                                        .then(() => {
+                                            let balance_after_sell =
+                                                precisionRound(
+                                                    balance_user +
+                                                        precisionRound(
+                                                            parseFloat(
+                                                                prepare.amount
+                                                            ) *
+                                                                parseFloat(
+                                                                    prepare.price
+                                                                )
+                                                        )
+                                                );
+                                            user.Wallet.balance =
+                                                balance_after_sell;
+                                            user.save()
+                                                .then(() => {
+                                                    orderSell.status = status;
+                                                    orderSell
+                                                        .save()
+                                                        .then(() => {
+                                                            successCode(
+                                                                res,
+                                                                `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer}`
+                                                            );
+                                                        })
+                                                        .catch((err) =>
+                                                            errCode1(res, err)
+                                                        );
+                                                })
+                                                .catch((err) =>
+                                                    errCode1(res, err)
+                                                );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                } else {
+                                    errCode2(
+                                        res,
+                                        `Can not execute this command because it is not enough condition for ${status}. Please pending first.`
+                                    );
+                                }
+                            } else if (status == 'Canceled') {
+                                if (orderSell.status == 'Completed') {
+                                    let prepare = {
+                                        id: orderSell._id,
+                                        amount: orderSell.amount,
+                                        symbol: orderSell.symbol,
+                                        fee: orderSell.fee,
+                                        price: orderSell.price
+                                    };
+                                    let resultAddCoin = handleAddCoinAuto(
+                                        prepare.symbol,
+                                        prepare.amount,
+                                        user
+                                    );
+                                    resultAddCoin
+                                        .then(() => {
+                                            let balance_after_cancel_sell =
+                                                precisionRound(
+                                                    balance_user -
+                                                        precisionRound(
+                                                            parseFloat(
+                                                                prepare.amount
+                                                            ) *
+                                                                parseFloat(
+                                                                    prepare.price
+                                                                )
+                                                        )
+                                                );
+                                            user.Wallet.balance =
+                                                balance_after_cancel_sell;
+                                            user.save()
+                                                .then(() => {
+                                                    orderSell.status = status;
+                                                    orderSell
+                                                        .save()
+                                                        .then(() => {
+                                                            successCode(
+                                                                res,
+                                                                `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer}`
+                                                            );
+                                                        })
+                                                        .catch((err) =>
+                                                            errCode1(res, err)
+                                                        );
+                                                })
+                                                .catch((err) =>
+                                                    errCode1(res, err)
+                                                );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                } else {
+                                    errCode2(
+                                        res,
+                                        `Can not execute this command because it is not enough condition for ${status}. Please Completed first.`
+                                    );
+                                }
+                            } else if (status == 'Pending') {
+                                if (orderSell.status == 'Canceled') {
+                                    orderSell.status = status;
+                                    orderSell
+                                        .save()
+                                        .then(() => {
+                                            successCode(
+                                                res,
+                                                `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer}`
+                                            );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                } else {
+                                    errCode2(
+                                        res,
+                                        `${status} failed order sell coin of user with email: ${orderSell.buyer.gmailUSer}. Please canceled first`
+                                    );
+                                }
+                            } else {
+                                errCode2(
+                                    res,
+                                    `${status} is not supported for sell coin`
+                                );
+                            }
+                        }
+                    } else {
+                        errCode2(
+                            res,
+                            `Order sell coin is not valid with id = ${id}`
+                        );
+                    }
+                }
+            }
+        } catch (error) {
+            errCode1(res, error);
         }
     }
 
@@ -2225,8 +2455,8 @@ class AdminController {
                         );
                     } else {
                         const balance_user = parseFloat(user.Wallet.balance);
-                        if (status == 'Confirmed') {
-                            if (deposit.status == 'On hold') {
+                        if (status == 'Completed') {
+                            if (deposit.status == 'Confirmed') {
                                 let balance_after_deposit = precisionRound(
                                     balance_user + parseFloat(deposit.amountUsd)
                                 );
@@ -2294,41 +2524,6 @@ class AdminController {
                                         })
                                         .catch((err) => errCode1(res, err));
                                 }
-                            } else if (deposit.status == 'Confirmed') {
-                                let balance_after_deposit = precisionRound(
-                                    balance_user - parseFloat(deposit.amountUsd)
-                                );
-
-                                let deposit_after = precisionRound(
-                                    parseFloat(user.Wallet.deposit) -
-                                        parseFloat(deposit.amountUsd)
-                                );
-
-                                if (balance_after_deposit < 0) {
-                                    errCode2(
-                                        res,
-                                        `Balance of user is not enough for repaying of order deposit with id = ${id}`
-                                    );
-                                } else {
-                                    user.Wallet.balance = balance_after_deposit;
-                                    user.Wallet.deposit = deposit_after;
-                                    user.save()
-                                        .then(() => {
-                                            deposit.status = status;
-                                            deposit
-                                                .save()
-                                                .then(() => {
-                                                    successCode(
-                                                        res,
-                                                        `${status} successfully of order deposit with id = ${id}`
-                                                    );
-                                                })
-                                                .catch((err) =>
-                                                    errCode1(res, err)
-                                                );
-                                        })
-                                        .catch((err) => errCode1(res, err));
-                                }
                             } else {
                                 deposit.status = status;
                                 deposit
@@ -2341,8 +2536,8 @@ class AdminController {
                                     })
                                     .catch((err) => errCode1(res, err));
                             }
-                        } else if (status == 'Completed') {
-                            if (deposit.status == 'Confirmed') {
+                        } else if (status == 'Confirmed') {
+                            if (deposit.status == 'On hold') {
                                 deposit.status = status;
                                 deposit
                                     .save()
@@ -2359,17 +2554,29 @@ class AdminController {
                                     `Order deposit is not enough condition for ${status}. Please Confirmed this order deposit first. Or it is already is ${status}`
                                 );
                             }
+                        } else if (status == 'On hold') {
+                            if (deposit.status == 'Canceled') {
+                                deposit.status = status;
+                                deposit
+                                    .save()
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `${status} successfully for this order deposit with id = ${id}`
+                                        );
+                                    })
+                                    .catch((err) => errCode1(res, err));
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Order deposit is not enough condition for ${status}. Please Canceled this order deposit first. Or it is already is ${status}`
+                                );
+                            }
                         } else {
-                            deposit.status = status;
-                            deposit
-                                .save()
-                                .then(() => {
-                                    successCode(
-                                        res,
-                                        `${status} successfully for this order deposit with id = ${id}`
-                                    );
-                                })
-                                .catch((err) => errCode1(res, err));
+                            errCode2(
+                                res,
+                                `${status} is not support for handle Deposit`
+                            );
                         }
                     }
                 }
@@ -2712,17 +2919,29 @@ class AdminController {
                                     `Order withdraw is not enough condition for ${status}. Please Confirmed this order withdraw first. Or it is already is ${status}`
                                 );
                             }
+                        } else if (status == 'On hold') {
+                            if (withdraw.status == 'Canceled') {
+                                withdraw.status = status;
+                                withdraw
+                                    .save()
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `${status} successfully for this order withdraw with id = ${id}`
+                                        );
+                                    })
+                                    .catch((err) => errCode1(res, err));
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Order withdraw is not enough condition for ${status}. Please Canceled this order withdraw first. Or it is already is ${status}`
+                                );
+                            }
                         } else {
-                            withdraw.status = status;
-                            withdraw
-                                .save()
-                                .then(() => {
-                                    successCode(
-                                        res,
-                                        `${status} successfully for this order withdraw with id = ${id}`
-                                    );
-                                })
-                                .catch((err) => errCode1(res, err));
+                            errCode2(
+                                res,
+                                `${status} is not support for handle withdraw`
+                            );
                         }
                     }
                 }
@@ -2842,7 +3061,7 @@ class AdminController {
             dataCode(res, {
                 users: userHaveBalance,
                 total: total,
-                totalUSer: lenOfUserHaveBalance
+                totalUser: lenOfUserHaveBalance
             });
         }
     }
