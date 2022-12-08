@@ -144,11 +144,11 @@ router.put(
     '/handleSellCoin/:id',
     checkAuth,
     checkAdmin,
-    AdminController.handleSellCoin
+    AdminController.handle_sell_coin_v2
 );
 
 // [PUT] /admin/testHandleSellCoinBot/:id
-router.put('/handleSellCoinBot/:id', AdminController.handleSellCoin);
+router.put('/handleSellCoinBot/:id', AdminController.handle_sell_coin_v2);
 
 //[PUT] /admin/updateRankUser/:id
 router.put(

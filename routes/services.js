@@ -3,6 +3,6 @@ const router = express.Router();
 
 const ServicesController = require('../controllers/ServicesController');
 
-router.get('/getRate', ServicesController.getRate);
+router.post('/changeFeeUsers', ServicesController.changeFeeUsers);
 
 module.exports = router;

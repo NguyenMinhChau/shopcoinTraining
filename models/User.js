@@ -38,7 +38,7 @@ const user = new mongoose.Schema(
         },
         rank: { type: String, default: 'STANDARD' },
         changeBalance: { type: Number, default: 0.0 },
-        fee: { type: Number, default: 0.15 },
+        fee: { type: Number, default: 0.0015 },
         uploadCCCDFont: { type: String, default: '' },
         uploadCCCDBeside: { type: String, default: '' },
         uploadLicenseFont: { type: String, default: '' },

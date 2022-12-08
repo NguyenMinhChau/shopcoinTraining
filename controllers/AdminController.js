@@ -1444,6 +1444,17 @@ class AdminController {
                                     .catch((err) => {
                                         errCode1(res, err);
                                     });
+                            } else if (orderBuy.status == 'Pending') {
+                                orderBuy.status = status;
+                                orderBuy
+                                    .save()
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `${status} successfully for order buy coin`
+                                        );
+                                    })
+                                    .catch((err) => errCode1(res, err));
                             } else {
                                 errCode2(
                                     res,
@@ -1849,6 +1860,17 @@ class AdminController {
                                                 .catch((err) =>
                                                     errCode1(res, err)
                                                 );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                } else if (orderSell.status == 'Pending') {
+                                    orderSell.status = status;
+                                    orderSell
+                                        .save()
+                                        .then(() => {
+                                            successCode(
+                                                res,
+                                                `${status} successfully for order sell coin`
+                                            );
                                         })
                                         .catch((err) => errCode1(res, err));
                                 } else {

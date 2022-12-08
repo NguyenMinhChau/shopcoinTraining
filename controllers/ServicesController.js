@@ -1,55 +1,33 @@
-const otpGenerator = require('otp-generator');
-const jimp = require('jimp');
-const fs = require('fs');
-const Path = require('path');
-const xml2 = require('xml2js');
-
-// models
-const Rates = require('../models/Rates');
-
-// function global
-const {
-    errCode1,
-    errCode2,
-    dataCode,
-    successCode,
-    precisionRound,
-    mail
-} = require('../function');
-const axios = require('axios');
-
-const {
-    withdrawMail,
-    confirmWithdraw,
-    withdrawSuccess
-} = require('../mailform/withdrawForm');
+const { errCode1, errCode2, dataCode, successCode } = require('../function');
+const Ranks = require('../models/Ranks');
+const Users = require('../models/User');
 
 class ServicesController {
-    // [GET] /services/getRate
-    async getRate(req, res) {
-        const xml = axios.get(
-            'https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx?b=10'
-        );
-        const [resultTyGia] = await Promise.all([xml]);
-
-        xml2.parseString(
-            resultTyGia.data,
-            { mergeAttrs: true },
-            (err, result) => {
-                if (err) {
-                    throw err;
+    async changeFeeUsers(req, res) {
+        try {
+            const { rankIn } = req.body;
+            const rank = await Ranks.findOne({ ranks: rankIn });
+            if (!rank) {
+                throw { message: 'No rank' };
+            } else {
+                const usersFind = await Users.find({ rank: rank.ranks });
+                if (usersFind.length == 0) {
+                    successCode(res, `No user valid with rank = ${rankIn}`);
+                } else {
+                    // let fee = rank.fee;
+                    // usersFind.forEach((user) => {
+                    //     user.fee = fee;
+                    //     user.save()
+                    //         .then(() => {})
+                    //         .catch((err) => errCode1(res, err));
+                    // });
+                    // successCode(res, `Udpate successfully`);
+                    dataCode(res, usersFind);
                 }
-
-                const data = result.ExrateList.Exrate;
-                const finalRes = data.filter((exchangeRate) => {
-                    if (exchangeRate.CurrencyCode == 'USD') {
-                        return exchangeRate;
-                    }
-                });
-
-                dataCode(res, finalRes);
             }
-        );
+        } catch (error) {
+            errCode1(res, error);
+        }
     }
 }
 

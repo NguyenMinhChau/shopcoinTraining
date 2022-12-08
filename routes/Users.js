@@ -80,14 +80,10 @@ router.put(
 );
 
 // [POST] /users/withdraw
-router.post('/withdraw', checkAuth, UsersContronller.withdraw);
+router.post('/withdraw', UsersContronller.withdraw);
 
 // [GET] /users/enterOTPWithdraw/:code
-router.get(
-    '/enterOTPWithdraw/:code',
-    checkAuth,
-    UsersContronller.enterOTPWithdraw
-);
+router.get('/enterOTPWithdraw/:code', UsersContronller.enterOTPWithdraw);
 
 // [GET] /users/getAllBuy/:id
 router.get('/getAllBuy/:id', UsersContronller.getAllBuy);
@@ -105,19 +101,26 @@ router.get('/getAllWithdraw/:email', UsersContronller.getAllWithdraw);
 router.get('/getAllCoinOfUser/:id', UsersContronller.getAllCoinOfUser);
 
 // [DELETE] /users/cancelWithdraw/:id
-router.delete('/cancelWithdraw/:id', checkAuth, UsersContronller.cancelWithdraw);
+router.delete('/cancelWithdraw/:id', UsersContronller.cancelWithdraw);
 
 // [POST] /users/resendOTPWithdraw/:id
-router.post('/resendOTPWithdraw/:id', checkAuth, UsersContronller.resendOTPWithdraw);
+router.post(
+    '/resendOTPWithdraw/:id',
+    checkAuth,
+    UsersContronller.resendOTPWithdraw
+);
 
 // [GET] /users/getRate/:numberBank
-router.get('/getRate/:numberBank', UsersContronller.getRatesOfUser)
+router.get('/getRate/:numberBank', UsersContronller.getRatesOfUser);
 
 // [PUT] /users/additionImages/:id
-router.put('/additionImages/:id', checkAuth, UsersContronller.additionImages)
+router.put('/additionImages/:id', checkAuth, UsersContronller.additionImages);
 
 // [PUT] /users/additionImageDeposit/:id
-router.put('/additionImageDeposit/:id', checkAuth, UsersContronller.additionImageDeposit)
-
+router.put(
+    '/additionImageDeposit/:id',
+    checkAuth,
+    UsersContronller.additionImageDeposit
+);
 
 module.exports = router;

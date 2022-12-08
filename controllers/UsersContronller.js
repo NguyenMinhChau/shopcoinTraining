@@ -144,103 +144,121 @@ const buyCoin = async (
             parseFloat(amount * price)
         ) == true
     ) {
-        if (user.rank == 'DEMO') {
-            let fee = 0;
-            let new_fee = precisionRound(
-                parseFloat(user.fee) - parseFloat(fee)
-            );
-            const resultCreateBill = createNewBill(
-                user.payment.email,
-                amount,
-                amountUsd,
-                symbol,
-                price,
-                type,
-                user.payment.rule,
-                user.rank,
-                new_fee
-            );
-            resultCreateBill
-                .then((value) => {
-                    successCode(
-                        res,
-                        `Đã mua coin thành công chờ admin xét duyệt`
-                    );
-                })
-                .catch((err) => errCode1(res, err));
-        } else if (user.rank == 'STANDARD') {
-            let fee = 0;
-            let new_fee = precisionRound(
-                parseFloat(user.fee) - parseFloat(fee)
-            );
-            const resultCreateBill = createNewBill(
-                user.payment.email,
-                amount,
-                amountUsd,
-                symbol,
-                price,
-                type,
-                user.payment.rule,
-                user.rank,
-                new_fee
-            );
-            resultCreateBill
-                .then((value) => {
-                    successCode(
-                        res,
-                        `Đã mua coin thành công chờ admin xét duyệt`
-                    );
-                })
-                .catch((err) => errCode1(res, err));
-        } else if (user.rank == 'PRO') {
-            let fee = 0.01;
-            let new_fee = precisionRound(
-                parseFloat(user.fee) - parseFloat(fee)
-            );
-            const resultCreateBill = createNewBill(
-                user.payment.email,
-                amount,
-                amountUsd,
-                symbol,
-                price,
-                type,
-                user.payment.rule,
-                user.rank,
-                new_fee
-            );
-            resultCreateBill
-                .then((value) => {
-                    successCode(
-                        res,
-                        `Đã mua coin thành công chờ admin xét duyệt`
-                    );
-                })
-                .catch((err) => errCode1(res, err));
-        } else if (user.rank == 'VIP') {
-            let fee = 0.02;
-            let new_fee = precisionRound(
-                parseFloat(user.fee) - parseFloat(fee)
-            );
-            const resultCreateBill = createNewBill(
-                user.payment.email,
-                amount,
-                amountUsd,
-                symbol,
-                price,
-                type,
-                user.payment.rule,
-                user.rank,
-                new_fee
-            );
-            resultCreateBill
-                .then((value) => {
-                    successCode(
-                        res,
-                        `Đã mua coin thành công chờ admin xét duyệt`
-                    );
-                })
-                .catch((err) => errCode1(res, err));
-        }
+        // if (user.rank == 'DEMO') {
+        //     let fee = 0;
+        //     let new_fee = precisionRound(
+        //         parseFloat(user.fee) - parseFloat(fee)
+        //     );
+        //     const resultCreateBill = createNewBill(
+        //         user.payment.email,
+        //         amount,
+        //         amountUsd,
+        //         symbol,
+        //         price,
+        //         type,
+        //         user.payment.rule,
+        //         user.rank,
+        //         new_fee
+        //     );
+        //     resultCreateBill
+        //         .then((value) => {
+        //             successCode(
+        //                 res,
+        //                 `Đã mua coin thành công chờ admin xét duyệt`
+        //             );
+        //         })
+        //         .catch((err) => errCode1(res, err));
+        // } else if (user.rank == 'STANDARD') {
+        //     let fee = 0;
+        //     let new_fee = precisionRound(
+        //         parseFloat(user.fee) - parseFloat(fee)
+        //     );
+        //     const resultCreateBill = createNewBill(
+        //         user.payment.email,
+        //         amount,
+        //         amountUsd,
+        //         symbol,
+        //         price,
+        //         type,
+        //         user.payment.rule,
+        //         user.rank,
+        //         new_fee
+        //     );
+        //     resultCreateBill
+        //         .then((value) => {
+        //             successCode(
+        //                 res,
+        //                 `Đã mua coin thành công chờ admin xét duyệt`
+        //             );
+        //         })
+        //         .catch((err) => errCode1(res, err));
+        // } else if (user.rank == 'PRO') {
+        //     let fee = 0.0001;
+        //     let new_fee = precisionRound(
+        //         parseFloat(user.fee) - parseFloat(fee)
+        //     );
+        //     const resultCreateBill = createNewBill(
+        //         user.payment.email,
+        //         amount,
+        //         amountUsd,
+        //         symbol,
+        //         price,
+        //         type,
+        //         user.payment.rule,
+        //         user.rank,
+        //         new_fee
+        //     );
+        //     resultCreateBill
+        //         .then((value) => {
+        //             successCode(
+        //                 res,
+        //                 `Đã mua coin thành công chờ admin xét duyệt`
+        //             );
+        //         })
+        //         .catch((err) => errCode1(res, err));
+        // } else if (user.rank == 'VIP') {
+        //     let fee = 0.0002;
+        //     let new_fee = precisionRound(
+        //         parseFloat(user.fee) - parseFloat(fee)
+        //     );
+        //     const resultCreateBill = createNewBill(
+        //         user.payment.email,
+        //         amount,
+        //         amountUsd,
+        //         symbol,
+        //         price,
+        //         type,
+        //         user.payment.rule,
+        //         user.rank,
+        //         new_fee
+        //     );
+        //     resultCreateBill
+        //         .then((value) => {
+        //             successCode(
+        //                 res,
+        //                 `Đã mua coin thành công chờ admin xét duyệt`
+        //             );
+        //         })
+        //         .catch((err) => errCode1(res, err));
+        // }
+
+        let fee = parseFloat(user.fee);
+        const resultCreateBill = createNewBill(
+            user.payment.email,
+            amount,
+            amountUsd,
+            symbol,
+            price,
+            type,
+            user.payment.rule,
+            user.rank,
+            fee
+        );
+        resultCreateBill
+            .then((value) => {
+                successCode(res, `Đã mua coin thành công chờ admin xét duyệt`);
+            })
+            .catch((err) => errCode1(res, err));
     } else {
         errCode2(res, `Tài khoản không đủ để hoàn thành bước này !!!`);
     }
@@ -560,6 +578,7 @@ class UsersController {
                     {
                         'buyer.gmailUSer': user.payment.email,
                         type: 'BuyCoin'
+                        // status: 'Completed'
                     },
                     (err, allBuy) => {
                         if (err) methods.errCode1(res, err);
