@@ -2204,7 +2204,11 @@ class AdminController {
         const { status } = req.body;
         try {
             if (status == undefined) {
-                throw 'Status for handle deposit is not valid. Please choose status.';
+                throw {
+                    code: 1,
+                    message:
+                        'Status for handle deposit is not valid. Please choose status.'
+                };
             } else {
                 const deposit = await Deposits.findById(id);
 
@@ -2371,7 +2375,7 @@ class AdminController {
                 }
             }
         } catch (error) {
-            errCode2(res, error);
+            errCode1(res, error);
         }
     }
 
@@ -2557,40 +2561,86 @@ class AdminController {
         const { id } = req.params;
         const { status } = req.body;
         try {
-            const withdraw = await Withdraws.findById(id);
-
-            if (!withdraw) {
-                errCode2(res, `Withdraw is not valid with id = ${id}`);
+            if (status == undefined) {
+                throw {
+                    code: 1,
+                    message:
+                        'Status for handle deposit is not valid. Please choose status.'
+                };
             } else {
-                const user = await User.findOne({
-                    'payment.email': withdraw.user
-                });
-                if (!user) {
-                    errCode2(
-                        res,
-                        `User is not valid with id = ${id} of order withdraw`
-                    );
-                } else {
-                    const balance_user = parseFloat(user.Wallet.balance);
-                    if (status == 'Confirmed') {
-                        if (withdraw.status == 'On hold') {
-                            let balance_after_withdraw = precisionRound(
-                                balance_user - parseFloat(withdraw.amountUsd)
-                            );
-                            let withdraw_after = precisionRound(
-                                parseFloat(user.Wallet.withdraw) +
-                                    parseFloat(withdraw.amountUsd)
-                            );
+                const withdraw = await Withdraws.findById(id);
 
-                            if (balance_after_withdraw < 0) {
+                if (!withdraw) {
+                    errCode2(res, `Withdraw is not valid with id = ${id}`);
+                } else {
+                    const user = await User.findOne({
+                        'payment.email': withdraw.user
+                    });
+                    if (!user) {
+                        errCode2(
+                            res,
+                            `User is not valid with id = ${id} of order withdraw`
+                        );
+                    } else {
+                        const balance_user = parseFloat(user.Wallet.balance);
+                        if (status == 'Confirmed') {
+                            if (withdraw.status == 'On hold') {
+                                let balance_after_withdraw = precisionRound(
+                                    balance_user -
+                                        parseFloat(withdraw.amountUsd)
+                                );
+                                let withdraw_after = precisionRound(
+                                    parseFloat(user.Wallet.withdraw) +
+                                        parseFloat(withdraw.amountUsd)
+                                );
+
+                                if (balance_after_withdraw < 0) {
+                                    errCode2(
+                                        res,
+                                        `Balance of user is not enough for executing the order withdraw`
+                                    );
+                                } else {
+                                    user.Wallet.balance =
+                                        balance_after_withdraw;
+                                    user.Wallet.withdraw = withdraw_after;
+
+                                    user.save()
+                                        .then(() => {
+                                            withdraw.status = status;
+                                            withdraw
+                                                .save()
+                                                .then(() => {
+                                                    successCode(
+                                                        res,
+                                                        `${status} successfully of order withdraw with id = ${id}`
+                                                    );
+                                                })
+                                                .catch((err) =>
+                                                    errCode1(res, err)
+                                                );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                }
+                            } else {
                                 errCode2(
                                     res,
-                                    `Balance of user is not enough for executing the order withdraw`
+                                    `Can not execute this command because it is not enough condition for ${status}. Please change the status of order to On hold. Or it is already is ${status}`
                                 );
-                            } else {
+                            }
+                        } else if (status == 'Canceled') {
+                            if (withdraw.status == 'Completed') {
+                                let balance_after_withdraw = precisionRound(
+                                    balance_user +
+                                        parseFloat(withdraw.amountUsd)
+                                );
+
+                                let withdraw_after = precisionRound(
+                                    parseFloat(user.Wallet.withdraw) -
+                                        parseFloat(withdraw.amountUsd)
+                                );
+
                                 user.Wallet.balance = balance_after_withdraw;
                                 user.Wallet.withdraw = withdraw_after;
-
                                 user.save()
                                     .then(() => {
                                         withdraw.status = status;
@@ -2605,80 +2655,64 @@ class AdminController {
                                             .catch((err) => errCode1(res, err));
                                     })
                                     .catch((err) => errCode1(res, err));
+                            } else if (withdraw.status == 'Confirmed') {
+                                let balance_after_withdraw = precisionRound(
+                                    balance_user +
+                                        parseFloat(withdraw.amountUsd)
+                                );
+
+                                let withdraw_after = precisionRound(
+                                    parseFloat(user.Wallet.withdraw) -
+                                        parseFloat(withdraw.amountUsd)
+                                );
+
+                                user.Wallet.balance = balance_after_withdraw;
+                                user.Wallet.withdraw = withdraw_after;
+                                user.save()
+                                    .then(() => {
+                                        withdraw.status = status;
+                                        withdraw
+                                            .save()
+                                            .then(() => {
+                                                successCode(
+                                                    res,
+                                                    `${status} successfully of order withdraw with id = ${id}`
+                                                );
+                                            })
+                                            .catch((err) => errCode1(res, err));
+                                    })
+                                    .catch((err) => errCode1(res, err));
+                            } else {
+                                withdraw.status = status;
+                                withdraw
+                                    .save()
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `${status} successfully for refusing withdraw of user`
+                                        );
+                                    })
+                                    .catch((err) => errCode1(res, err));
+                            }
+                        } else if (status == 'Completed') {
+                            if (withdraw.status == 'Confirmed') {
+                                withdraw.status = status;
+                                withdraw
+                                    .save()
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `${status} successfully for this order withdraw with id = ${id}`
+                                        );
+                                    })
+                                    .catch((err) => errCode1(res, err));
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Order withdraw is not enough condition for ${status}. Please Confirmed this order withdraw first. Or it is already is ${status}`
+                                );
                             }
                         } else {
-                            errCode2(
-                                res,
-                                `Can not execute this command because it is not enough condition for ${status}. Please change the status of order to On hold. Or it is already is ${status}`
-                            );
-                        }
-                    } else if (status == 'Canceled') {
-                        if (withdraw.status == 'Completed') {
-                            let balance_after_withdraw = precisionRound(
-                                balance_user + parseFloat(withdraw.amountUsd)
-                            );
-
-                            let withdraw_after = precisionRound(
-                                parseFloat(user.Wallet.withdraw) -
-                                    parseFloat(withdraw.amountUsd)
-                            );
-
-                            user.Wallet.balance = balance_after_withdraw;
-                            user.Wallet.withdraw = withdraw_after;
-                            user.save()
-                                .then(() => {
-                                    withdraw.status = status;
-                                    withdraw
-                                        .save()
-                                        .then(() => {
-                                            successCode(
-                                                res,
-                                                `${status} successfully of order withdraw with id = ${id}`
-                                            );
-                                        })
-                                        .catch((err) => errCode1(res, err));
-                                })
-                                .catch((err) => errCode1(res, err));
-                        } else if (withdraw.status == 'Confirmed') {
-                            let balance_after_withdraw = precisionRound(
-                                balance_user + parseFloat(withdraw.amountUsd)
-                            );
-
-                            let withdraw_after = precisionRound(
-                                parseFloat(user.Wallet.withdraw) -
-                                    parseFloat(withdraw.amountUsd)
-                            );
-
-                            user.Wallet.balance = balance_after_withdraw;
-                            user.Wallet.withdraw = withdraw_after;
-                            user.save()
-                                .then(() => {
-                                    withdraw.status = status;
-                                    withdraw
-                                        .save()
-                                        .then(() => {
-                                            successCode(
-                                                res,
-                                                `${status} successfully of order withdraw with id = ${id}`
-                                            );
-                                        })
-                                        .catch((err) => errCode1(res, err));
-                                })
-                                .catch((err) => errCode1(res, err));
-                        } else {
-                            withdraw.status = status;
-                            withdraw
-                                .save()
-                                .then(() => {
-                                    successCode(
-                                        res,
-                                        `${status} successfully for refusing withdraw of user`
-                                    );
-                                })
-                                .catch((err) => errCode1(res, err));
-                        }
-                    } else if (status == 'Completed') {
-                        if (withdraw.status == 'Confirmed') {
                             withdraw.status = status;
                             withdraw
                                 .save()
@@ -2689,23 +2723,7 @@ class AdminController {
                                     );
                                 })
                                 .catch((err) => errCode1(res, err));
-                        } else {
-                            errCode2(
-                                res,
-                                `Order withdraw is not enough condition for ${status}. Please Confirmed this order withdraw first. Or it is already is ${status}`
-                            );
                         }
-                    } else {
-                        withdraw.status = status;
-                        withdraw
-                            .save()
-                            .then(() => {
-                                successCode(
-                                    res,
-                                    `${status} successfully for this order withdraw with id = ${id}`
-                                );
-                            })
-                            .catch((err) => errCode1(res, err));
                     }
                 }
             }
