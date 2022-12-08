@@ -2058,8 +2058,8 @@ class AdminController {
                     if (err) errCode1(res, err);
 
                     if (user) {
-                        if (status === 'Confirmed') {
-                            if (deposit.status == 'On hold') {
+                        if (status === 'Completed') {
+                            if (deposit.status == 'Confirmed') {
                                 const new_balance = methods.precisionRound(
                                     parseFloat(user.Wallet.balance) +
                                         parseFloat(deposit.amountUsd)
@@ -2109,7 +2109,7 @@ class AdminController {
                                 );
                             }
                         } else if (status === 'Canceled') {
-                            if (deposit.status == 'Confirmed') {
+                            if (deposit.status == 'Completed') {
                                 const new_balance = methods.precisionRound(
                                     parseFloat(user.Wallet.balance) -
                                         parseFloat(deposit.amountUsd)
@@ -2198,6 +2198,183 @@ class AdminController {
         });
     }
 
+    // [PUT] /admin/handleDeposit/:id
+    async handle_deposit_v2(req, res, next) {
+        const { id } = req.params;
+        const { status } = req.body;
+        try {
+            if (status == undefined) {
+                throw 'Status for handle deposit is not valid. Please choose status.';
+            } else {
+                const deposit = await Deposits.findById(id);
+
+                if (!deposit) {
+                    errCode2(res, `Deposit is not valid with id = ${id}`);
+                } else {
+                    const user = await User.findOne({
+                        'payment.email': deposit.user
+                    });
+                    if (!user) {
+                        errCode2(
+                            res,
+                            `User is not valid with id = ${id} of order deposit`
+                        );
+                    } else {
+                        const balance_user = parseFloat(user.Wallet.balance);
+                        if (status == 'Confirmed') {
+                            if (deposit.status == 'On hold') {
+                                let balance_after_deposit = precisionRound(
+                                    balance_user + parseFloat(deposit.amountUsd)
+                                );
+                                let deposit_after = precisionRound(
+                                    parseFloat(user.Wallet.deposit) +
+                                        parseFloat(deposit.amountUsd)
+                                );
+
+                                user.Wallet.balance = balance_after_deposit;
+                                user.Wallet.deposit = deposit_after;
+
+                                user.save()
+                                    .then(() => {
+                                        deposit.status = status;
+                                        deposit
+                                            .save()
+                                            .then(() => {
+                                                successCode(
+                                                    res,
+                                                    `${status} successfully of order deposit with id = ${id}`
+                                                );
+                                            })
+                                            .catch((err) => errCode1(res, err));
+                                    })
+                                    .catch((err) => errCode1(res, err));
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Can not execute this command because it is not enough condition for ${status}. Please change the status of order to On hold. Or it is already is ${status}`
+                                );
+                            }
+                        } else if (status == 'Canceled') {
+                            if (deposit.status == 'Completed') {
+                                let balance_after_deposit = precisionRound(
+                                    balance_user - parseFloat(deposit.amountUsd)
+                                );
+
+                                let deposit_after = precisionRound(
+                                    parseFloat(user.Wallet.deposit) -
+                                        parseFloat(deposit.amountUsd)
+                                );
+
+                                if (balance_after_deposit < 0) {
+                                    errCode2(
+                                        res,
+                                        `Balance of user is not enough for repaying of order deposit with id = ${id}`
+                                    );
+                                } else {
+                                    user.Wallet.balance = balance_after_deposit;
+                                    user.Wallet.deposit = deposit_after;
+                                    user.save()
+                                        .then(() => {
+                                            deposit.status = status;
+                                            deposit
+                                                .save()
+                                                .then(() => {
+                                                    successCode(
+                                                        res,
+                                                        `${status} successfully of order deposit with id = ${id}`
+                                                    );
+                                                })
+                                                .catch((err) =>
+                                                    errCode1(res, err)
+                                                );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                }
+                            } else if (deposit.status == 'Confirmed') {
+                                let balance_after_deposit = precisionRound(
+                                    balance_user - parseFloat(deposit.amountUsd)
+                                );
+
+                                let deposit_after = precisionRound(
+                                    parseFloat(user.Wallet.deposit) -
+                                        parseFloat(deposit.amountUsd)
+                                );
+
+                                if (balance_after_deposit < 0) {
+                                    errCode2(
+                                        res,
+                                        `Balance of user is not enough for repaying of order deposit with id = ${id}`
+                                    );
+                                } else {
+                                    user.Wallet.balance = balance_after_deposit;
+                                    user.Wallet.deposit = deposit_after;
+                                    user.save()
+                                        .then(() => {
+                                            deposit.status = status;
+                                            deposit
+                                                .save()
+                                                .then(() => {
+                                                    successCode(
+                                                        res,
+                                                        `${status} successfully of order deposit with id = ${id}`
+                                                    );
+                                                })
+                                                .catch((err) =>
+                                                    errCode1(res, err)
+                                                );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                }
+                            } else {
+                                deposit.status = status;
+                                deposit
+                                    .save()
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `${status} successfully for refusing deposit of user`
+                                        );
+                                    })
+                                    .catch((err) => errCode1(res, err));
+                            }
+                        } else if (status == 'Completed') {
+                            if (deposit.status == 'Confirmed') {
+                                deposit.status = status;
+                                deposit
+                                    .save()
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `${status} successfully for this order deposit with id = ${id}`
+                                        );
+                                    })
+                                    .catch((err) => errCode1(res, err));
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Order deposit is not enough condition for ${status}. Please Confirmed this order deposit first. Or it is already is ${status}`
+                                );
+                            }
+                        } else {
+                            deposit.status = status;
+                            deposit
+                                .save()
+                                .then(() => {
+                                    successCode(
+                                        res,
+                                        `${status} successfully for this order deposit with id = ${id}`
+                                    );
+                                })
+                                .catch((err) => errCode1(res, err));
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            errCode2(res, error);
+        }
+    }
+
     // [PUT] /admin/handleWithdraw/:id
     handleWithdraw(req, res) {
         const { id } = req.params;
@@ -2214,8 +2391,16 @@ class AdminController {
                         if (err) errCode1(res, err);
 
                         if (user) {
-                            if (status === 'Confirmed') {
-                                if (withdraw.status == 'On hold') {
+                            if (
+                                status === 'Confirmed' ||
+                                status === 'Completed'
+                            ) {
+                                if (
+                                    (withdraw.status == 'On hold' &&
+                                        status === 'Confirmed') ||
+                                    (withdraw.status === 'Canceled' &&
+                                        status === 'Completed')
+                                ) {
                                     const new_balance = methods.precisionRound(
                                         parseFloat(user.Wallet.balance) -
                                             parseFloat(withdraw.amountUsd)
@@ -2326,7 +2511,7 @@ class AdminController {
                                     withdraw.status = status;
                                     withdraw
                                         .save()
-                                        .then((res) => {
+                                        .then(() => {
                                             successCode(
                                                 res,
                                                 `Canceled this order`
@@ -2365,6 +2550,168 @@ class AdminController {
                 errCode2(res, `withdraw is not valid id = ${id}`);
             }
         });
+    }
+
+    // [PUT] /admin/handleWithdraw/:id
+    async handleWithdraw_v2(req, res, next) {
+        const { id } = req.params;
+        const { status } = req.body;
+        try {
+            const withdraw = await Withdraws.findById(id);
+
+            if (!withdraw) {
+                errCode2(res, `Withdraw is not valid with id = ${id}`);
+            } else {
+                const user = await User.findOne({
+                    'payment.email': withdraw.user
+                });
+                if (!user) {
+                    errCode2(
+                        res,
+                        `User is not valid with id = ${id} of order withdraw`
+                    );
+                } else {
+                    const balance_user = parseFloat(user.Wallet.balance);
+                    if (status == 'Confirmed') {
+                        if (withdraw.status == 'On hold') {
+                            let balance_after_withdraw = precisionRound(
+                                balance_user - parseFloat(withdraw.amountUsd)
+                            );
+                            let withdraw_after = precisionRound(
+                                parseFloat(user.Wallet.withdraw) +
+                                    parseFloat(withdraw.amountUsd)
+                            );
+
+                            if (balance_after_withdraw < 0) {
+                                errCode2(
+                                    res,
+                                    `Balance of user is not enough for executing the order withdraw`
+                                );
+                            } else {
+                                user.Wallet.balance = balance_after_withdraw;
+                                user.Wallet.withdraw = withdraw_after;
+
+                                user.save()
+                                    .then(() => {
+                                        withdraw.status = status;
+                                        withdraw
+                                            .save()
+                                            .then(() => {
+                                                successCode(
+                                                    res,
+                                                    `${status} successfully of order withdraw with id = ${id}`
+                                                );
+                                            })
+                                            .catch((err) => errCode1(res, err));
+                                    })
+                                    .catch((err) => errCode1(res, err));
+                            }
+                        } else {
+                            errCode2(
+                                res,
+                                `Can not execute this command because it is not enough condition for ${status}. Please change the status of order to On hold. Or it is already is ${status}`
+                            );
+                        }
+                    } else if (status == 'Canceled') {
+                        if (withdraw.status == 'Completed') {
+                            let balance_after_withdraw = precisionRound(
+                                balance_user + parseFloat(withdraw.amountUsd)
+                            );
+
+                            let withdraw_after = precisionRound(
+                                parseFloat(user.Wallet.withdraw) -
+                                    parseFloat(withdraw.amountUsd)
+                            );
+
+                            user.Wallet.balance = balance_after_withdraw;
+                            user.Wallet.withdraw = withdraw_after;
+                            user.save()
+                                .then(() => {
+                                    withdraw.status = status;
+                                    withdraw
+                                        .save()
+                                        .then(() => {
+                                            successCode(
+                                                res,
+                                                `${status} successfully of order withdraw with id = ${id}`
+                                            );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                })
+                                .catch((err) => errCode1(res, err));
+                        } else if (withdraw.status == 'Confirmed') {
+                            let balance_after_withdraw = precisionRound(
+                                balance_user + parseFloat(withdraw.amountUsd)
+                            );
+
+                            let withdraw_after = precisionRound(
+                                parseFloat(user.Wallet.withdraw) -
+                                    parseFloat(withdraw.amountUsd)
+                            );
+
+                            user.Wallet.balance = balance_after_withdraw;
+                            user.Wallet.withdraw = withdraw_after;
+                            user.save()
+                                .then(() => {
+                                    withdraw.status = status;
+                                    withdraw
+                                        .save()
+                                        .then(() => {
+                                            successCode(
+                                                res,
+                                                `${status} successfully of order withdraw with id = ${id}`
+                                            );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                })
+                                .catch((err) => errCode1(res, err));
+                        } else {
+                            withdraw.status = status;
+                            withdraw
+                                .save()
+                                .then(() => {
+                                    successCode(
+                                        res,
+                                        `${status} successfully for refusing withdraw of user`
+                                    );
+                                })
+                                .catch((err) => errCode1(res, err));
+                        }
+                    } else if (status == 'Completed') {
+                        if (withdraw.status == 'Confirmed') {
+                            withdraw.status = status;
+                            withdraw
+                                .save()
+                                .then(() => {
+                                    successCode(
+                                        res,
+                                        `${status} successfully for this order withdraw with id = ${id}`
+                                    );
+                                })
+                                .catch((err) => errCode1(res, err));
+                        } else {
+                            errCode2(
+                                res,
+                                `Order withdraw is not enough condition for ${status}. Please Confirmed this order withdraw first. Or it is already is ${status}`
+                            );
+                        }
+                    } else {
+                        withdraw.status = status;
+                        withdraw
+                            .save()
+                            .then(() => {
+                                successCode(
+                                    res,
+                                    `${status} successfully for this order withdraw with id = ${id}`
+                                );
+                            })
+                            .catch((err) => errCode1(res, err));
+                    }
+                }
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
     }
 
     // [GET] /admin/totalDeposit

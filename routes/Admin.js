@@ -214,7 +214,7 @@ router.put(
     '/handleDeposit/:id',
     checkAuth,
     checkAdmin,
-    AdminController.handleDeposit
+    AdminController.handle_deposit_v2
 );
 
 // [PUT] /admin/handleDepositBot/:id
@@ -225,7 +225,7 @@ router.put(
     '/handleWithdraw/:id',
     checkAuth,
     checkAdmin,
-    AdminController.handleWithdraw
+    AdminController.handleWithdraw_v2
 );
 
 // [PUT] /admin/handleWithdrawBot/:id
@@ -257,5 +257,11 @@ router.put('/changeRates', checkAuth, checkAdmin, AdminController.changeRates);
 
 // [GET] /admin/getRates
 router.get('/getRates', AdminController.getRates);
+
+// // [PUT] /admin/testHandleWithdraw/:id
+// router.put('/testHandleWithdraw/:id', AdminController.handleWithdraw_v2);
+
+// // [PUT] /admin/testHandleDeposit/:id
+// router.put('/testHandleDeposit/:id', AdminController.handle_deposit_v2);
 
 module.exports = router;
