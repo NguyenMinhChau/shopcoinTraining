@@ -559,8 +559,7 @@ class UsersController {
                 Bills.find(
                     {
                         'buyer.gmailUSer': user.payment.email,
-                        type: 'BuyCoin',
-                        status: 'Confirmed'
+                        type: 'BuyCoin'
                     },
                     (err, allBuy) => {
                         if (err) methods.errCode1(res, err);
