@@ -128,6 +128,51 @@ const createNewBill = async (
     return result;
 };
 
+const createNewBillFutures = async (
+    gmailUser,
+    amount,
+    amountUsd,
+    symbol,
+    price,
+    type,
+    typeUser,
+    rank,
+    new_fee,
+    fromDate
+) => {
+    const result = new Promise((resolve, reject) => {
+        const newBill = new Bills({
+            fee: new_fee,
+            buyer: {
+                typeUser: typeUser,
+                gmailUSer: gmailUser,
+                rank: rank
+            },
+            amount: amount,
+            amountUsd: amountUsd,
+            symbol: symbol,
+            price: price,
+            type: type
+        });
+        const date = new Date(fromDate);
+        newBill.createdAt = date.toISOString();
+        newBill
+            .save({ timestamps: { createdAt: false, updatedAt: true } })
+            .then((bill) => {
+                // botHelperSendMessage(chatId, bill, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
+                resolve({
+                    code: 0,
+                    message: 'Đã mua coin thành công đợi chờ xét duyệt',
+                    billInfo: bill
+                });
+            })
+            .catch((err) => {
+                reject({ code: 1, message: err.message });
+            });
+    });
+    return result;
+};
+
 const buyCoin = async (
     req,
     res,
@@ -329,6 +374,76 @@ function sellCoin(
             return res.json({ code: 1, message: err.message });
         });
 }
+
+///-------------------------------------- Futures --------------------------------------------
+
+const buyCoinFuture = async (
+    user,
+    fromDate,
+    amount,
+    amountUsd,
+    symbol,
+    price,
+    type
+) => {
+    const p = new Promise((resolve, reject) => {
+        const newBuyOrder = createNewBillFutures(
+            user.payment.email,
+            amount,
+            amountUsd,
+            symbol,
+            price,
+            type,
+            user.payment.rule,
+            user.rank,
+            user.fee,
+            fromDate
+        );
+        newBuyOrder
+            .then((bill) => {
+                resolve(bill);
+            })
+            .catch((err) => {
+                reject({ message: err.message });
+            });
+    });
+    return p;
+};
+
+const sellCoinFutures = async (
+    user,
+    fromDate,
+    amount,
+    amountUsd,
+    symbol,
+    price,
+    type
+) => {
+    const p = new Promise((resolve, reject) => {
+        let fee = parseFloat(user.fee);
+        const resultCreateBill = createNewBillFutures(
+            user.payment.email,
+            amount,
+            amountUsd,
+            symbol,
+            price,
+            type,
+            user.payment.rule,
+            user.rank,
+            fee
+        );
+        resultCreateBill
+            .then((bill) => {
+                resolve(bill);
+            })
+            .catch((err) => {
+                reject({ message: err.message });
+            });
+    });
+    return p;
+};
+
+///-------------------------------------- Futures --------------------------------------------
 
 async function addPayment(methodName, accountName, accountNumber) {
     const p = new Promise((resolve, reject) => {
@@ -1447,5 +1562,124 @@ class UsersController {
             errCode1(res, err);
         }
     }
+
+    // [POST] /users/createUser
+    async createUser(req, res, next) {
+        const { email, password } = req.body;
+        try {
+            bcrypt
+                .hash(password, 10)
+                .then((hashed) => {
+                    const newUser = new Users({
+                        'payment.email': email,
+                        'payment.password': hashed
+                    });
+
+                    newUser
+                        .save()
+                        .then(() => {
+                            successCode(res, `Create user successfully`);
+                        })
+                        .catch((err) => {
+                            throw {
+                                message: err.message
+                            };
+                        });
+                })
+                .catch((err) => {
+                    throw {
+                        message: err.message
+                    };
+                });
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    ///-------------------------------------- Futures --------------------------------------------
+
+    // [POST] /users/buyCoinFutures/:id
+    async buyCoinFutures(req, res, next) {
+        const { id } = req.params;
+        const { fromDate, gmailUser, amount, amountUsd, symbol, price, type } =
+            req.body;
+
+        try {
+            const userFind = await Users.findById(id);
+            if (userFind) {
+                if (
+                    !checkWallet(
+                        parseFloat(userFind.Wallet.balance),
+                        precisionRound(parseFloat(amount) * parseFloat(price))
+                    )
+                ) {
+                    throw {
+                        message: `Current balance of user with id = ${id} is not enough for buy Coin with amount = ${amount}`
+                    };
+                } else {
+                    buyCoinFuture(
+                        userFind,
+                        fromDate,
+                        amount,
+                        amountUsd,
+                        symbol,
+                        price,
+                        type
+                    )
+                        .then(async (bill) => {
+                            dataCode(res, bill);
+                        })
+                        .catch((err) => {
+                            throw {
+                                message: err.message
+                            };
+                        });
+                }
+            } else {
+                throw {
+                    message: `User is not valid with id = ${id}`
+                };
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [POST] /users/sellCoinFutures/:id
+    async sellCoinFutures(req, res, next) {
+        const { id } = req.params;
+        const { fromDate, gmailUser, amount, amountUsd, symbol, price, type } =
+            req.body;
+        try {
+            const user = Users.findById(id);
+            if (!user) {
+                throw {
+                    message: `User is not valid with id = ${id}`
+                };
+            } else {
+                sellCoinFutures(
+                    user,
+                    fromDate,
+                    amount,
+                    amountUsd,
+                    symbol,
+                    price,
+                    type
+                )
+                    .then((bill) => {
+                        dataCode(res, bill);
+                    })
+                    .catch((err) => {
+                        throw {
+                            message: err.message
+                        };
+                    });
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    ///-------------------------------------- Futures --------------------------------------------
 }
 module.exports = new UsersController();

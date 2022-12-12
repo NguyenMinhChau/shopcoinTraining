@@ -123,4 +123,13 @@ router.put(
     UsersContronller.additionImageDeposit
 );
 
+// [POST] /users/buyCoinFutures/:id
+router.post('/buyCoinFutures/:id', UsersContronller.buyCoinFutures);
+
+// [POST] /users/sellCoinFutures/:id
+router.post('/sellCoinFutures/:id', UsersContronller.sellCoinFutures);
+
+// [POST] /users/createUser
+router.post('/createUser', UsersContronller.createUser);
+
 module.exports = router;
