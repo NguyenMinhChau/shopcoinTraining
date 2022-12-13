@@ -30,6 +30,7 @@ const {
     confirmWithdraw
 } = require('../mailform/withdrawForm');
 const Commission = require('../models/Commission');
+const { default: axios } = require('axios');
 
 // support function
 const checkBalance = (balanceNow, balanceAdd) => {
@@ -671,7 +672,7 @@ class UserController {
                     if (err) errCode1(res, err);
 
                     if (withdraw) {
-                        withdraw.status = 'On hold';
+                        withdraw.status = 'Pending';
                         withdraw
                             .save()
                             .then((result) => {
@@ -685,10 +686,22 @@ class UserController {
                                 )
                                     .then((result) => {
                                         // botHelperSendMessage(chatId, withdraw, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
-                                        successCode(
-                                            res,
-                                            `Request withdraw is success with id = ${id}`
-                                        );
+                                        axios
+                                            .put(
+                                                `http://localhost:${process.env.PORT}/handleSellUSD/${id}`,
+                                                {
+                                                    status: 'Completed'
+                                                }
+                                            )
+                                            .then(() => {
+                                                successCode(
+                                                    res,
+                                                    `Request withdraw is success with id = ${id}`
+                                                );
+                                            })
+                                            .catch((err) => {
+                                                errCode1(res, err);
+                                            });
                                     })
                                     .catch((err) => {
                                         errCode1(res, err);

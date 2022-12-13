@@ -26,7 +26,7 @@ router.get('/getPaymentAdmin', AdminController.getPaymentAdmin);
 // [GET] /admin/getPayment/:id
 router.get('/getPayment/:id', AdminController.getPayment);
 
-// ------------------- handle services ----------------
+// -------------------------------------- handle services ------------------------------------------------
 
 // [PUT] /admin/handleSellUSD/:id
 router.put(
@@ -44,9 +44,9 @@ router.put(
     AdminController.handleBuyUSD
 );
 
-// ------------------- handle services ----------------
+// -------------------------------------- handle services ------------------------------------------------
 
-// ------------------- get all ----------------
+// -------------------------------------- get all ------------------------------------------------
 
 // [GET] /admin/getAllDeposit
 router.get('/getAllDeposit', AdminController.getAllDeposit);
@@ -57,9 +57,9 @@ router.get('/getAllWithdraw', AdminController.getAllWithdraw);
 // [GET] /admin/getAllUser
 router.get('/getAllUser', AdminController.getAllUser);
 
-// ------------------- get all ----------------
+// -------------------------------------- get all ------------------------------------------------
 
-// ------------------- delete services ----------------
+// -------------------------------------- delete services ------------------------------------------------
 
 // [DELETE] /admin/deleteUser/:id
 router.delete(
@@ -85,7 +85,7 @@ router.delete(
     AdminController.deleteDeposit
 );
 
-// ------------------- delete services ----------------
+// -------------------------------------- delete services ------------------------------------------------
 
 // -------------------------------------- get total ------------------------------------------------
 

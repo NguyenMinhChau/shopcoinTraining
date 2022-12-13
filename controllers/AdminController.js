@@ -224,63 +224,85 @@ class AdminController {
             });
             const [user] = await Promise.all([userFind]);
             if (status == 'Completed') {
-                const addUSDResult = addUSD(user, depositFinal.amountUsd);
-                addUSDResult
-                    .then(async (value) => {
-                        const deposit = await Deposit.findById(id);
-                        deposit.status = status;
-                        deposit
-                            .save()
-                            .then(() => {
-                                addCommission(deposit.commission)
-                                    .then((result) => {
-                                        successCode(
-                                            res,
-                                            `Đã thêm USD cho khách hàng !!`
-                                        );
-                                    })
-                                    .catch((err) => {
-                                        errCode1(res, err);
-                                    });
-                            })
-                            .catch((err) => errCode1(res, err));
-                    })
-                    .catch((err) => errCode1(res, err));
+                if (depositFinal.status == 'Pending') {
+                    const addUSDResult = addUSD(user, depositFinal.amountUsd);
+                    addUSDResult
+                        .then(async (value) => {
+                            const deposit = await Deposit.findById(id);
+                            deposit.status = status;
+                            deposit
+                                .save()
+                                .then(() => {
+                                    addCommission(deposit.commission)
+                                        .then((result) => {
+                                            successCode(
+                                                res,
+                                                `Đã thêm USD cho khách hàng !!`
+                                            );
+                                        })
+                                        .catch((err) => {
+                                            errCode1(res, err);
+                                        });
+                                })
+                                .catch((err) => errCode1(res, err));
+                        })
+                        .catch((err) => errCode1(res, err));
+                } else {
+                    throw {
+                        message: `The order buy usd with id = ${id} is not valid for completing`
+                    };
+                }
             } else if (status == 'Canceled') {
-                const subUSDResult = subUSD(user, depositFinal.amountUsd);
-                subUSDResult
-                    .then(async (value) => {
-                        const deposit = await Deposit.findById(id);
-                        deposit.status = status;
-                        deposit
-                            .save()
-                            .then(() => {
-                                subCommission(deposit.commission)
-                                    .then((result) => {
-                                        successCode(
-                                            res,
-                                            `Đã trừ USD cho khách hàng trong từ chối giao dịch này !!`
-                                        );
-                                    })
-                                    .catch((err) => {
-                                        errCode1(res, err);
-                                    });
-                            })
-                            .catch((err) => errCode1(res, err));
-                    })
-                    .catch((err) => errCode1(res, err));
+                if (depositFinal.status == 'Completed') {
+                    const subUSDResult = subUSD(user, depositFinal.amountUsd);
+                    subUSDResult
+                        .then(async (value) => {
+                            const deposit = await Deposit.findById(id);
+                            deposit.status = status;
+                            deposit
+                                .save()
+                                .then(() => {
+                                    subCommission(deposit.commission)
+                                        .then((result) => {
+                                            successCode(
+                                                res,
+                                                `Đã trừ USD cho khách hàng trong từ chối giao dịch này !!`
+                                            );
+                                        })
+                                        .catch((err) => {
+                                            errCode1(res, err);
+                                        });
+                                })
+                                .catch((err) => errCode1(res, err));
+                        })
+                        .catch((err) => errCode1(res, err));
+                } else {
+                    throw {
+                        message: `The order buy usd with id = ${id} is not valid for canceling`
+                    };
+                }
+            } else if (status == 'Pending') {
+                if (depositFinal.status == 'Canceled') {
+                    const deposit = await Deposit.findById(id);
+                    deposit.status = status;
+                    deposit
+                        .save()
+                        .then(() => {
+                            successCode(
+                                res,
+                                `Thay đổi trạng thái thành công sang ${status} !!`
+                            );
+                        })
+                        .catch((err) => errCode1(res, err));
+                } else {
+                    throw {
+                        message: `The order buy usd with id = ${id} is not valid for Pending`
+                    };
+                }
             } else {
-                const deposit = await Deposit.findById(id);
-                deposit.status = status;
-                deposit
-                    .save()
-                    .then(() => {
-                        successCode(
-                            res,
-                            `Thay đổi trạng thái thành công sang ${status} !!`
-                        );
-                    })
-                    .catch((err) => errCode1(res, err));
+                throw {
+                    message: `This ${status} is not supported for handling buy USD`
+                };
             }
         } catch (error) {
             errCode1(res, error);
@@ -306,63 +328,81 @@ class AdminController {
             });
 
             if (status == 'Completed') {
-                const subUSDResult = subUSD(user, withdrawFinal.amountUsd);
-                subUSDResult
-                    .then(async (value) => {
-                        const withdraw = await Withdraw.findById(id);
-                        withdraw.status = status;
-                        withdraw
-                            .save()
-                            .then(() => {
-                                addCommission(withdraw.commission)
-                                    .then((result) => {
-                                        successCode(
-                                            res,
-                                            `Đã bán USD thành công !!`
-                                        );
-                                    })
-                                    .catch((err) => {
-                                        errCode1(res, err);
-                                    });
-                            })
-                            .catch((err) => errCode1(res, err));
-                    })
-                    .catch((err) => errCode1(res, err));
+                if (withdrawFinal.status == 'Pending') {
+                    const subUSDResult = subUSD(user, withdrawFinal.amountUsd);
+                    subUSDResult
+                        .then(async (value) => {
+                            const withdraw = await Withdraw.findById(id);
+                            withdraw.status = status;
+                            withdraw
+                                .save()
+                                .then(() => {
+                                    addCommission(withdraw.commission)
+                                        .then((result) => {
+                                            successCode(
+                                                res,
+                                                `Đã bán USD thành công !!`
+                                            );
+                                        })
+                                        .catch((err) => {
+                                            errCode1(res, err);
+                                        });
+                                })
+                                .catch((err) => errCode1(res, err));
+                        })
+                        .catch((err) => errCode1(res, err));
+                } else {
+                    throw {
+                        message: `The order sell usd with id = ${id} is not valid for ${status}`
+                    };
+                }
             } else if (status == 'Canceled') {
-                const addUSDResult = addUSD(user, withdrawFinal.amountUsd);
-                addUSDResult
-                    .then(async (value) => {
-                        const withdraw = await Withdraw.findById(id);
-                        withdraw.status = status;
-                        withdraw
-                            .save()
-                            .then(() => {
-                                subCommission(withdraw.commission)
-                                    .then((result) => {
-                                        successCode(
-                                            res,
-                                            `Đã từ chối bán USD này thành công đã trả lại USD cho khách hàng !!`
-                                        );
-                                    })
-                                    .catch((err) => {
-                                        errCode1(res, err);
-                                    });
-                            })
-                            .catch((err) => errCode1(res, err));
-                    })
-                    .catch((err) => errCode1(res, err));
-            } else {
-                const withdraw = await Withdraw.findById(id);
-                withdraw.status = status;
-                withdraw
-                    .save()
-                    .then(() => {
-                        successCode(
-                            res,
-                            `Thay đổi trạng thái thành công sang ${status} !!`
-                        );
-                    })
-                    .catch((err) => errCode1(res, err));
+                if (withdrawFinal.status == 'Completed') {
+                    const addUSDResult = addUSD(user, withdrawFinal.amountUsd);
+                    addUSDResult
+                        .then(async (value) => {
+                            const withdraw = await Withdraw.findById(id);
+                            withdraw.status = status;
+                            withdraw
+                                .save()
+                                .then(() => {
+                                    subCommission(withdraw.commission)
+                                        .then((result) => {
+                                            successCode(
+                                                res,
+                                                `Đã từ chối bán USD này thành công đã trả lại USD cho khách hàng !!`
+                                            );
+                                        })
+                                        .catch((err) => {
+                                            errCode1(res, err);
+                                        });
+                                })
+                                .catch((err) => errCode1(res, err));
+                        })
+                        .catch((err) => errCode1(res, err));
+                } else {
+                    throw {
+                        message: `The order sell usd with id = ${id} is not valid for ${status}`
+                    };
+                }
+            } else if (status == 'Pending') {
+                if (withdrawFinal.status == 'Canceled') {
+                    const withdraw = await Withdraw.findById(id);
+                    withdraw.status = status;
+                    withdraw
+                        .save()
+                        .then(() => {
+                            successCode(
+                                res,
+                                `Thay đổi trạng thái thành công sang ${status} !!`
+                            );
+                        })
+                        .catch((err) => errCode1(res, err));
+                } else {
+                    throw {
+                        message: `The order sell usd with id = ${id} is not valid for ${status}`
+                    };
+                }
             }
         } catch (error) {
             errCode1(res, error);

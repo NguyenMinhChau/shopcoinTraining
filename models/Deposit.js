@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { Schema, model } = mongoose;
 const deposit = new Schema(
     {
-        status: { type: String, default: 'On hold' },
+        status: { type: String, default: 'Pending' },
         code: { type: String, default: '' },
         user: { type: String, default: '' },
         method: {
