@@ -146,6 +146,142 @@ class AuthenController {
         }
     }
 
+    // [POST] /admin/login
+    async login_v2(req, res, next) {
+        const { email, password } = req.body;
+        try {
+            if (!email || !password) {
+                throw {
+                    message: 'Input field is insufficient'
+                };
+            } else {
+                const userFindByEmail = await User.findOne({
+                    'payment.email': email
+                });
+                const userFindByUsername = await User.findOne({
+                    'payment.username': email
+                });
+
+                if (userFindByEmail) {
+                    bcrypt
+                        .compare(password, userFindByEmail.payment.password)
+                        .then((match) => {
+                            if (match) {
+                                const checkBlocked = userFindByEmail.blockUser;
+                                if (checkBlocked == true) {
+                                    errCode2(
+                                        res,
+                                        `Your account is blocked. Please contact to manager to support!`
+                                    );
+                                } else {
+                                    const token = jwt.sign(
+                                        { id: userFindByEmail._id, email },
+                                        process.env.JWT_SECRET,
+                                        {
+                                            expiresIn: '30m'
+                                        }
+                                    );
+                                    const refreshToken = jwt.sign(
+                                        { id: userFindByEmail._id, email },
+                                        process.env.JWT_SECRET,
+                                        {
+                                            expiresIn: '365d'
+                                        }
+                                    );
+
+                                    res.cookie('jwt', refreshToken, {
+                                        httpOnly: true,
+                                        sameSite: 'strict',
+                                        secure: false,
+                                        maxAge: 365 * 24 * 60 * 1000 * 60
+                                    });
+
+                                    return res.json({
+                                        code: 0,
+                                        userInfo: userFindByEmail,
+                                        token: token
+                                    });
+                                }
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Password or username, email is not match`
+                                );
+                            }
+                        })
+                        .catch((err) => {
+                            errCode1(res, err);
+                        });
+                } else if (userFindByUsername) {
+                    bcrypt
+                        .compare(password, userFindByUsername.payment.password)
+                        .then((match) => {
+                            if (match) {
+                                const checkBlocked =
+                                    userFindByUsername.blockUser;
+                                if (checkBlocked == true) {
+                                    errCode2(
+                                        res,
+                                        `Your account is blocked. Please contact to manager to support!`
+                                    );
+                                } else {
+                                    const token = jwt.sign(
+                                        {
+                                            id: userFindByUsername._id,
+                                            email: userFindByUsername.payment
+                                                .email
+                                        },
+                                        process.env.JWT_SECRET,
+                                        {
+                                            expiresIn: '30m'
+                                        }
+                                    );
+                                    const refreshToken = jwt.sign(
+                                        {
+                                            id: userFindByUsername._id,
+                                            email: userFindByUsername.payment
+                                                .email
+                                        },
+                                        process.env.JWT_SECRET,
+                                        {
+                                            expiresIn: '365d'
+                                        }
+                                    );
+
+                                    res.cookie('jwt', refreshToken, {
+                                        httpOnly: true,
+                                        sameSite: 'strict',
+                                        secure: false,
+                                        maxAge: 365 * 24 * 60 * 1000 * 60
+                                    });
+
+                                    return res.json({
+                                        code: 0,
+                                        userInfo: userFindByUsername,
+                                        token: token
+                                    });
+                                }
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Password or username, email is not match`
+                                );
+                            }
+                        })
+                        .catch((err) => {
+                            errCode1(res, err);
+                        });
+                } else {
+                    throw {
+                        message: `User is not valid`
+                    };
+                }
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
     // [POST] /admin/refreshToken
     refreshToken(req, res) {
         const refreshToken = req.cookies.jwt;
@@ -166,7 +302,7 @@ class AuthenController {
                         { id: decoded.id, email: decoded.email },
                         process.env.JWT_SECRET,
                         {
-                            expiresIn: '1d'
+                            expiresIn: '365d'
                         }
                     );
 
@@ -174,7 +310,7 @@ class AuthenController {
                         httpOnly: true,
                         sameSite: 'strict',
                         secure: false,
-                        maxAge: 60 * 1000 * 60
+                        maxAge: 365 * 24 * 60 * 1000 * 60
                     });
 
                     return res.json({ code: 0, newtoken: token });

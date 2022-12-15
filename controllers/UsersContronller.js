@@ -1565,32 +1565,39 @@ class UsersController {
 
     // [POST] /users/createUser
     async createUser(req, res, next) {
-        const { email, password } = req.body;
+        const { email, password, username } = req.body;
         try {
-            bcrypt
-                .hash(password, 10)
-                .then((hashed) => {
-                    const newUser = new Users({
-                        'payment.email': email,
-                        'payment.password': hashed
-                    });
-
-                    newUser
-                        .save()
-                        .then(() => {
-                            successCode(res, `Create user successfully`);
-                        })
-                        .catch((err) => {
-                            throw {
-                                message: err.message
-                            };
+            if (!email || !password || !username) {
+                throw {
+                    message: 'Input field is insufficient'
+                };
+            } else {
+                bcrypt
+                    .hash(password, 10)
+                    .then((hashed) => {
+                        const newUser = new Users({
+                            'payment.email': email,
+                            'payment.password': hashed,
+                            'payment.username': username
                         });
-                })
-                .catch((err) => {
-                    throw {
-                        message: err.message
-                    };
-                });
+
+                        newUser
+                            .save()
+                            .then(() => {
+                                successCode(res, `Create user successfully`);
+                            })
+                            .catch((err) => {
+                                throw {
+                                    message: err.message
+                                };
+                            });
+                    })
+                    .catch((err) => {
+                        throw {
+                            message: err.message
+                        };
+                    });
+            }
         } catch (error) {
             errCode1(res, error);
         }

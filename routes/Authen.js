@@ -10,7 +10,7 @@ const loginValidator = require('./validators/LoginValidator');
 const registerValidator = require('./validators/RegisterValidation');
 
 // [POST] /authen/login
-router.post('/login', loginValidator, AuthenController.login);
+router.post('/login', loginValidator, AuthenController.login_v2);
 
 // [POST] /authen/register
 router.post('/register', registerValidator, AuthenController.register);

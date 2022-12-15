@@ -6,6 +6,7 @@ const deposit = new mongoose.Schema(
         code: { type: String, default: '' },
         amount: { type: Number, default: 0 },
         user: { type: String, default: '' },
+        createBy: { type: String, default: '' },
         method: {
             code: { type: String, default: '' },
             methodName: { type: String, default: '' },
@@ -17,7 +18,7 @@ const deposit = new mongoose.Schema(
         amountVnd: { type: Number, default: 0.0 },
         symbol: { type: String, default: 'USDT' },
         statement: { type: String, default: '' },
-        bankAdmin: {type: Object, default: {}}
+        bankAdmin: { type: Object, default: {} }
     },
     { timestamps: true }
 );

@@ -12,6 +12,7 @@ const withdraw = new mongoose.Schema(
             transform: { type: Number, default: 0 }
         },
         user: { type: String, default: '' },
+        createBy: { type: String, default: '' },
         amountUsd: { type: Number, default: 0 },
         amountVnd: { type: Number, default: 0 },
         symbol: { type: String, default: 'USDT' }

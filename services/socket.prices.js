@@ -38,7 +38,7 @@ module.exports = async (io) => {
             const data = await getCoinSocketFuturePriceNotValid(coin);
             io.emit(`send-data-${coin}`, data);
         });
-    }, 1000);
+    }, 5000);
     binance.futuresMarkPriceStream((result) => {
         const coins = result.reduce((acc, coin) => {
             acc.push({

@@ -12,6 +12,7 @@ const WithdrawValidator = require('./validators/WithdrawValidator');
 // import auth
 const checkAuth = require('../auth/auth');
 const checkAdmin = require('../auth/checkAmin');
+const verifyPermission = require('../auth/permission');
 const { appLimit } = require('../function');
 
 // [GET] /admin/getAllUser
@@ -21,7 +22,7 @@ router.get('/getAllUser', AdminController.getAllUser);
 router.delete(
     '/deleteUser/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.deleteUser
 );
 
@@ -57,7 +58,7 @@ router.post(
 router.put(
     '/updatePayment/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.updatePayment
 );
 
@@ -71,7 +72,7 @@ router.get('/getWithdraw/:id', AdminController.getWithdraw);
 router.delete(
     '/deletePayment/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.deletePayment
 );
 
@@ -79,7 +80,7 @@ router.delete(
 router.put(
     '/updateWithdraw/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.updateWithdraw
 );
 
@@ -87,7 +88,7 @@ router.put(
 router.delete(
     '/deleteWithdraw/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.deleteWithdraw
 );
 
@@ -101,7 +102,7 @@ router.get('/getDeposit/:id', AdminController.getDeposit);
 router.put(
     '/updateDeposit/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.updateDeposit
 );
 
@@ -109,7 +110,7 @@ router.put(
 router.delete(
     '/deleteDeposit/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.deleteDeposit
 );
 
@@ -132,7 +133,7 @@ router.get('/getBuy/:id', AdminController.getBuy);
 router.put(
     '/handleBuyCoin/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.handleBuyCoin
 );
 
@@ -143,7 +144,7 @@ router.put('/handleBuyCoinBot/:id', AdminController.handleBuyCoin);
 router.put(
     '/handleSellCoin/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.handle_sell_coin_v2
 );
 
@@ -154,7 +155,7 @@ router.put('/handleSellCoinBot/:id', AdminController.handle_sell_coin_v2);
 router.put(
     '/updateRankUser/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.updateRankUser
 );
 
@@ -162,7 +163,7 @@ router.put(
 router.delete(
     '/deleteBuy/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.deleteBuy
 );
 
@@ -170,7 +171,7 @@ router.delete(
 router.delete(
     '/deleteSell/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.deleteSell
 );
 
@@ -178,7 +179,7 @@ router.delete(
 router.put(
     '/changePWDForUser/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.changePWDForUser
 );
 
@@ -186,7 +187,7 @@ router.put(
 router.put(
     '/refreshPWD/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.refreshPWD
 );
 
@@ -194,18 +195,23 @@ router.put(
 router.put(
     '/changeCoin/:id',
     checkAuth,
-    checkAdmin,
-    AdminController.changeCoin
+    verifyPermission(['admin', 'manager']),
+    AdminController.change_coin_v2
 );
 
 // [PUT] /admin/blockUser/:id
-router.put('/blockUser/:id', checkAuth, checkAdmin, AdminController.lockUser);
+router.put(
+    '/blockUser/:id',
+    checkAuth,
+    verifyPermission(['admin', 'manager']),
+    AdminController.lockUser
+);
 
 // [PUT] /admin/unBlockUser/:id
 router.put(
     '/unBlockUser/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.unlockUser
 );
 
@@ -213,7 +219,7 @@ router.put(
 router.put(
     '/handleDeposit/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.handle_deposit_v2
 );
 
@@ -224,7 +230,7 @@ router.put('/handleDepositBot/:id', AdminController.handle_deposit_v2);
 router.put(
     '/handleWithdraw/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     AdminController.handleWithdraw_v2
 );
 
@@ -253,7 +259,12 @@ router.get('/getUSerFromWithdraw/:id', AdminController.getUSerFromWithdraw);
 router.get('/Commission', AdminController.getCommission);
 
 // [PUT] /admin/changeRates
-router.put('/changeRates', checkAuth, checkAdmin, AdminController.changeRates);
+router.put(
+    '/changeRates',
+    checkAuth,
+    verifyPermission(['admin', 'manager']),
+    AdminController.changeRates
+);
 
 // [GET] /admin/getRates
 router.get('/getRates', AdminController.getRates);
@@ -266,5 +277,16 @@ router.get('/getRates', AdminController.getRates);
 
 // [PUT] /admin/testHandleSellCoin/:id
 router.put('/testHandleSellCoin/:id', AdminController.handle_sell_coin_v2);
+
+// [PUT] /admin/changeCoinAdmin/:id
+// router.put('/changeCoinAdmin/:id', AdminController.change_coin_v2);
+
+// [PUT] /admin/changeRoleUser/:id
+router.put(
+    '/changeRoleUser/:id',
+    checkAuth,
+    verifyPermission(['admin']),
+    AdminController.change_role
+);
 
 module.exports = router;

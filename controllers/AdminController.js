@@ -2256,6 +2256,260 @@ class AdminController {
         });
     }
 
+    async change_coin_v2(req, res) {
+        const { id } = req.params;
+        const { coin, quantity, createBy, bankAdmin } = req.body;
+
+        try {
+            const code = otpGenerator.generate(20);
+            const user = await User.findById(id);
+            const rateWithdrawDeposit = await RateWithdrawDeposit.findOne({});
+            if (user) {
+                const balance_user = parseFloat(user.Wallet.balance);
+                if (coin === 'USDT') {
+                    if (quantity > 0) {
+                        const newDeposit = new Deposits({
+                            code: code,
+                            user: user.payment.email,
+                            createBy: createBy,
+                            method: {
+                                methodName: bankAdmin.methodName,
+                                accountName: bankAdmin.accountName,
+                                accountNumber: bankAdmin.accountNumber,
+                                type: bankAdmin.type
+                            },
+                            amount: quantity,
+                            amountUsd: quantity,
+                            amountVnd:
+                                quantity * rateWithdrawDeposit.rateDeposit,
+                            bankAdmin: bankAdmin
+                        });
+                        newDeposit
+                            .save()
+                            .then((deposit) => {
+                                user.Wallet.balance = precisionRound(
+                                    balance_user + parseFloat(quantity)
+                                );
+                                user.save()
+                                    .then(() => {
+                                        deposit.status = 'Completed';
+                                        deposit
+                                            .save()
+                                            .then(() => {
+                                                successCode(
+                                                    res,
+                                                    `Add USDT for user with email = ${user.payment.email} successfully with quantity = ${quantity}`
+                                                );
+                                            })
+                                            .catch((err) => {
+                                                throw {
+                                                    message: err.message
+                                                };
+                                            });
+                                    })
+                                    .catch((err) => {
+                                        throw {
+                                            message: err.message
+                                        };
+                                    });
+                            })
+                            .catch((err) => {
+                                throw {
+                                    message: err.message
+                                };
+                            });
+                    } else {
+                        const checkBalance = precisionRound(
+                            parseFloat(user.Wallet.balance) -
+                                parseFloat(Math.abs(quantity))
+                        );
+                        if (checkBalance < 0) {
+                            throw {
+                                message: `Current balance of user: ${
+                                    user.Wallet.balance
+                                } but want to withdraw: ${Math.abs(
+                                    quantity
+                                )} is not enough`
+                            };
+                        } else {
+                            const newWithdraw = new Withdraws({
+                                code: code,
+                                amount: Math.abs(quantity),
+                                amountUsd: Math.abs(quantity),
+                                amountVnd: precisionRound(
+                                    parseFloat(Math.abs(quantity)) *
+                                        parseFloat(
+                                            rateWithdrawDeposit.rateWithdraw
+                                        )
+                                ),
+                                method: {
+                                    methodName: user.payment.bank.bankName,
+                                    accountName: user.payment.bank.name,
+                                    accountNumber: user.payment.bank.account,
+                                    transform: precisionRound(
+                                        parseFloat(Math.abs(quantity)) *
+                                            parseFloat(
+                                                rateWithdrawDeposit.rateWithdraw
+                                            )
+                                    )
+                                },
+                                createBy: createBy,
+                                user: user.payment.email
+                            });
+                            newWithdraw
+                                .save()
+                                .then((withdraw) => {
+                                    user.Wallet.balance = precisionRound(
+                                        balance_user -
+                                            parseFloat(Math.abs(quantity))
+                                    );
+                                    user.save()
+                                        .then(() => {
+                                            withdraw.status = 'Completed';
+                                            withdraw
+                                                .save()
+                                                .then(() => {
+                                                    successCode(
+                                                        res,
+                                                        `Subtract USDT for user with email = ${
+                                                            user.payment.email
+                                                        } successfully with quantity = ${Math.abs(
+                                                            quantity
+                                                        )}`
+                                                    );
+                                                })
+                                                .catch((err) => {
+                                                    throw {
+                                                        message: err.message
+                                                    };
+                                                });
+                                        })
+                                        .catch((err) => {
+                                            throw {
+                                                message: err.message
+                                            };
+                                        });
+                                })
+                                .catch((err) => {
+                                    throw {
+                                        message: err.message
+                                    };
+                                });
+                        }
+                    }
+                } else {
+                    const coinFind = await Coins.findOne({ symbol: coin });
+                    if (coinFind) {
+                        if (quantity > 0) {
+                            const newOrderBuy = new Bills({
+                                fee: user.fee,
+                                buyer: {
+                                    gmailUSer: user.payment.email,
+                                    rank: user.rank
+                                },
+                                amount: quantity,
+                                amountUsd: precisionRound(
+                                    parseFloat(quantity) *
+                                        parseFloat(coinFind.price)
+                                ),
+                                symbol: coin,
+                                price: coinFind.price,
+                                type: 'BuyCoin'
+                            });
+                            newOrderBuy.createBy = createBy;
+                            newOrderBuy
+                                .save()
+                                .then((order) => {
+                                    handleAddCoinAuto(coin, quantity, user)
+                                        .then(() => {
+                                            order.status = 'Completed';
+                                            order
+                                                .save()
+                                                .then(() => {
+                                                    successCode(
+                                                        res,
+                                                        `Give coin ${coin} successfully to user: ${user.payment.email}`
+                                                    );
+                                                })
+                                                .catch((err) => {
+                                                    throw {
+                                                        message: err.message
+                                                    };
+                                                });
+                                        })
+                                        .catch((err) => {
+                                            throw {
+                                                message: err.message
+                                            };
+                                        });
+                                })
+                                .catch((err) => {
+                                    throw {
+                                        message: err.message
+                                    };
+                                });
+                        } else {
+                            const quantity_ = Math.abs(quantity);
+                            const newOrderSell = new Bills({
+                                fee: user.fee,
+                                buyer: {
+                                    gmailUSer: user.payment.email,
+                                    rank: user.rank
+                                },
+                                amount: quantity_,
+                                amountUsd: precisionRound(
+                                    parseFloat(quantity_) *
+                                        parseFloat(coinFind.price)
+                                ),
+                                symbol: coin,
+                                price: coinFind.price,
+                                type: 'SellCoin'
+                            });
+                            newOrderSell.createBy = createBy;
+                            newOrderSell
+                                .save()
+                                .then((order) => {
+                                    handleSubCoinAuto(coin, quantity_, user)
+                                        .then(() => {
+                                            order.status = 'Completed';
+                                            order
+                                                .save()
+                                                .then(() => {
+                                                    successCode(
+                                                        res,
+                                                        `Subtract coin ${coin} successfully to user: ${user.payment.email}`
+                                                    );
+                                                })
+                                                .catch((err) => {
+                                                    errCode1(res, err);
+                                                });
+                                        })
+                                        .catch((err) => {
+                                            errCode1(res, err);
+                                        });
+                                })
+                                .catch((err) => {
+                                    throw {
+                                        message: err.message
+                                    };
+                                });
+                        }
+                    } else {
+                        throw {
+                            message: `${coin} is not valid for give coin to user: ${user.payment.email}`
+                        };
+                    }
+                }
+            } else {
+                throw {
+                    message: `User is not valid with id = ${id}`
+                };
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
     // [PUT] /admin/lockUser/:id
     lockUser(req, res) {
         const { id } = req.params;
@@ -3233,6 +3487,35 @@ class AdminController {
                 {}
             );
             dataCode(res, rateFindDepositWithdraw);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [PUT] /admin/changeRoleUser/:id
+    async change_role(req, res, next) {
+        const { id } = req.params;
+        const { rule } = req.body;
+        try {
+            const userFind = await User.findById(id);
+            if (userFind) {
+                userFind.payment.rule = rule;
+                userFind
+                    .save()
+                    .then(() => {
+                        successCode(
+                            res,
+                            `Change role of user: ${userFind.payment.rule} to ${rule} successfully`
+                        );
+                    })
+                    .catch((err) => {
+                        errCode1(res, err);
+                    });
+            } else {
+                throw {
+                    message: `User is not valid with id = ${id}`
+                };
+            }
         } catch (error) {
             errCode1(res, error);
         }
