@@ -312,7 +312,7 @@ class CoinsController {
         const step = typeShow * pages - typeShow;
         try {
             if (pages) {
-                console.log('Connect to have page');
+                // console.log('Connect to have page');
                 const totalCoin = Coins.find({});
                 const [coins] = await Promise.all([totalCoin]);
                 const coinsFound = coins.filter((coin) => {

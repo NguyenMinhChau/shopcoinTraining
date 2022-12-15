@@ -350,25 +350,37 @@ class AdminController {
 
     // [GET] /admin/getAllUser
     async getAllUser(req, res) {
-        const pages = req.query.page || 1;
+        const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = typeShow * pages - typeShow;
 
         try {
-            const total = User.countDocuments();
-            const allUser = User.find()
-                // .sort({ createdAt: 'desc' })
-                .sort({ 'payment.username': '1' })
-                .skip(step)
-                .limit(typeShow);
-            const [totalUser, all] = await Promise.all([total, allUser]);
-            return res.json({
-                code: 0,
-                dataUser: all,
-                page: pages,
-                typeShow: typeShow,
-                total: totalUser
-            });
+            if (pages) {
+                const total = User.countDocuments();
+                const allUser = User.find()
+                    .sort({ 'payment.username': '1' })
+                    .skip(step)
+                    .limit(typeShow);
+                const [totalUser, all] = await Promise.all([total, allUser]);
+                return res.json({
+                    code: 0,
+                    dataUser: all,
+                    page: pages,
+                    typeShow: typeShow,
+                    total: totalUser
+                });
+            } else {
+                const total = User.countDocuments();
+                const allUser = User.find().sort({ 'payment.username': '1' });
+                const [totalUser, all] = await Promise.all([total, allUser]);
+                return res.json({
+                    code: 0,
+                    dataUser: all,
+                    page: pages,
+                    typeShow: typeShow,
+                    total: totalUser
+                });
+            }
         } catch {
             errCode2(res, `Error something in get all users`);
         }

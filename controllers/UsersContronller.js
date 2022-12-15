@@ -1572,31 +1572,51 @@ class UsersController {
                     message: 'Input field is insufficient'
                 };
             } else {
-                bcrypt
-                    .hash(password, 10)
-                    .then((hashed) => {
-                        const newUser = new Users({
-                            'payment.email': email,
-                            'payment.password': hashed,
-                            'payment.username': username
-                        });
+                const userFindByEmail = await Users.findOne({
+                    'payment.email': email
+                });
+                const userFindByUsername = await Users.findOne({
+                    'payment.username': username
+                });
 
-                        newUser
-                            .save()
-                            .then(() => {
-                                successCode(res, `Create user successfully`);
-                            })
-                            .catch((err) => {
-                                throw {
-                                    message: err.message
-                                };
+                if (userFindByEmail) {
+                    throw {
+                        message: `Email is valid`
+                    };
+                } else if (userFindByUsername) {
+                    throw {
+                        message: `Username is valid`
+                    };
+                } else {
+                    bcrypt
+                        .hash(password, 10)
+                        .then((hashed) => {
+                            const newUser = new Users({
+                                'payment.email': email,
+                                'payment.password': hashed,
+                                'payment.username': username
                             });
-                    })
-                    .catch((err) => {
-                        throw {
-                            message: err.message
-                        };
-                    });
+
+                            newUser
+                                .save()
+                                .then(() => {
+                                    successCode(
+                                        res,
+                                        `Create user successfully`
+                                    );
+                                })
+                                .catch((err) => {
+                                    throw {
+                                        message: err.message
+                                    };
+                                });
+                        })
+                        .catch((err) => {
+                            throw {
+                                message: err.message
+                            };
+                        });
+                }
             }
         } catch (error) {
             errCode1(res, error);
