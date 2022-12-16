@@ -309,70 +309,24 @@ const buyCoin = async (
     }
 };
 
-function sellCoin(
-    req,
-    res,
-    fee,
-    gmailUser,
-    amount,
-    amountUsd,
-    symbol,
-    price,
-    type,
-    typeUser,
-    rank,
-    coins,
-    user
-) {
-    const balance = user.Wallet.balance;
-
-    let new_fee = 0;
-    let fee_rank = 0;
-
-    if (rank == 'Demo') {
-        fee_rank = 0;
-        new_fee = methods.precisionRound(
-            parseFloat(fee) - parseFloat(fee_rank)
-        );
-    } else if (rank == 'Standard') {
-        fee_rank = 0;
-        new_fee = methods.precisionRound(
-            parseFloat(fee) - parseFloat(fee_rank)
-        );
-    } else if (rank == 'Pro') {
-        fee_rank = 0.01;
-        new_fee = methods.precisionRound(
-            parseFloat(fee) - parseFloat(fee_rank)
-        );
-    } else if (rank == 'VIP') {
-        // for rank VIP
-        fee_rank = 0.02;
-        new_fee = methods.precisionRound(
-            parseFloat(fee) - parseFloat(fee_rank)
-        );
-    }
-
-    const newBill = new Bills({
-        fee: new_fee,
-        buyer: {
-            gmailUSer: gmailUser
-        },
-        amount: amount,
-        amountUsd: amountUsd,
-        symbol: symbol,
-        price: price,
-        type: type
-    });
-
-    newBill
-        .save()
-        .then((bill) => {
-            // botHelperSendMessage(chatId, bill, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
-            return res.json({ code: 0, infoBill: bill });
+function sellCoin(req, res, user, amount, amountUsd, symbol, price, type) {
+    let fee = parseFloat(user.fee);
+    const resultCreateBill = createNewBill(
+        user.payment.email,
+        amount,
+        amountUsd,
+        symbol,
+        price,
+        type,
+        user.payment.rule,
+        user.rank,
+        0
+    );
+    resultCreateBill
+        .then((value) => {
+            successCode(res, `Đã bán coin thành công chờ admin xét duyệt`);
         })
-        .catch((err) => {
-            return res.json({ code: 1, message: err.message });
-        });
+        .catch((err) => errCode1(res, err));
 }
 
 ///-------------------------------------- Futures --------------------------------------------
@@ -804,41 +758,31 @@ class UsersController {
     }
 
     // [POST] /users/SellCoin/
-    SellCoin(req, res) {
+    async SellCoin(req, res) {
         const { gmailUser, amount, amountUsd, symbol, price, type } = req.body;
-        Users.findOne({ 'payment.email': gmailUser }, (err, user) => {
-            if (err) {
-                return res.json({ code: 2, message: err.message });
+        try {
+            const userFind = await Users.findOne({
+                'payment.email': gmailUser
+            });
+            if (!userFind) {
+                throw {
+                    message: `User is not valid with email: ${gmailUser}`
+                };
+            } else {
+                sellCoin(
+                    req,
+                    res,
+                    userFind,
+                    amount,
+                    amountUsd,
+                    symbol,
+                    price,
+                    type
+                );
             }
-            if (!user || user == '') {
-                return res.json({
-                    code: 2,
-                    message: 'Người dùng không tồn tại'
-                });
-            }
-
-            // return res.json({code: 1, message: "OK", data: user})
-            const typeUser = user.payment.rule,
-                rank = user.rank,
-                coins = user.coins,
-                fee = user.fee;
-
-            sellCoin(
-                req,
-                res,
-                fee,
-                gmailUser,
-                amount,
-                amountUsd,
-                symbol,
-                price,
-                type,
-                typeUser,
-                rank,
-                coins,
-                user
-            );
-        });
+        } catch (error) {
+            errCode1(res, error);
+        }
     }
 
     // [GET] /users/getAllSell/:id

@@ -1430,28 +1430,67 @@ class AdminController {
                                                     parseFloat(prepare.amount) *
                                                         parseFloat(
                                                             prepare.price
-                                                        )
+                                                        ) *
+                                                        (1 +
+                                                            parseFloat(
+                                                                prepare.fee
+                                                            ))
                                                 )
                                         );
                                         user.Wallet.balance = balanceAfter;
                                         user.save()
-                                            .then(() => {
-                                                orderBuy.status = status;
-                                                orderBuy
+                                            .then(async () => {
+                                                const commission =
+                                                    await Commission.findById(
+                                                        process.env
+                                                            .ID_COMMISSION
+                                                    );
+                                                const commisionAfter =
+                                                    precisionRound(
+                                                        parseFloat(
+                                                            commission.commission
+                                                        ) -
+                                                            precisionRound(
+                                                                parseFloat(
+                                                                    prepare.amount
+                                                                ) *
+                                                                    parseFloat(
+                                                                        prepare.price
+                                                                    ) *
+                                                                    parseFloat(
+                                                                        prepare.fee
+                                                                    )
+                                                            )
+                                                    );
+                                                commission.commission =
+                                                    commisionAfter;
+                                                commission
                                                     .save()
                                                     .then(() => {
-                                                        successCode(
-                                                            res,
-                                                            `Canceled successfully order buy and paid money to customer with id order = ${id}`
-                                                        );
+                                                        orderBuy.status =
+                                                            status;
+                                                        orderBuy
+                                                            .save()
+                                                            .then(() => {
+                                                                successCode(
+                                                                    res,
+                                                                    `Canceled successfully order buy and paid money to customer with id order = ${id}`
+                                                                );
+                                                            })
+                                                            .catch((err) => {
+                                                                errCode1(
+                                                                    res,
+                                                                    err
+                                                                );
+                                                            });
                                                     })
-                                                    .catch((err) => {
-                                                        errCode1(res, err);
-                                                    });
+                                                    .catch((err) =>
+                                                        errCode1(res, err)
+                                                    );
                                             })
-                                            .catch((err) => [
-                                                errCode1(res, err)
-                                            ]);
+                                            .catch((err) => {
+                                                errCode1(res, err);
+                                            });
                                     })
                                     .catch((err) => {
                                         errCode1(res, err);
