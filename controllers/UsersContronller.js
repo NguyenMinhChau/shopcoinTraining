@@ -366,13 +366,13 @@ const buyCoin = async (
         );
         resultCreateBill
             .then((value) => {
-                botHelperSendMessage(
-                    chatId,
-                    value,
-                    // 'https://apishopcoin.4eve.site/images/1668654759659-1668654734000.jpeg',
-                    null,
-                    null
-                );
+                // botHelperSendMessage(
+                //     chatId,
+                //     value,
+                //     // 'https://apishopcoin.4eve.site/images/1668654759659-1668654734000.jpeg',
+                //     null,
+                //     null
+                // );
                 successCode(res, `Đã mua coin thành công chờ admin xét duyệt`);
             })
             .catch((err) => errCode1(res, err));
@@ -396,7 +396,7 @@ function sellCoin(req, res, user, amount, amountUsd, symbol, price, type) {
     );
     resultCreateBill
         .then((value) => {
-            botHelperSendMessage(chatId, value, null, null);
+            // botHelperSendMessage(chatId, value, null, null);
             successCode(res, `Đã bán coin thành công chờ admin xét duyệt`);
         })
         .catch((err) => errCode1(res, err));
@@ -1398,29 +1398,34 @@ class UsersController {
                 deposit.statement = pathImageDeposit;
                 deposit.bankAdmin = bankAdmin;
                 deposit.status = 'Confirmed';
-                deposit.save().then((dep) => {
-                    methods
-                        .mail(
-                            dep.user,
-                            depositSuccess(dep.user, dep.amountUsd),
-                            'Deposit Message'
-                        )
-                        .then(() => {
-                            botHelperSendMessageDepositWithdraw(
-                                chatId,
-                                deposit,
-                                `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`,
-                                'Deposit'
-                            );
-                            successCode(
-                                res,
-                                `Addition image successfully for deposit with id = ${id}`
-                            );
-                        })
-                        .catch((err) => {
-                            errCode1(res, err);
-                        });
-                });
+                deposit
+                    .save()
+                    .then((dep) => {
+                        // methods
+                        //     .mail(
+                        //         dep.user,
+                        //         depositSuccess(dep.user, dep.amountUsd),
+                        //         'Deposit Message'
+                        //     )
+                        //     .then(() => {
+                        botHelperSendMessageDepositWithdraw(
+                            chatId,
+                            deposit,
+                            `${process.env.URL_API}${pathImageDeposit}`,
+                            'Deposit'
+                        );
+                        successCode(
+                            res,
+                            `Addition image successfully for deposit with id = ${id}`
+                        );
+                        // })
+                        // .catch((err) => {
+                        //     errCode1(res, err);
+                        // });
+                    })
+                    .catch((err) => {
+                        errCode1(res, err);
+                    });
             }
         } catch (err) {
             errCode1(res, err);

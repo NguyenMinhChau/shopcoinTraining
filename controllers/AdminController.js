@@ -25,7 +25,8 @@ const Commission = require('../models/Commission');
 const { mail, dataCode, precisionRound } = require('../function');
 const { resolve } = require('path');
 const RateWithdrawDeposit = require('../models/RateWithdrawDeposit');
-const { depositMail } = require('../mailform/depositForm');
+const { depositSuccess } = require('../mailform/depositForm');
+const { transSuccess, sellSuccess } = require('../mailform/BuySellForm');
 
 // support function
 const calculateAdd = async (total, value, callback) => {
@@ -1379,10 +1380,35 @@ class AdminController {
                                                         orderBuy
                                                             .save()
                                                             .then(() => {
-                                                                successCode(
-                                                                    res,
-                                                                    `Confirmed the order buy with id = ${id}`
-                                                                );
+                                                                mail(
+                                                                    user.payment
+                                                                        .email,
+                                                                    transSuccess(
+                                                                        user
+                                                                            .payment
+                                                                            .username,
+                                                                        orderBuy
+                                                                    ),
+                                                                    'Buy Coins successfully'
+                                                                )
+                                                                    .then(
+                                                                        () => {
+                                                                            successCode(
+                                                                                res,
+                                                                                `Confirmed the order buy with id = ${id}`
+                                                                            );
+                                                                        }
+                                                                    )
+                                                                    .catch(
+                                                                        (
+                                                                            err
+                                                                        ) => {
+                                                                            errCode1(
+                                                                                res,
+                                                                                err
+                                                                            );
+                                                                        }
+                                                                    );
                                                             })
                                                             .catch((err) => {
                                                                 errCode1(
@@ -1833,25 +1859,90 @@ class AdminController {
                                                             ) *
                                                                 parseFloat(
                                                                     prepare.price
-                                                                )
+                                                                ) *
+                                                                (1 -
+                                                                    parseFloat(
+                                                                        prepare.fee
+                                                                    ))
                                                         )
                                                 );
                                             user.Wallet.balance =
                                                 balance_after_sell;
                                             user.save()
-                                                .then(() => {
-                                                    orderSell.status = status;
-                                                    orderSell
+                                                .then(async () => {
+                                                    const commission =
+                                                        await Commission.findById(
+                                                            process.env
+                                                                .ID_COMMISSION
+                                                        );
+                                                    const commisionAfter =
+                                                        precisionRound(
+                                                            parseFloat(
+                                                                commission.commission
+                                                            ) +
+                                                                precisionRound(
+                                                                    parseFloat(
+                                                                        prepare.amount
+                                                                    ) *
+                                                                        parseFloat(
+                                                                            prepare.price
+                                                                        ) *
+                                                                        parseFloat(
+                                                                            prepare.fee
+                                                                        )
+                                                                )
+                                                        );
+                                                    commission.commission =
+                                                        commisionAfter;
+                                                    commission
                                                         .save()
                                                         .then(() => {
-                                                            successCode(
-                                                                res,
-                                                                `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer}`
-                                                            );
+                                                            orderSell.status =
+                                                                status;
+                                                            orderSell
+                                                                .save()
+                                                                .then(() => {
+                                                                    mail(
+                                                                        user
+                                                                            .payment
+                                                                            .email,
+                                                                        sellSuccess(
+                                                                            user
+                                                                                .payment
+                                                                                .username,
+                                                                            orderSell
+                                                                        ),
+                                                                        'Sell Coins Successfully'
+                                                                    )
+                                                                        .then(
+                                                                            () => {
+                                                                                successCode(
+                                                                                    res,
+                                                                                    `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer}`
+                                                                                );
+                                                                            }
+                                                                        )
+                                                                        .catch(
+                                                                            (
+                                                                                err
+                                                                            ) => {
+                                                                                errCode1(
+                                                                                    res,
+                                                                                    err
+                                                                                );
+                                                                            }
+                                                                        );
+                                                                })
+                                                                .catch((err) =>
+                                                                    errCode1(
+                                                                        res,
+                                                                        err
+                                                                    )
+                                                                );
                                                         })
-                                                        .catch((err) =>
-                                                            errCode1(res, err)
-                                                        );
+                                                        .catch((err) => {
+                                                            errCode1(res, err);
+                                                        });
                                                 })
                                                 .catch((err) =>
                                                     errCode1(res, err)
@@ -1889,25 +1980,64 @@ class AdminController {
                                                             ) *
                                                                 parseFloat(
                                                                     prepare.price
-                                                                )
+                                                                ) *
+                                                                (1 +
+                                                                    parseFloat(
+                                                                        prepare.fee
+                                                                    ))
                                                         )
                                                 );
                                             user.Wallet.balance =
                                                 balance_after_cancel_sell;
                                             user.save()
-                                                .then(() => {
-                                                    orderSell.status = status;
-                                                    orderSell
+                                                .then(async () => {
+                                                    const commission =
+                                                        await Commission.findById(
+                                                            process.env
+                                                                .ID_COMMISSION
+                                                        );
+                                                    const commisionAfter =
+                                                        precisionRound(
+                                                            parseFloat(
+                                                                commission.commission
+                                                            ) -
+                                                                precisionRound(
+                                                                    parseFloat(
+                                                                        prepare.amount
+                                                                    ) *
+                                                                        parseFloat(
+                                                                            prepare.price
+                                                                        ) *
+                                                                        parseFloat(
+                                                                            prepare.fee
+                                                                        )
+                                                                )
+                                                        );
+                                                    commission.commission =
+                                                        commisionAfter;
+                                                    commission
                                                         .save()
                                                         .then(() => {
-                                                            successCode(
-                                                                res,
-                                                                `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer}`
-                                                            );
+                                                            orderSell.status =
+                                                                status;
+                                                            orderSell
+                                                                .save()
+                                                                .then(() => {
+                                                                    successCode(
+                                                                        res,
+                                                                        `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer}`
+                                                                    );
+                                                                })
+                                                                .catch((err) =>
+                                                                    errCode1(
+                                                                        res,
+                                                                        err
+                                                                    )
+                                                                );
                                                         })
-                                                        .catch((err) =>
-                                                            errCode1(res, err)
-                                                        );
+                                                        .catch((err) => {
+                                                            errCode1(res, err);
+                                                        });
                                                 })
                                                 .catch((err) =>
                                                     errCode1(res, err)
@@ -2804,8 +2934,11 @@ class AdminController {
                                             .then(() => {
                                                 mail(
                                                     user.payment.email,
-                                                    depositMail(),
-                                                    'Completed Deposit'
+                                                    depositSuccess(
+                                                        user.payment.username,
+                                                        deposit.amountUsd
+                                                    ),
+                                                    'Your Deposit Request was Successfully'
                                                 )
                                                     .then(() => {
                                                         successCode(
@@ -3245,6 +3378,7 @@ class AdminController {
                                 withdraw
                                     .save()
                                     .then(() => {
+                                        mail(user.payment.email);
                                         successCode(
                                             res,
                                             `${status} successfully for this order withdraw with id = ${id}`
