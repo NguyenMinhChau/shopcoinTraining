@@ -25,6 +25,7 @@ const Commission = require('../models/Commission');
 const { mail, dataCode, precisionRound } = require('../function');
 const { resolve } = require('path');
 const RateWithdrawDeposit = require('../models/RateWithdrawDeposit');
+const { depositMail } = require('../mailform/depositForm');
 
 // support function
 const calculateAdd = async (total, value, callback) => {
@@ -2801,10 +2802,20 @@ class AdminController {
                                         deposit
                                             .save()
                                             .then(() => {
-                                                successCode(
-                                                    res,
-                                                    `${status} successfully of order deposit with id = ${id}`
-                                                );
+                                                mail(
+                                                    user.payment.email,
+                                                    depositMail(),
+                                                    'Completed Deposit'
+                                                )
+                                                    .then(() => {
+                                                        successCode(
+                                                            res,
+                                                            `${status} successfully of order deposit with id = ${id}`
+                                                        );
+                                                    })
+                                                    .catch((err) => {
+                                                        errCode1(res, err);
+                                                    });
                                             })
                                             .catch((err) => errCode1(res, err));
                                     })

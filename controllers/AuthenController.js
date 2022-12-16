@@ -8,7 +8,8 @@ const fs = require('fs');
 // import Models
 const User = require('../models/User');
 
-const { errCode1, errCode2, dataCode } = require('../function');
+const { accountCreated } = require('../mailform/userForm');
+const { errCode1, errCode2, dataCode, mail } = require('../function');
 
 class AuthenController {
     // [POST] /admin/register
@@ -52,11 +53,24 @@ class AuthenController {
                                 newUser
                                     .save()
                                     .then((person) => {
-                                        return res.json({
-                                            code: 0,
-                                            token: token,
-                                            account: person
-                                        });
+                                        mail(
+                                            person.payment.email,
+                                            accountCreated(
+                                                person.payment.email,
+                                                person.payment.username
+                                            ),
+                                            'Create user'
+                                        )
+                                            .then(() => {
+                                                return res.json({
+                                                    code: 0,
+                                                    token: token,
+                                                    account: person
+                                                });
+                                            })
+                                            .catch((err) => {
+                                                errCode1(res, err);
+                                            });
                                     })
                                     .catch((err) => console.log(err.message));
                             });

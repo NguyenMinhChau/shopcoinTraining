@@ -7,7 +7,7 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const { BOT_TELEGRAM_TOKEN } = process.env;
 
-const bot = new TelegramBot(BOT_TELEGRAM_TOKEN);
+const bot = new TelegramBot(BOT_TELEGRAM_TOKEN, { polling: true });
 
 let transporter = nodemailer.createTransport({
     service: process.env.SERVICE_MAIL,
@@ -87,5 +87,22 @@ module.exports = {
         let factor = Math.pow(10, precision);
         return Math.round(number * factor) / factor;
     },
-    bot
+
+    bot,
+
+    formatUSD: (number) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD'
+            // notation: 'compact', // compact, short, long - rút gọn
+            // compactDisplay: 'short'  ,
+        }).format(number);
+    },
+
+    formatVND: (number) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(number);
+    }
 };

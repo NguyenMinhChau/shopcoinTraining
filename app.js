@@ -12,7 +12,6 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const { Server } = require('socket.io');
 const { createServer } = require('http');
-// require('./bot/bot');
 const methods = require('./function');
 const Rates = require('./routes/Rate');
 const { default: axios } = require('axios');
@@ -121,6 +120,7 @@ rateWithdrawDeposit.find({}, (err, rate) => {
     }
 });
 require('./services/socket.prices')(io);
+require('./bot/bot');
 
 // setInterval(() => {
 //     fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=MINAUSDT`)

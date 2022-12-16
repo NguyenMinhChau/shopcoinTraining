@@ -22,6 +22,9 @@ const {
     confirmWithdraw,
     withdrawSuccess
 } = require('../mailform/withdrawForm');
+const { PassChanged, appForgotPass } = require('../mailform/userForm');
+
+const { depositMail, depositSuccess } = require('../mailform/depositForm');
 
 const methods = require('../function');
 const {
@@ -30,16 +33,78 @@ const {
     errCode1,
     dataCode,
     bot,
-    precisionRound
+    precisionRound,
+    formatUSD,
+    formatVND,
+    mail
 } = require('../function');
 const { default: axios } = require('axios');
 
 // support function
-let chatId = 5752059699;
+// let chatId = 5752059699;
+let chatId = -756899178;
 
-const botHelperSendMessage = (chatId, data, photo) => {
-    bot.sendMessage(chatId, JSON.stringify(data));
-    bot.sendPhoto(chatId, photo);
+const botHelperSendMessage = (chatId, data, photo, type) => {
+    // console.log(data);
+    if (data.billInfo.type) {
+        const mailSend = {
+            type: data.billInfo.type,
+            id: data.billInfo._id,
+            email: data.billInfo.buyer.gmailUSer,
+            symbol: data.billInfo.symbol,
+            quantity: data.billInfo.amount,
+            createdAt: data.billInfo.createdAt
+        };
+
+        bot.sendMessage(
+            chatId,
+            `
+            <b>Type: ${mailSend.type}</b>
+            <b>Id: ${mailSend.id}</b>
+            <b>Email: ${mailSend.email}</b>
+            <b>Symbol: ${mailSend.symbol}</b>
+            <b>Quantity: ${mailSend.quantity}</b>
+            <b>Create at: ${mailSend.createdAt}</b>
+        `,
+            { parse_mode: 'HTML' }
+        );
+        if (photo != null) {
+            bot.sendPhoto(chatId, photo);
+        }
+    } else {
+        errCode2(res, 'Error send to bot telegram');
+    }
+};
+
+const botHelperSendMessageDepositWithdraw = (chatId, data, photo, type) => {
+    // console.log(data);
+    if (data.symbol == 'USDT') {
+        const mailSend = {
+            id: data._id,
+            type: type,
+            email: data.user,
+            VND: formatVND(parseFloat(data.amountVnd)),
+            USD: formatUSD(parseFloat(data.amountUsd)),
+            createdAt: data.createdAt
+        };
+        bot.sendMessage(
+            chatId,
+            `
+            <b>Id: ${mailSend.id}</b>
+            <b>Type: ${mailSend.type}</b>
+            <b>Email: ${mailSend.email}</b>
+            <b>VND: ${mailSend.VND}</b>
+            <b>USD: ${mailSend.USD}</b>
+            <b>Create at: ${mailSend.createdAt}</b>
+        `,
+            { parse_mode: 'HTML' }
+        );
+        if (photo != null) {
+            bot.sendPhoto(chatId, photo);
+        }
+    } else {
+        errCode2(res, 'Error send to bot telegram');
+    }
 };
 
 const getCoinByIdSupport = async (id, amount, callback) => {
@@ -301,6 +366,13 @@ const buyCoin = async (
         );
         resultCreateBill
             .then((value) => {
+                botHelperSendMessage(
+                    chatId,
+                    value,
+                    // 'https://apishopcoin.4eve.site/images/1668654759659-1668654734000.jpeg',
+                    null,
+                    null
+                );
                 successCode(res, `Đã mua coin thành công chờ admin xét duyệt`);
             })
             .catch((err) => errCode1(res, err));
@@ -324,6 +396,7 @@ function sellCoin(req, res, user, amount, amountUsd, symbol, price, type) {
     );
     resultCreateBill
         .then((value) => {
+            botHelperSendMessage(chatId, value, null, null);
             successCode(res, `Đã bán coin thành công chờ admin xét duyệt`);
         })
         .catch((err) => errCode1(res, err));
@@ -963,7 +1036,7 @@ class UsersController {
             `;
                             let resultSendMail = methods.mail(
                                 email,
-                                mailContent,
+                                appForgotPass(user.payment.username, otp),
                                 'Reset Password'
                             );
                             resultSendMail
@@ -1025,10 +1098,28 @@ class UsersController {
                                                         Forgot.deleteOne({
                                                             _id: resultOfOTP.id
                                                         }).then((ok) => {
-                                                            dataCode(
-                                                                res,
-                                                                token
-                                                            );
+                                                            methods
+                                                                .mail(
+                                                                    decoded.email,
+                                                                    PassChanged(
+                                                                        decoded.email
+                                                                    ),
+                                                                    'Congratulation !'
+                                                                )
+                                                                .then(() => {
+                                                                    dataCode(
+                                                                        res,
+                                                                        token
+                                                                    );
+                                                                })
+                                                                .catch(
+                                                                    (err) => {
+                                                                        errCode1(
+                                                                            res,
+                                                                            err
+                                                                        );
+                                                                    }
+                                                                );
                                                         });
                                                     } else {
                                                         errCode2(
@@ -1307,12 +1398,28 @@ class UsersController {
                 deposit.statement = pathImageDeposit;
                 deposit.bankAdmin = bankAdmin;
                 deposit.status = 'Confirmed';
-                deposit.save().then(() => {
-                    // botHelperSendMessage(chatId, deposit, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
-                    successCode(
-                        res,
-                        `Addition image successfully for deposit with id = ${id}`
-                    );
+                deposit.save().then((dep) => {
+                    methods
+                        .mail(
+                            dep.user,
+                            depositSuccess(dep.user, dep.amountUsd),
+                            'Deposit Message'
+                        )
+                        .then(() => {
+                            botHelperSendMessageDepositWithdraw(
+                                chatId,
+                                deposit,
+                                `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`,
+                                'Deposit'
+                            );
+                            successCode(
+                                res,
+                                `Addition image successfully for deposit with id = ${id}`
+                            );
+                        })
+                        .catch((err) => {
+                            errCode1(res, err);
+                        });
                 });
             }
         } catch (err) {
@@ -1346,7 +1453,6 @@ class UsersController {
                                         'Success Withdraw Mail'
                                     )
                                     .then((result) => {
-                                        // botHelperSendMessage(chatId, withdraw, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
                                         axios
                                             .put(
                                                 // `${process.env.URL_API}/admin/handleWithdrawBot/${withdraw._id}`,
@@ -1356,6 +1462,12 @@ class UsersController {
                                                 }
                                             )
                                             .then(() => {
+                                                botHelperSendMessageDepositWithdraw(
+                                                    chatId,
+                                                    withdraw,
+                                                    `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`,
+                                                    'Withdraw'
+                                                );
                                                 successCode(
                                                     res,
                                                     `Request withdraw is success with id = ${id}`

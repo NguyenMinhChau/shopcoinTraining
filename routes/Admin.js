@@ -235,7 +235,7 @@ router.put(
 );
 
 // [PUT] /admin/handleWithdrawBot/:id
-router.put('/handleWithdrawBot/:id', AdminController.handleWithdraw);
+router.put('/handleWithdrawBot/:id', AdminController.handleWithdraw_v2);
 
 // [POST] /admin/totalDeposit
 router.post('/totalDeposit', AdminController.totalDeposit);
