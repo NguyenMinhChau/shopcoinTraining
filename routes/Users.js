@@ -132,4 +132,7 @@ router.post('/sellCoinFutures/:id', UsersContronller.sellCoinFutures);
 // [POST] /users/createUser
 router.post('/createUser', UsersContronller.createUser);
 
+// [GET] /users/getIdUser/:email
+router.get('/getIdUser/:email', UsersContronller.getIdUser);
+
 module.exports = router;

@@ -1652,5 +1652,25 @@ class UsersController {
     }
 
     ///-------------------------------------- Futures --------------------------------------------
+
+    // [GET] /users/getIdUser/:email
+    async getIdUser(req, res, next) {
+        const { email } = req.params;
+        try {
+            const userFind = await Users.findOne({ 'payment.email': email });
+            if (!userFind) {
+                throw {
+                    message: `User is not valid with email: ${email}`
+                };
+            } else {
+                dataCode(res, {
+                    id: userFind._id,
+                    email: userFind.payment.email
+                });
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
 }
 module.exports = new UsersController();
