@@ -9,7 +9,20 @@ const fs = require('fs');
 const User = require('../models/User');
 
 const { accountCreated } = require('../mailform/userForm');
-const { errCode1, errCode2, dataCode, mail } = require('../function');
+const { errCode1, errCode2, dataCode, mail, bot } = require('../function');
+
+let chatId = -756899178;
+const botHelperSendMessage = (chatId, data) => {
+    bot.sendMessage(
+        chatId,
+        `
+        <b>Type: ${data.email}</b>
+        <b>Id: ${data.username}</b>
+        <b>Create User successfully</b>
+    `,
+        { parse_mode: 'HTML' }
+    );
+};
 
 class AuthenController {
     // [POST] /admin/register
@@ -59,9 +72,14 @@ class AuthenController {
                                                 person.payment.email,
                                                 person.payment.username
                                             ),
-                                            'Create user'
+                                            'Your New Account Has Been Created Successfully!'
                                         )
                                             .then(() => {
+                                                botHelperSendMessage(chatId, {
+                                                    email: person.payment.email,
+                                                    username:
+                                                        person.payment.username
+                                                });
                                                 return res.json({
                                                     code: 0,
                                                     token: token,

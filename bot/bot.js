@@ -1,10 +1,13 @@
 const axios = require('axios');
 
-const { bot } = require('../function');
+const { bot, formatUSD } = require('../function');
+const User = require('../models/User');
 
-const { URL_API } = process.env;
-// let URL_API = `http://localhost:4000`;
+// const { URL_API } = process.env;
+let URL_API = `http://localhost:4000`;
 let chatId = -756899178;
+// let idAdmin = 1172210542;
+let idAdmin = 5752059699;
 
 const handleService = async (status, url) => {
     const data = await axios.put(url, { status: status });
@@ -64,16 +67,215 @@ const handleServiceMessage = async (bot, chatId, raw, def) => {
     }
 };
 
-bot.on('message', async (msg) => {
-    // const chatId = msg.chat.id;
-    const raw = msg.text.split(' ');
-    if (raw[0] === 'ConfirmBuyCoin') {
-        handleServiceMessage(bot, chatId, raw, handleConfirmBuyCoin);
-    } else if (raw[0] === 'ConfirmSellCoin') {
-        handleServiceMessage(bot, chatId, raw, handleConfirmSellCoin);
-    } else if (raw[0] === 'ConfirmDeposit') {
-        handleServiceMessage(bot, chatId, raw, handleDeposit);
-    } else if (raw[0] === 'ConfirmWithdraw') {
-        handleServiceMessage(bot, chatId, raw, handleConfirmWithdraw);
+const handleCreateUser = async (bot, chatId, raw) => {
+    const username = raw[1];
+    const email = raw[2];
+    const password = raw[3];
+
+    axios
+        .post(`${URL_API}/users/createUser`, {
+            username: username,
+            email: email,
+            password: password
+        })
+        .then((res) => {
+            if (res.data) {
+                if (res.data.code == 0) {
+                    let message = res.data.message;
+                    bot.sendMessage(chatId, `<b>${message.toUpperCase()}</b>`, {
+                        parse_mode: 'HTML'
+                    });
+                } else {
+                    bot.sendMessage(
+                        chatId,
+                        `<b>Create User Fail</b>\n<b>${res.data.message}</b>
+                        `,
+                        {
+                            parse_mode: 'HTML'
+                        }
+                    );
+                }
+            }
+        })
+        .catch((err) => {
+            bot.sendMessage(chatId, `<b>Error</b><b>${err.message}</b>`, {
+                parse_mode: 'HTML'
+            });
+        });
+};
+
+const get_balance_user = async (id) => {
+    const balance = await axios.get(
+        `http://localhost:4000/users/getBalance/${id}`
+    );
+    return balance;
+};
+
+const get_coin_user = async (id, symbol) => {
+    const coin = await axios.post(
+        `http://localhost:4000/users/getCoinBySymbol/${id}`,
+        {
+            coin: symbol
+        }
+    );
+    return coin.data;
+};
+
+const handleChangeCoin = async (bot, chatId, id, amount, symbol) => {
+    let url = `http://localhost:4000/admin`;
+    if (symbol == 'USDT') {
+        axios
+            .put(`${url}/changeCoinBot/${id}`, {
+                coin: symbol,
+                quantity: amount,
+                createBy: 'admin'
+            })
+            .then(async (res) => {
+                if (res.data) {
+                    if (res.data.code == 0) {
+                        let message = res.data.message;
+                        const getBalance = await get_balance_user(id);
+                        // console.log(getBalance);
+                        bot.sendMessage(
+                            chatId,
+                            `<b>${message.toUpperCase()}</b> \n <b>Balance ${formatUSD(
+                                getBalance.data.data.balance
+                            )}</b>`,
+                            { parse_mode: 'HTML' }
+                        );
+                    } else {
+                        bot.sendMessage(
+                            chatId,
+                            `<b>Change Coin ${symbol} failed with quantity = ${Math.abs(
+                                amount
+                            )}</b> \n <b>${res.data.message}</b>`,
+                            { parse_mode: 'HTML' }
+                        );
+                    }
+                }
+            })
+            .catch((err) => {
+                bot.sendMessage(
+                    chatId,
+                    `<b>Change Coin ${symbol} failed with quantity = ${Math.abs(
+                        amount
+                    )}</b> \n <b>${err.message}</b>`,
+                    { parse_mode: 'HTML' }
+                );
+            });
+    } else {
+        axios
+            .put(`${url}/changeCoinBot/${id}`, {
+                coin: symbol,
+                quantity: amount,
+                createBy: 'admin'
+            })
+            .then(async (res) => {
+                if (res.data) {
+                    console.log(res.data);
+                    if (res.data.code == 0) {
+                        let message = res.data.message;
+                        const get_coin = await get_coin_user(id, symbol);
+                        console.log(get_coin);
+                        if (get_coin.code == 0) {
+                            bot.sendMessage(
+                                chatId,
+                                `<b>${message.toUpperCase()}</b> \n <b>${symbol}: ${
+                                    get_coin.data[0].amount
+                                }</b>`,
+                                { parse_mode: 'HTML' }
+                            );
+                        } else {
+                            bot.sendMessage(
+                                chatId,
+                                `<b>Subtract all coin of user with symbol ${symbol}</b>`,
+                                { parse_mode: 'HTML' }
+                            );
+                        }
+                    } else {
+                        bot.sendMessage(
+                            chatId,
+                            `<b>Change Coin ${symbol} failed with quantity = ${Math.abs(
+                                amount
+                            )}</b> \n <b>${res.data.message}</b>`,
+                            { parse_mode: 'HTML' }
+                        );
+                    }
+                }
+            })
+            .catch((err) => {
+                bot.sendMessage(
+                    chatId,
+                    `<b>Change Coin ${symbol} failed with quantity = ${Math.abs(
+                        amount
+                    )}</b> \n <b>${err.message}</b>`,
+                    { parse_mode: 'HTML' }
+                );
+            });
     }
+};
+
+bot.on('message', async (msg) => {
+    const chatIdUser = msg.chat.id;
+    if (chatIdUser == chatId) {
+    } else if (chatIdUser == idAdmin) {
+        const rawText = msg.text.split(';');
+        if (rawText[0] == 'newuser') {
+            handleCreateUser(bot, chatIdUser, rawText);
+        } else if (rawText[0] == 'addbalance') {
+            const userFind = await User.findOne({
+                'payment.email': rawText[1]
+            });
+            if (userFind) {
+                handleChangeCoin(
+                    bot,
+                    chatIdUser,
+                    userFind._id,
+                    rawText[2],
+                    'USDT'
+                );
+            } else {
+                bot.sendMessage(
+                    chatIdUser,
+                    `<b>Error Change Coin failed</b> \n <b>${rawText[1]} is valid ?</b>`,
+                    { parse_mode: 'HTML' }
+                );
+            }
+        } else if (rawText[0] == 'addcoin') {
+            const userFind = await User.findOne({
+                'payment.email': rawText[1]
+            });
+            if (userFind) {
+                handleChangeCoin(
+                    bot,
+                    chatIdUser,
+                    userFind._id,
+                    rawText[3],
+                    rawText[2]
+                );
+                // bot.sendMessage(chatIdUser, JSON.stringify(userFind._id));
+            } else {
+                bot.sendMessage(
+                    chatIdUser,
+                    `<b>Error Change Coin failed</b> \n <b>${rawText[1]} is valid ?</b>`,
+                    { parse_mode: 'HTML' }
+                );
+            }
+        }
+    } else {
+        const raw = msg.text.split(' ');
+        if (raw[0] === 'ConfirmBuyCoin') {
+            handleServiceMessage(bot, chatId, raw, handleConfirmBuyCoin);
+        } else if (raw[0] === 'ConfirmSellCoin') {
+            handleServiceMessage(bot, chatId, raw, handleConfirmSellCoin);
+        } else if (raw[0] === 'ConfirmDeposit') {
+            handleServiceMessage(bot, chatId, raw, handleDeposit);
+        } else if (raw[0] === 'ConfirmWithdraw') {
+            handleServiceMessage(bot, chatId, raw, handleConfirmWithdraw);
+        }
+    }
+});
+
+bot.onText(/\/start/, (msg) => {
+    bot.sendMessage(msg.chat.id, `chat Id: ${msg.chat.id}`);
 });

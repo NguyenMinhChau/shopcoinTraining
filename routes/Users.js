@@ -135,4 +135,10 @@ router.post('/createUser', UsersContronller.createUser);
 // [GET] /users/getIdUser/:email
 router.get('/getIdUser/:email', UsersContronller.getIdUser);
 
+// [GET] /users/getBalance/:id
+router.get('/getBalance/:id', UsersContronller.getBalance);
+
+// [POST] /users/getCoinBySymbol/:id
+router.post('/getCoinBySymbol/:id', UsersContronller.getCoinBySymbol);
+
 module.exports = router;

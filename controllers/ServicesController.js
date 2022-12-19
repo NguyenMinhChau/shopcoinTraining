@@ -29,6 +29,34 @@ class ServicesController {
             errCode1(res, error);
         }
     }
+
+    // [DELETE] /services/delete_user
+    async delete_all_user(req, res, next) {
+        try {
+            // const users = await Users.find();
+            // if (users) {
+            //     // dataCode(res, users);
+            //     let userFindNotAdmin = users.filter((user) => {
+            //         if (user.payment.rule != 'admin') {
+            //             return user;
+            //         }
+            //     });
+            //     userFindNotAdmin.forEach(async (u) => {
+            //         Users.findOneAndDelete({ _id: u._id }, (err, doc) => {
+            //             if (err) console.log(err);
+            //             console.log(`delete user with id ${u._id}`);
+            //         });
+            //     });
+            //     dataCode(res, 'OKKK');
+            // } else {
+            //     throw {
+            //         message: 'No users'
+            //     };
+            // }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
 }
 
 module.exports = new ServicesController();

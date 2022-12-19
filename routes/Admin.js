@@ -199,6 +199,9 @@ router.put(
     AdminController.change_coin_v2
 );
 
+// [PUT] /admin/changeCoinBot/:id
+router.put('/changeCoinBot/:id', AdminController.change_coin_v2);
+
 // [PUT] /admin/blockUser/:id
 router.put(
     '/blockUser/:id',

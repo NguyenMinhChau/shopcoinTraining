@@ -1981,7 +1981,7 @@ class AdminController {
                                                                 parseFloat(
                                                                     prepare.price
                                                                 ) *
-                                                                (1 +
+                                                                (1 -
                                                                     parseFloat(
                                                                         prepare.fee
                                                                     ))
@@ -2454,17 +2454,10 @@ class AdminController {
                             code: code,
                             user: user.payment.email,
                             createBy: createBy,
-                            method: {
-                                methodName: bankAdmin.methodName,
-                                accountName: bankAdmin.accountName,
-                                accountNumber: bankAdmin.accountNumber,
-                                type: bankAdmin.type
-                            },
                             amount: quantity,
                             amountUsd: quantity,
                             amountVnd:
-                                quantity * rateWithdrawDeposit.rateDeposit,
-                            bankAdmin: bankAdmin
+                                quantity * rateWithdrawDeposit.rateDeposit
                         });
                         newDeposit
                             .save()

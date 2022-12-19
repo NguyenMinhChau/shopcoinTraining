@@ -1789,5 +1789,68 @@ class UsersController {
             errCode1(res, error);
         }
     }
+
+    // [GET] /users/getBalance/:id
+    async getBalance(req, res, next) {
+        try {
+            const userFind = await Users.findById(req.params.id);
+            if (userFind) {
+                dataCode(res, {
+                    balance: userFind.Wallet.balance
+                });
+            } else {
+                throw {
+                    message: `user is not valid with id = ${req.params.id}`
+                };
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [POST] /users/getCoinBySymbol/:id
+    async getCoinBySymbol(req, res, next) {
+        const { id } = req.params;
+        const { coin } = req.body;
+        try {
+            const userFind = await Users.findById(id);
+            if (userFind) {
+                let coins = userFind.coins;
+                let coinFinal = [];
+                coins.forEach(async (coin) => {
+                    coinFinal.push(
+                        new Promise((resolve) => {
+                            getCoinByIdSupport(
+                                coin._id,
+                                coin.amount,
+                                (result) => {
+                                    resolve(result);
+                                }
+                            );
+                        })
+                    );
+                });
+                // listCoins
+                Promise.all(coinFinal).then((coinsResult) => {
+                    let coinFindFinal = coinsResult.filter((c) => {
+                        if (c.coin.symbol == coin) {
+                            return c;
+                        }
+                    });
+                    if (coinFindFinal.length > 0) {
+                        dataCode(res, coinFindFinal);
+                    } else {
+                        errCode2(res, `${coin} is not valid in user`);
+                    }
+                });
+            } else {
+                throw {
+                    message: `User is not valid with id = ${id}`
+                };
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
 }
 module.exports = new UsersController();
