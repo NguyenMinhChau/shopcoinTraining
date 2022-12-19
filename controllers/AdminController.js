@@ -1395,7 +1395,7 @@ class AdminController {
                                                                         () => {
                                                                             successCode(
                                                                                 res,
-                                                                                `${status} the order buy with id = ${id}`
+                                                                                `${status} the order buy with email = ${user.payment.email} with quantity = ${prepare.amount}`
                                                                             );
                                                                         }
                                                                     )
@@ -1918,7 +1918,7 @@ class AdminController {
                                                                             () => {
                                                                                 successCode(
                                                                                     res,
-                                                                                    `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer}`
+                                                                                    `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer} with quantity = ${prepare.amount}`
                                                                                 );
                                                                             }
                                                                         )
@@ -2603,7 +2603,7 @@ class AdminController {
                                                 .then(() => {
                                                     successCode(
                                                         res,
-                                                        `Give coin ${coin} successfully to user: ${user.payment.email}`
+                                                        `Give coin ${coin} successfully to user: ${user.payment.email} with quantity = ${quantity}`
                                                     );
                                                 })
                                                 .catch((err) => {
@@ -2652,7 +2652,11 @@ class AdminController {
                                                 .then(() => {
                                                     successCode(
                                                         res,
-                                                        `Subtract coin ${coin} successfully to user: ${user.payment.email}`
+                                                        `Subtract coin ${coin} successfully to user: ${
+                                                            user.payment.email
+                                                        } with quantity = ${Math.abs(
+                                                            quantity
+                                                        )}`
                                                     );
                                                 })
                                                 .catch((err) => {
