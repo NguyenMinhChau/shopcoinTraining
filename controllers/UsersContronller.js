@@ -36,7 +36,8 @@ const {
     precisionRound,
     formatUSD,
     formatVND,
-    mail
+    mail,
+    dataCode_1
 } = require('../function');
 const { default: axios } = require('axios');
 
@@ -373,7 +374,12 @@ const buyCoin = async (
                 //     null,
                 //     null
                 // );
-                successCode(res, `Đã mua coin thành công chờ admin xét duyệt`);
+                // successCode(res, `Đã mua coin thành công chờ admin xét duyệt`);
+                dataCode_1(
+                    res,
+                    `Đã mua coin thành công chờ admin xét duyệt`,
+                    value
+                );
             })
             .catch((err) => errCode1(res, err));
     } else {
@@ -392,12 +398,17 @@ function sellCoin(req, res, user, amount, amountUsd, symbol, price, type) {
         type,
         user.payment.rule,
         user.rank,
-        0
+        fee
     );
     resultCreateBill
         .then((value) => {
             // botHelperSendMessage(chatId, value, null, null);
-            successCode(res, `Đã bán coin thành công chờ admin xét duyệt`);
+            // successCode(res, `Đã bán coin thành công chờ admin xét duyệt`);
+            dataCode_1(
+                res,
+                `Đã bán coin thành công chờ admin xét duyệt`,
+                value
+            );
         })
         .catch((err) => errCode1(res, err));
 }

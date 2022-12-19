@@ -49,10 +49,10 @@ const sellSuccess = (username, sell) => `
 <h3>Total Price: ${formatUSD(
     precisionRound(
         precisionRound(
-            parseFloat(trans.fee) *
-                parseFloat(trans.amount) *
-                parseFloat(trans.price)
-        ) + trans.amountUsd
+            parseFloat(sell.fee) *
+                parseFloat(sell.amount) *
+                parseFloat(sell.price)
+        ) + sell.amountUsd
     )
 )}</h3>
 

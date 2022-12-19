@@ -178,6 +178,73 @@ class AuthenController {
         }
     }
 
+    // [POST] /admin/login_admin
+    async login_admin(req, res, next) {
+        try {
+            const { email, password } = req.body;
+            const userFind = await User.findOne({ 'payment.email': email });
+
+            if (userFind) {
+                if (
+                    userFind.payment.rule == 'admin' ||
+                    userFind.payment.rule == 'manager'
+                ) {
+                    bcrypt
+                        .compare(password, userFind.payment.password)
+                        .then((hash) => {
+                            if (hash) {
+                                const token = jwt.sign(
+                                    { id: userFind._id, email },
+                                    process.env.JWT_SECRET,
+                                    {
+                                        expiresIn: '30s'
+                                    }
+                                );
+                                const refreshToken = jwt.sign(
+                                    { id: userFind._id, email },
+                                    process.env.JWT_SECRET,
+                                    {
+                                        expiresIn: '1d'
+                                    }
+                                );
+
+                                res.cookie('jwt', refreshToken, {
+                                    httpOnly: true,
+                                    sameSite: 'strict',
+                                    secure: false,
+                                    maxAge: 60 * 1000 * 60
+                                });
+
+                                return res.json({
+                                    code: 0,
+                                    userInfo: userFind,
+                                    token: token
+                                });
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Password is not true or email is not true`
+                                );
+                            }
+                        })
+                        .catch((err) => {
+                            errCode1(res, err);
+                        });
+                } else {
+                    throw {
+                        message: `Your account is not support`
+                    };
+                }
+            } else {
+                throw {
+                    message: `User is not valid with email = ${email}`
+                };
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
     // [POST] /admin/login
     async login_v2(req, res, next) {
         const { email, password } = req.body;

@@ -48,6 +48,10 @@ module.exports = {
         return res.json({ code: 0, message: 'Successfully !!!', data: data });
     },
 
+    dataCode_1: (res, message, data) => {
+        return res.json({ code: 0, message: message, data: data });
+    },
+
     mail: function (email, message, subject) {
         const mailOptions = {
             from: process.env.EMAIL,

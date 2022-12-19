@@ -1395,7 +1395,7 @@ class AdminController {
                                                                         () => {
                                                                             successCode(
                                                                                 res,
-                                                                                `Confirmed the order buy with id = ${id}`
+                                                                                `${status} the order buy with id = ${id}`
                                                                             );
                                                                         }
                                                                     )

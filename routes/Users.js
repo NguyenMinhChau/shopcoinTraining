@@ -43,8 +43,14 @@ router.put(
 // [POST] /users/BuyCoin/
 router.post('/BuyCoin', checkAuth, UsersContronller.BuyCoin);
 
+// [POST] /users/BuyCoinBot/
+router.post('/BuyCoinBot', UsersContronller.BuyCoin);
+
 // [POST] /users/SellCoin/
 router.post('/SellCoin', checkAuth, UsersContronller.SellCoin);
+
+// [POST] /users/SellCoinBot/
+router.post('/SellCoinBot', UsersContronller.SellCoin);
 
 // [PUT] /users/changePWD/:id
 router.put('/changePWD/:id', checkAuth, UsersContronller.changePWD);
