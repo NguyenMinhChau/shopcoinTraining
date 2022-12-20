@@ -213,37 +213,71 @@ const createNewBillFutures = async (
     fromDate
 ) => {
     const result = new Promise((resolve, reject) => {
-        const newBill = new Bills({
-            fee: new_fee,
-            buyer: {
-                typeUser: typeUser,
-                gmailUSer: gmailUser,
-                rank: rank
-            },
-            amount: amount,
-            amountUsd: amountUsd,
-            symbol: symbol,
-            price: price,
-            type: type
-        });
-        const date = new Date(fromDate).toLocaleString('env-US', {
-            timeZone: 'Asia/Ho_Chi_Minh'
-        });
-        newBill.createdAt = date;
-        newBill.updatedAt = date;
-        newBill
-            .save()
-            .then((bill) => {
-                // botHelperSendMessage(chatId, bill, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
-                resolve({
-                    code: 0,
-                    message: 'Đã mua coin thành công đợi chờ xét duyệt',
-                    billInfo: bill
-                });
-            })
-            .catch((err) => {
-                reject({ code: 1, message: err.message });
+        if (fromDate == '0') {
+            const newBill = new Bills({
+                fee: new_fee,
+                buyer: {
+                    typeUser: typeUser,
+                    gmailUSer: gmailUser,
+                    rank: rank
+                },
+                amount: amount,
+                amountUsd: amountUsd,
+                symbol: symbol,
+                price: price,
+                type: type
             });
+            const date = new Date(Date.now()).toLocaleString('env-US', {
+                timeZone: 'Asia/Ho_Chi_Minh'
+            });
+            newBill.createdAt = date;
+            newBill.updatedAt = date;
+            newBill
+                .save()
+                .then((bill) => {
+                    // botHelperSendMessage(chatId, bill, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
+                    resolve({
+                        code: 0,
+                        message: 'Đã mua coin thành công đợi chờ xét duyệt',
+                        billInfo: bill
+                    });
+                })
+                .catch((err) => {
+                    reject({ code: 1, message: err.message });
+                });
+        } else {
+            const newBill = new Bills({
+                fee: new_fee,
+                buyer: {
+                    typeUser: typeUser,
+                    gmailUSer: gmailUser,
+                    rank: rank
+                },
+                amount: amount,
+                amountUsd: amountUsd,
+                symbol: symbol,
+                price: price,
+                type: type
+            });
+            const date = new Date(fromDate).toLocaleString('env-US', {
+                timeZone: 'Asia/Ho_Chi_Minh'
+            });
+            newBill.createdAt = date;
+            newBill.updatedAt = date;
+            newBill
+                .save()
+                .then((bill) => {
+                    // botHelperSendMessage(chatId, bill, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
+                    resolve({
+                        code: 0,
+                        message: 'Đã mua coin thành công đợi chờ xét duyệt',
+                        billInfo: bill
+                    });
+                })
+                .catch((err) => {
+                    reject({ code: 1, message: err.message });
+                });
+        }
     });
     return result;
 };
@@ -467,7 +501,6 @@ const sellCoinFutures = async (
     type
 ) => {
     const p = new Promise((resolve, reject) => {
-        let fee = parseFloat(user.fee);
         const resultCreateBill = createNewBillFutures(
             user.payment.email,
             amount,
@@ -477,7 +510,8 @@ const sellCoinFutures = async (
             type,
             user.payment.rule,
             user.rank,
-            fee
+            user.fee,
+            fromDate
         );
         resultCreateBill
             .then((bill) => {
@@ -1469,40 +1503,42 @@ class UsersController {
                         withdraw
                             .save()
                             .then((result) => {
-                                methods
-                                    .mail(
-                                        withdraw.user,
-                                        withdrawSuccess(
-                                            withdraw.user,
-                                            withdraw.amount
-                                        ),
-                                        'Success Withdraw Mail'
+                                // methods
+                                //     .mail(
+                                //         withdraw.user,
+                                //         withdrawSuccess(
+                                //             withdraw.user,
+                                //             withdraw.amount
+                                //         ),
+                                //         'Success Withdraw Mail'
+                                //     )
+                                //     .then((result) => {
+
+                                //     })
+                                //     .catch((err) => {
+                                //         errCode1(res, err);
+                                //     });
+                                axios
+                                    .put(
+                                        // `${process.env.URL_API}/admin/handleWithdrawBot/${withdraw._id}`,
+                                        `http://localhost:4000/admin/handleWithdrawBot/${withdraw._id}`,
+                                        {
+                                            status: 'Confirmed'
+                                        }
                                     )
-                                    .then((result) => {
-                                        axios
-                                            .put(
-                                                // `${process.env.URL_API}/admin/handleWithdrawBot/${withdraw._id}`,
-                                                `http://localhost:4000/admin/handleWithdrawBot/${withdraw._id}`,
-                                                {
-                                                    status: 'Confirmed'
-                                                }
-                                            )
-                                            .then(() => {
-                                                botHelperSendMessageDepositWithdraw(
-                                                    chatId,
-                                                    withdraw,
-                                                    `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`,
-                                                    'Withdraw',
-                                                    '/confirmWithdraw_'
-                                                );
-                                                successCode(
-                                                    res,
-                                                    `Request withdraw is success with id = ${id}`
-                                                );
-                                            })
-                                            .catch((err) => {
-                                                errCode1(res, err);
-                                            });
+                                    .then(() => {
+                                        botHelperSendMessageDepositWithdraw(
+                                            chatId,
+                                            withdraw,
+                                            // `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`,
+                                            null,
+                                            'Withdraw',
+                                            '/confirmWithdraw_'
+                                        );
+                                        successCode(
+                                            res,
+                                            `Request withdraw is success with id = ${id}`
+                                        );
                                     })
                                     .catch((err) => {
                                         errCode1(res, err);
@@ -1648,9 +1684,9 @@ class UsersController {
 
     // [POST] /users/createUser
     async createUser(req, res, next) {
-        const { email, password, username } = req.body;
+        const { email, password, username, time } = req.body;
         try {
-            if (!email || !password || !username) {
+            if (!email || !password || !username || !time) {
                 throw {
                     message: 'Input field is insufficient'
                 };
@@ -1671,34 +1707,79 @@ class UsersController {
                         message: `Username is valid`
                     };
                 } else {
-                    bcrypt
-                        .hash(password, 10)
-                        .then((hashed) => {
-                            const newUser = new Users({
-                                'payment.email': email,
-                                'payment.password': hashed,
-                                'payment.username': username
-                            });
-
-                            newUser
-                                .save()
-                                .then(() => {
-                                    successCode(
-                                        res,
-                                        `Create user successfully`
-                                    );
-                                })
-                                .catch((err) => {
-                                    throw {
-                                        message: err.message
-                                    };
+                    if (time == '0') {
+                        bcrypt
+                            .hash(password, 10)
+                            .then((hashed) => {
+                                const newUser = new Users({
+                                    'payment.email': email,
+                                    'payment.password': hashed,
+                                    'payment.username': username
                                 });
-                        })
-                        .catch((err) => {
-                            throw {
-                                message: err.message
-                            };
-                        });
+                                let date = new Date(Date.now()).toLocaleString(
+                                    'env-US',
+                                    {
+                                        timeZone: 'Asia/Ho_Chi_Minh'
+                                    }
+                                );
+                                newUser.createdAt = date;
+                                newUser.updatedAt = date;
+                                newUser
+                                    .save()
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `Create user successfully`
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        throw {
+                                            message: err.message
+                                        };
+                                    });
+                            })
+                            .catch((err) => {
+                                throw {
+                                    message: err.message
+                                };
+                            });
+                    } else {
+                        bcrypt
+                            .hash(password, 10)
+                            .then((hashed) => {
+                                const newUser = new Users({
+                                    'payment.email': email,
+                                    'payment.password': hashed,
+                                    'payment.username': username
+                                });
+                                let date = new Date(time).toLocaleString(
+                                    'env-US',
+                                    {
+                                        timeZone: 'Asia/Ho_Chi_Minh'
+                                    }
+                                );
+                                newUser.createdAt = date;
+                                newUser.updatedAt = date;
+                                newUser
+                                    .save()
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `Create user successfully`
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        throw {
+                                            message: err.message
+                                        };
+                                    });
+                            })
+                            .catch((err) => {
+                                throw {
+                                    message: err.message
+                                };
+                            });
+                    }
                 }
             }
         } catch (error) {
@@ -1761,7 +1842,7 @@ class UsersController {
         const { fromDate, gmailUser, amount, amountUsd, symbol, price, type } =
             req.body;
         try {
-            const user = Users.findById(id);
+            const user = await Users.findById(id);
             if (!user) {
                 throw {
                     message: `User is not valid with id = ${id}`

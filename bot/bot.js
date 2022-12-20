@@ -71,12 +71,14 @@ const handleCreateUser = async (bot, chatId, raw) => {
     const username = raw[1].trim();
     const email = raw[2].trim();
     const password = raw[3].trim();
+    const time = raw[4];
 
     axios
         .post(`${URL_API}/users/createUser`, {
             username: username,
             email: email,
-            password: password
+            password: password,
+            time: time
         })
         .then((res) => {
             if (res.data) {
@@ -226,12 +228,13 @@ const handleBuySellCoin = async (
     symbol,
     price,
     type,
-    fee
+    fee,
+    time
 ) => {
     let url = `http://localhost:4000`;
     if (type == 'BuyCoin') {
         axios
-            .post(`${url}/users/BuyCoinBot`, {
+            .post(`${url}/users/buyCoinFutures/${id}`, {
                 gmailUser: email,
                 amount: amount,
                 amountUsd: precisionRound(
@@ -241,7 +244,8 @@ const handleBuySellCoin = async (
                 ),
                 symbol: symbol,
                 price: price,
-                type: type
+                type: type,
+                fromDate: time
             })
             .then(async (res) => {
                 if (res.data) {
@@ -286,7 +290,7 @@ const handleBuySellCoin = async (
             });
     } else if (type == 'SellCoin') {
         axios
-            .post(`${url}/users/SellCoinBot`, {
+            .post(`${url}/users/sellCoinFutures/${id}`, {
                 gmailUser: email,
                 amount: amount,
                 amountUsd: precisionRound(
@@ -296,7 +300,8 @@ const handleBuySellCoin = async (
                 ),
                 symbol: symbol,
                 price: price,
-                type: type
+                type: type,
+                fromDate: time
             })
             .then(async (res) => {
                 if (res.data) {
@@ -351,10 +356,10 @@ bot.on('message', async (msg) => {
     } else if (chatIdUser == idAdmin || chatIdUser == idAdminServer) {
         const rawText = msg.text.split(';');
         if (rawText[0] == 'newuser') {
-            if (rawText.length == 4) {
+            if (rawText.length == 5) {
                 handleCreateUser(bot, chatIdUser, rawText);
             } else {
-                bot.sendMessage(chatIdUser, `newuser;username;email;pass`);
+                bot.sendMessage(chatIdUser, `newuser;username;email;pass;time`);
             }
         } else if (rawText[0] == 'addbalance') {
             let email = rawText[1];
@@ -411,7 +416,8 @@ bot.on('message', async (msg) => {
             let symbol = rawText[2];
             let amount = rawText[3];
             let price = rawText[4];
-            if (rawText.length == 5) {
+            let time = rawText[5];
+            if (rawText.length == 6) {
                 const userFind = await User.findOne({ 'payment.email': email });
                 if (userFind) {
                     handleBuySellCoin(
@@ -423,7 +429,8 @@ bot.on('message', async (msg) => {
                         `${symbol.toUpperCase()}USDT`,
                         price,
                         'BuyCoin',
-                        userFind.fee
+                        userFind.fee,
+                        time
                     );
                 } else {
                     bot.sendMessage(
@@ -432,14 +439,18 @@ bot.on('message', async (msg) => {
                     );
                 }
             } else {
-                bot.sendMessage(chatIdUser, `buy;email;symbol;amount;price`);
+                bot.sendMessage(
+                    chatIdUser,
+                    `buy;email;symbol;amount;price;time`
+                );
             }
         } else if (rawText[0] == 'sell') {
             let email = rawText[1].trim();
             let symbol = rawText[2];
             let amount = rawText[3];
             let price = rawText[4];
-            if (rawText.length > 0) {
+            let time = rawText[5];
+            if (rawText.length == 6) {
                 const userFind = await User.findOne({ 'payment.email': email });
                 if (userFind) {
                     handleBuySellCoin(
@@ -451,7 +462,8 @@ bot.on('message', async (msg) => {
                         `${symbol.toUpperCase()}USDT`,
                         price,
                         'SellCoin',
-                        userFind.fee
+                        userFind.fee,
+                        time
                     );
                 } else {
                     bot.sendMessage(
@@ -460,7 +472,10 @@ bot.on('message', async (msg) => {
                     );
                 }
             } else {
-                bot.sendMessage(chatIdUser, `sell;email;symbol;amount;price`);
+                bot.sendMessage(
+                    chatIdUser,
+                    `sell;email;symbol;amount;price;time`
+                );
             }
         }
     } else {
@@ -481,7 +496,56 @@ bot.onText(/\/start/, (msg) => {
     bot.sendMessage(msg.chat.id, `chat Id: ${msg.chat.id}`);
 });
 
-bot.onText(/\/confirmDep_.+$/, (msg) => {
-    console.log(msg.text.split('_'));
-    bot.sendMessage(msg.chat.id, `chat Id: ${msg.chat.id} Ok confirm dep`);
+bot.onText(/\/confirmWithdraw.+$/, (msg) => {
+    const rawText = msg.text.split('_');
+    if (rawText.length == 2) {
+        handleConfirmWithdraw(rawText[1], 'Completed')
+            .then((result) => {
+                if (result.code == 0) {
+                    bot.sendMessage(
+                        chatId,
+                        `<b>${result.message.toUpperCase()}</b>`,
+                        { parse_mode: 'HTML' }
+                    );
+                } else {
+                    bot.sendMessage(chatId, `<b>${result.message}</b>`, {
+                        parse_mode: 'HTML'
+                    });
+                }
+            })
+            .catch((err) => {
+                console.log(err.message);
+            });
+    } else {
+        bot.sendMessage(chatId, `<b>/confirmWithdraw_idOrderWithdraw</b>`, {
+            parse_mode: 'HTML'
+        });
+    }
+});
+
+bot.onText(/\/confirmDeposit_.+$/, (msg) => {
+    const rawText = msg.text.split('_');
+    if (rawText.length == 2) {
+        handleDeposit(rawText[1], 'Completed')
+            .then((result) => {
+                if (result.code == 0) {
+                    bot.sendMessage(
+                        chatId,
+                        `<b>${result.message.toUpperCase()}</b>`,
+                        { parse_mode: 'HTML' }
+                    );
+                } else {
+                    bot.sendMessage(chatId, `<b>${result.message}</b>`, {
+                        parse_mode: 'HTML'
+                    });
+                }
+            })
+            .catch((err) => {
+                console.log(err.message);
+            });
+    } else {
+        bot.sendMessage(chatId, `<b>/confirmWithdraw_idOrderWithdraw</b>`, {
+            parse_mode: 'HTML'
+        });
+    }
 });
