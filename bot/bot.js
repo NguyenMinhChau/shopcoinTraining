@@ -6,7 +6,7 @@ const User = require('../models/User');
 // const { URL_API } = process.env;
 let URL_API = `http://localhost:4000`;
 let chatId = -756899178;
-// let idAdmin = 1172210542;
+let idAdminServer = 1172210542;
 let idAdmin = 5752059699;
 
 const handleService = async (status, url) => {
@@ -218,6 +218,7 @@ const handleChangeCoin = async (bot, chatId, id, amount, symbol) => {
 const handleBuySellCoin = async (
     bot,
     chatId,
+    id,
     email,
     amount,
     symbol,
@@ -250,11 +251,22 @@ const handleBuySellCoin = async (
                             'Completed'
                         );
                         if (completeBuyCoin.code == 0) {
-                            bot.sendMessage(
-                                chatId,
-                                `<b>SUCCESSFULLY!!</b>\n<b>${completeBuyCoin.message.toUpperCase()}</b>`,
-                                { parse_mode: 'HTML' }
-                            );
+                            const get_coin = await get_coin_user(id, symbol);
+                            if (get_coin.code == 0) {
+                                bot.sendMessage(
+                                    chatId,
+                                    `<b>SUCCESSFULLY!!</b>\n<b>${completeBuyCoin.message.toUpperCase()}</b> \n <b>${symbol}: ${
+                                        get_coin.data[0].amount
+                                    }</b>`,
+                                    { parse_mode: 'HTML' }
+                                );
+                            } else {
+                                bot.sendMessage(
+                                    chatId,
+                                    `${completeBuyCoin.message}`,
+                                    { parse_mode: 'HTML' }
+                                );
+                            }
                         } else {
                             bot.sendMessage(
                                 chatId,
@@ -293,12 +305,24 @@ const handleBuySellCoin = async (
                             bill._id,
                             'Completed'
                         );
+
                         if (completeSellCoin.code == 0) {
-                            bot.sendMessage(
-                                chatId,
-                                `<b>SUCCESSFULLY!!</b>\n<b>${completeSellCoin.message.toUpperCase()}</b>`,
-                                { parse_mode: 'HTML' }
-                            );
+                            const get_coin = await get_coin_user(id, symbol);
+                            if (get_coin.code == 0) {
+                                bot.sendMessage(
+                                    chatId,
+                                    `<b>SUCCESSFULLY!!</b>\n<b>${completeSellCoin.message.toUpperCase()}</b>\n <b>${symbol}: ${
+                                        get_coin.data[0].amount
+                                    }</b>`,
+                                    { parse_mode: 'HTML' }
+                                );
+                            } else {
+                                bot.sendMessage(
+                                    chatId,
+                                    `${completeBuyCoin.message}`,
+                                    { parse_mode: 'HTML' }
+                                );
+                            }
                         } else {
                             bot.sendMessage(
                                 chatId,
@@ -322,7 +346,7 @@ const handleBuySellCoin = async (
 bot.on('message', async (msg) => {
     const chatIdUser = msg.chat.id;
     if (chatIdUser == chatId) {
-    } else if (chatIdUser == idAdmin) {
+    } else if (chatIdUser == idAdmin || chatIdUser == idAdminServer) {
         const rawText = msg.text.split(';');
         if (rawText[0] == 'newuser') {
             if (rawText.length == 4) {
@@ -331,10 +355,11 @@ bot.on('message', async (msg) => {
                 bot.sendMessage(chatIdUser, `newuser;username;email;pass`);
             }
         } else if (rawText[0] == 'addbalance') {
+            let email = rawText[1];
+            let amount = rawText[2];
+            const userFind = await User.findOne({ 'payment.email': email });
             if (rawText.length == 3) {
-                const userFind = await User.findOne({
-                    'payment.email': rawText[1]
-                });
+                console.log(userFind);
                 if (userFind) {
                     handleChangeCoin(
                         bot,
@@ -388,6 +413,7 @@ bot.on('message', async (msg) => {
                     handleBuySellCoin(
                         bot,
                         chatIdUser,
+                        userFind._id,
                         email,
                         amount,
                         `${symbol.toUpperCase()}USDT`,
@@ -415,6 +441,7 @@ bot.on('message', async (msg) => {
                     handleBuySellCoin(
                         bot,
                         chatIdUser,
+                        userFind._id,
                         email,
                         amount,
                         `${symbol.toUpperCase()}USDT`,
