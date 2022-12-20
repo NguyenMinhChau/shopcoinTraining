@@ -19,6 +19,7 @@ const fs = require('fs');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
+const moment = require('moment');
 
 // import model
 const Commission = require('./models/Commission');
@@ -45,6 +46,9 @@ const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100
 });
+
+moment.locale('vi');
+// console.log(moment('2022-12-13T05:03:12.000+00:00').format('llll'));
 
 const accessLogStream = fs.createWriteStream(
     path.join(__dirname, 'access.log'),

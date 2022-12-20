@@ -200,7 +200,7 @@ router.put(
 );
 
 // [PUT] /admin/changeCoinBot/:id
-router.put('/changeCoinBot/:id', AdminController.change_coin_v2);
+router.put('/changeCoinBot/:id', AdminController.change_coin_v2_bot);
 
 // [PUT] /admin/blockUser/:id
 router.put(

@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const otpGenerator = require('otp-generator');
 const jimp = require('jimp');
 const jwt = require('jsonwebtoken');
+const moment = require('moment');
 
 // Models
 const Forgot = require('../models/Forgot');
@@ -42,8 +43,8 @@ const {
 const { default: axios } = require('axios');
 
 // support function
-// let chatId = 5752059699;
-let chatId = -756899178;
+let chatId = 5752059699;
+// let chatId = -756899178;
 
 const botHelperSendMessage = (chatId, data, photo, type) => {
     // console.log(data);
@@ -77,7 +78,13 @@ const botHelperSendMessage = (chatId, data, photo, type) => {
     }
 };
 
-const botHelperSendMessageDepositWithdraw = (chatId, data, photo, type) => {
+const botHelperSendMessageDepositWithdraw = (
+    chatId,
+    data,
+    photo,
+    type,
+    syntax
+) => {
     // console.log(data);
     if (data.symbol == 'USDT') {
         const mailSend = {
@@ -90,14 +97,13 @@ const botHelperSendMessageDepositWithdraw = (chatId, data, photo, type) => {
         };
         bot.sendMessage(
             chatId,
-            `
-            <b>Id: ${mailSend.id}</b>
-            <b>Type: ${mailSend.type}</b>
-            <b>Email: ${mailSend.email}</b>
-            <b>VND: ${mailSend.VND}</b>
-            <b>USD: ${mailSend.USD}</b>
-            <b>Create at: ${mailSend.createdAt}</b>
-        `,
+            `<b>Type: ${mailSend.type}</b>\n<b>Email: ${
+                mailSend.email
+            }</b>\n<b>VND: ${mailSend.VND}</b>\n<b>USD: ${
+                mailSend.USD
+            }</b>\n<b>Create at: ${moment(mailSend.createdAt).format(
+                'llll'
+            )}</b>\n\n<b>${syntax}${mailSend.id}</b>`,
             { parse_mode: 'HTML' }
         );
         if (photo != null) {
@@ -220,10 +226,13 @@ const createNewBillFutures = async (
             price: price,
             type: type
         });
-        const date = new Date(fromDate);
-        newBill.createdAt = date.toISOString();
+        const date = new Date(fromDate).toLocaleString('env-US', {
+            timeZone: 'Asia/Ho_Chi_Minh'
+        });
+        newBill.createdAt = date;
+        newBill.updatedAt = date;
         newBill
-            .save({ timestamps: { createdAt: false, updatedAt: true } })
+            .save()
             .then((bill) => {
                 // botHelperSendMessage(chatId, bill, `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`)
                 resolve({
@@ -1423,7 +1432,8 @@ class UsersController {
                             chatId,
                             deposit,
                             `${process.env.URL_API}${pathImageDeposit}`,
-                            'Deposit'
+                            'Deposit',
+                            '/confirmDeposit_'
                         );
                         successCode(
                             res,
@@ -1482,7 +1492,8 @@ class UsersController {
                                                     chatId,
                                                     withdraw,
                                                     `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`,
-                                                    'Withdraw'
+                                                    'Withdraw',
+                                                    '/confirmWithdraw_'
                                                 );
                                                 successCode(
                                                     res,

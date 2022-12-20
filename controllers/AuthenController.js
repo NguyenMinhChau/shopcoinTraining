@@ -66,29 +66,29 @@ class AuthenController {
                                 newUser
                                     .save()
                                     .then((person) => {
-                                        mail(
-                                            person.payment.email,
-                                            accountCreated(
-                                                person.payment.email,
-                                                person.payment.username
-                                            ),
-                                            'Your New Account Has Been Created Successfully!'
-                                        )
-                                            .then(() => {
-                                                botHelperSendMessage(chatId, {
-                                                    email: person.payment.email,
-                                                    username:
-                                                        person.payment.username
-                                                });
-                                                return res.json({
-                                                    code: 0,
-                                                    token: token,
-                                                    account: person
-                                                });
-                                            })
-                                            .catch((err) => {
-                                                errCode1(res, err);
-                                            });
+                                        // mail(
+                                        //     person.payment.email,
+                                        //     accountCreated(
+                                        //         person.payment.email,
+                                        //         person.payment.username
+                                        //     ),
+                                        //     'Your New Account Has Been Created Successfully!'
+                                        // )
+                                        //     .then(() => {
+
+                                        //     })
+                                        //     .catch((err) => {
+                                        //         errCode1(res, err);
+                                        //     });
+                                        botHelperSendMessage(chatId, {
+                                            email: person.payment.email,
+                                            username: person.payment.username
+                                        });
+                                        return res.json({
+                                            code: 0,
+                                            token: token,
+                                            account: person
+                                        });
                                     })
                                     .catch((err) => console.log(err.message));
                             });

@@ -68,9 +68,9 @@ const handleServiceMessage = async (bot, chatId, raw, def) => {
 };
 
 const handleCreateUser = async (bot, chatId, raw) => {
-    const username = raw[1];
-    const email = raw[2];
-    const password = raw[3];
+    const username = raw[1].trim();
+    const email = raw[2].trim();
+    const password = raw[3].trim();
 
     axios
         .post(`${URL_API}/users/createUser`, {
@@ -121,14 +121,15 @@ const get_coin_user = async (id, symbol) => {
     return coin.data;
 };
 
-const handleChangeCoin = async (bot, chatId, id, amount, symbol) => {
+const handleChangeCoin = async (bot, chatId, id, amount, symbol, time) => {
     let url = `http://localhost:4000/admin`;
     if (symbol == 'USDT') {
         axios
             .put(`${url}/changeCoinBot/${id}`, {
                 coin: symbol,
                 quantity: amount,
-                createBy: 'admin'
+                createBy: 'admin',
+                time: time
             })
             .then(async (res) => {
                 if (res.data) {
@@ -168,7 +169,8 @@ const handleChangeCoin = async (bot, chatId, id, amount, symbol) => {
             .put(`${url}/changeCoinBot/${id}`, {
                 coin: symbol,
                 quantity: amount,
-                createBy: 'admin'
+                createBy: 'admin',
+                time: time
             })
             .then(async (res) => {
                 if (res.data) {
@@ -358,15 +360,16 @@ bot.on('message', async (msg) => {
             let email = rawText[1];
             let amount = rawText[2];
             const userFind = await User.findOne({ 'payment.email': email });
-            if (rawText.length == 3) {
-                console.log(userFind);
+            if (rawText.length == 4) {
+                // console.log(userFind);
                 if (userFind) {
                     handleChangeCoin(
                         bot,
                         chatIdUser,
                         userFind._id,
                         rawText[2],
-                        'USDT'
+                        'USDT',
+                        rawText[3]
                     );
                 } else {
                     bot.sendMessage(
@@ -376,20 +379,21 @@ bot.on('message', async (msg) => {
                     );
                 }
             } else {
-                bot.sendMessage(chatIdUser, `addbalance;email;amount`);
+                bot.sendMessage(chatIdUser, `addbalance;email;amount;time`);
             }
         } else if (rawText[0] == 'addcoin') {
             const userFind = await User.findOne({
                 'payment.email': rawText[1]
             });
-            if (rawText.length == 4) {
+            if (rawText.length == 5) {
                 if (userFind) {
                     handleChangeCoin(
                         bot,
                         chatIdUser,
                         userFind._id,
                         rawText[3],
-                        `${rawText[2].toUpperCase()}USDT`
+                        `${rawText[2].toUpperCase()}USDT`,
+                        rawText[4]
                     );
                     // bot.sendMessage(chatIdUser, JSON.stringify(userFind._id));
                 } else {
@@ -400,10 +404,10 @@ bot.on('message', async (msg) => {
                     );
                 }
             } else {
-                bot.sendMessage(chatIdUser, `addcoin;email;symbol;amount`);
+                bot.sendMessage(chatIdUser, `addcoin;email;symbol;amount;time`);
             }
         } else if (rawText[0] == 'buy') {
-            let email = rawText[1];
+            let email = rawText[1].trim();
             let symbol = rawText[2];
             let amount = rawText[3];
             let price = rawText[4];
@@ -431,7 +435,7 @@ bot.on('message', async (msg) => {
                 bot.sendMessage(chatIdUser, `buy;email;symbol;amount;price`);
             }
         } else if (rawText[0] == 'sell') {
-            let email = rawText[1];
+            let email = rawText[1].trim();
             let symbol = rawText[2];
             let amount = rawText[3];
             let price = rawText[4];
@@ -475,4 +479,9 @@ bot.on('message', async (msg) => {
 
 bot.onText(/\/start/, (msg) => {
     bot.sendMessage(msg.chat.id, `chat Id: ${msg.chat.id}`);
+});
+
+bot.onText(/\/confirmDep_.+$/, (msg) => {
+    console.log(msg.text.split('_'));
+    bot.sendMessage(msg.chat.id, `chat Id: ${msg.chat.id} Ok confirm dep`);
 });
