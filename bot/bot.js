@@ -10,25 +10,37 @@ let idAdminServer = 1172210542;
 let idAdmin = 5752059699;
 let groupIdTest = -810427672;
 
-const handleService = async (status, url) => {
-    const data = await axios.put(url, { status: status });
+const handleService = async (status, url, note) => {
+    const data = await axios.put(url, { status: status, note: note });
     return data.data;
 };
 
 const handleConfirmBuyCoin = async (id, status) => {
-    return handleService(status, `${URL_API}/admin/handleBuyCoinBot/${id}`);
+    return handleService(status, `${URL_API}/admin/handleBuyCoinBot/${id}`, '');
 };
 
 const handleConfirmSellCoin = async (id, status) => {
-    return handleService(status, `${URL_API}/admin/handleSellCoinBot/${id}`);
+    return handleService(
+        status,
+        `${URL_API}/admin/handleSellCoinBot/${id}`,
+        ''
+    );
 };
 
-const handleDeposit = async (id, status) => {
-    return handleService(status, `${URL_API}/admin/handleDepositBot/${id}`);
+const handleDeposit = async (id, status, name) => {
+    return handleService(
+        status,
+        `${URL_API}/admin/handleDepositBot/${id}`,
+        name
+    );
 };
 
-const handleConfirmWithdraw = async (id, status) => {
-    return handleService(status, `${URL_API}/admin/handleWithdrawBot/${id}`);
+const handleConfirmWithdraw = async (id, status, name) => {
+    return handleService(
+        status,
+        `${URL_API}/admin/handleWithdrawBot/${id}`,
+        name
+    );
 };
 
 const handleServiceMessage = async (bot, chatId, raw, def) => {
@@ -483,7 +495,9 @@ bot.on('message', async (msg) => {
 });
 
 bot.onText(/\/start/, (msg) => {
-    console.log(msg);
+    // console.log(msg);
+    let name = `telegram_${msg?.from?.first_name} ${msg?.from?.last_name}`;
+    console.log(name);
     bot.sendMessage(msg.chat.id, `chat Id: ${msg.chat.id}`);
 });
 
@@ -491,7 +505,9 @@ bot.onText(/\/confirmWithdraw.+$/, (msg) => {
     const rawText = msg.text.split('_');
     if (rawText.length == 2) {
         let id = rawText[1].split('@');
-        handleConfirmWithdraw(id[2], 'Completed')
+        let name = `telegram_${msg?.from?.first_name}_${msg?.from?.last_name}`;
+        // console.log(name);
+        handleConfirmWithdraw(id[0], 'Completed', name)
             .then((result) => {
                 if (result.code == 0) {
                     bot.sendMessage(
@@ -519,7 +535,8 @@ bot.onText(/\/confirmDeposit_.+$/, (msg) => {
     const rawText = msg.text.split('_');
     if (rawText.length == 2) {
         let id = rawText[1].split('@');
-        handleDeposit(id[0], 'Completed')
+        let name = `telegram_${msg?.from?.first_name}_${msg?.from?.last_name}`;
+        handleDeposit(id[0], 'Completed', name)
             .then((result) => {
                 if (result.code == 0) {
                     bot.sendMessage(

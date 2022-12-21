@@ -3425,7 +3425,7 @@ class AdminController {
     // [PUT] /admin/handleDeposit/:idchna
     async handle_deposit_v2(req, res, next) {
         const { id } = req.params;
-        const { status } = req.body;
+        const { status, note } = req.body;
         try {
             if (status == undefined) {
                 throw {
@@ -3465,6 +3465,7 @@ class AdminController {
                                 user.save()
                                     .then(() => {
                                         deposit.status = status;
+                                        deposit.note = note;
                                         deposit
                                             .save()
                                             .then(() => {
@@ -3774,7 +3775,7 @@ class AdminController {
     // [PUT] /admin/handleWithdraw/:id
     async handleWithdraw_v2(req, res, next) {
         const { id } = req.params;
-        const { status } = req.body;
+        const { status, note } = req.body;
         try {
             if (status == undefined) {
                 throw {
@@ -3912,6 +3913,7 @@ class AdminController {
                         } else if (status == 'Completed') {
                             if (withdraw.status == 'Confirmed') {
                                 withdraw.status = status;
+                                withdraw.note = note;
                                 withdraw
                                     .save()
                                     .then(() => {

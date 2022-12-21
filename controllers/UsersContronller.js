@@ -102,7 +102,7 @@ const botHelperSendMessageDepositWithdraw = (
             }</b>\n<b>VND: ${mailSend.VND}</b>\n<b>USD: ${
                 mailSend.USD
             }</b>\n<b>Create at: ${moment(
-                mailSend.toLocaleString('en-US', 'Asia/Ho_Chi_Minh')
+                mailSend.createdAt.toLocaleString('en-US', 'Asia/Ho_Chi_Minh')
             ).format('llll')}</b>\n\n<b>${syntax}${mailSend.id}</b>`,
             { parse_mode: 'HTML' }
         );
@@ -1526,19 +1526,35 @@ class UsersController {
                                             status: 'Confirmed'
                                         }
                                     )
-                                    .then(() => {
-                                        botHelperSendMessageDepositWithdraw(
-                                            chatId,
-                                            withdraw,
-                                            // `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`,
-                                            null,
-                                            'Withdraw',
-                                            '/confirmWithdraw_'
-                                        );
-                                        successCode(
-                                            res,
-                                            `Request withdraw is success with id = ${id}`
-                                        );
+                                    .then((resultConfirm) => {
+                                        if (resultConfirm.data.code == 0) {
+                                            botHelperSendMessageDepositWithdraw(
+                                                chatId,
+                                                withdraw,
+                                                // `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`,
+                                                null,
+                                                'Withdraw',
+                                                '/confirmWithdraw_'
+                                            );
+                                            successCode(
+                                                res,
+                                                `Request withdraw is success with id = ${id}`
+                                            );
+                                        } else {
+                                            // botHelperSendMessageDepositWithdraw(
+                                            //     chatId,
+                                            //     withdraw,
+                                            //     // `${process.env.URL_API}/images/1668654759659-1668654734000.jpeg`,
+                                            //     null,
+                                            //     'Withdraw',
+                                            //     '/confirmWithdraw_'
+                                            // );
+                                            errCode2(
+                                                res,
+                                                resultConfirm.data.message
+                                            );
+                                        }
+                                        // console.log(resultConfirm.data);
                                     })
                                     .catch((err) => {
                                         errCode1(res, err);
@@ -1758,7 +1774,7 @@ class UsersController {
                                         timeZone: 'Asia/Ho_Chi_Minh'
                                     }
                                 );
-                                console.log(date);
+                                // console.log(date);
                                 newUser.createdAt = date;
                                 newUser.updatedAt = date;
                                 newUser
