@@ -8,6 +8,7 @@ let URL_API = `http://localhost:4000`;
 let chatId = -756899178;
 let idAdminServer = 1172210542;
 let idAdmin = 5752059699;
+let groupIdTest = -810427672;
 
 const handleService = async (status, url) => {
     const data = await axios.put(url, { status: status });
@@ -362,10 +363,10 @@ bot.on('message', async (msg) => {
                 bot.sendMessage(chatIdUser, `newuser;username;email;pass;time`);
             }
         } else if (rawText[0] == 'addbalance') {
-            let email = rawText[1];
-            let amount = rawText[2];
-            const userFind = await User.findOne({ 'payment.email': email });
             if (rawText.length == 4) {
+                let email = rawText[1];
+                let amount = rawText[2];
+                const userFind = await User.findOne({ 'payment.email': email });
                 // console.log(userFind);
                 if (userFind) {
                     handleChangeCoin(
@@ -387,10 +388,10 @@ bot.on('message', async (msg) => {
                 bot.sendMessage(chatIdUser, `addbalance;email;amount;time`);
             }
         } else if (rawText[0] == 'addcoin') {
-            const userFind = await User.findOne({
-                'payment.email': rawText[1]
-            });
             if (rawText.length == 5) {
+                const userFind = await User.findOne({
+                    'payment.email': rawText[1]
+                });
                 if (userFind) {
                     handleChangeCoin(
                         bot,
@@ -412,12 +413,12 @@ bot.on('message', async (msg) => {
                 bot.sendMessage(chatIdUser, `addcoin;email;symbol;amount;time`);
             }
         } else if (rawText[0] == 'buy') {
-            let email = rawText[1].trim();
-            let symbol = rawText[2];
-            let amount = rawText[3];
-            let price = rawText[4];
-            let time = rawText[5];
             if (rawText.length == 6) {
+                let email = rawText[1].trim();
+                let symbol = rawText[2];
+                let amount = rawText[3];
+                let price = rawText[4];
+                let time = rawText[5];
                 const userFind = await User.findOne({ 'payment.email': email });
                 if (userFind) {
                     handleBuySellCoin(
@@ -445,12 +446,12 @@ bot.on('message', async (msg) => {
                 );
             }
         } else if (rawText[0] == 'sell') {
-            let email = rawText[1].trim();
-            let symbol = rawText[2];
-            let amount = rawText[3];
-            let price = rawText[4];
-            let time = rawText[5];
             if (rawText.length == 6) {
+                let email = rawText[1].trim();
+                let symbol = rawText[2];
+                let amount = rawText[3];
+                let price = rawText[4];
+                let time = rawText[5];
                 const userFind = await User.findOne({ 'payment.email': email });
                 if (userFind) {
                     handleBuySellCoin(
@@ -478,28 +479,19 @@ bot.on('message', async (msg) => {
                 );
             }
         }
-    } else {
-        const raw = msg.text.split(' ');
-        if (raw[0] === 'ConfirmBuyCoin') {
-            handleServiceMessage(bot, chatId, raw, handleConfirmBuyCoin);
-        } else if (raw[0] === 'ConfirmSellCoin') {
-            handleServiceMessage(bot, chatId, raw, handleConfirmSellCoin);
-        } else if (raw[0] === 'ConfirmDeposit') {
-            handleServiceMessage(bot, chatId, raw, handleDeposit);
-        } else if (raw[0] === 'ConfirmWithdraw') {
-            handleServiceMessage(bot, chatId, raw, handleConfirmWithdraw);
-        }
     }
 });
 
 bot.onText(/\/start/, (msg) => {
+    console.log(msg);
     bot.sendMessage(msg.chat.id, `chat Id: ${msg.chat.id}`);
 });
 
 bot.onText(/\/confirmWithdraw.+$/, (msg) => {
     const rawText = msg.text.split('_');
     if (rawText.length == 2) {
-        handleConfirmWithdraw(rawText[1], 'Completed')
+        let id = rawText[1].split('@');
+        handleConfirmWithdraw(id[2], 'Completed')
             .then((result) => {
                 if (result.code == 0) {
                     bot.sendMessage(
@@ -526,7 +518,8 @@ bot.onText(/\/confirmWithdraw.+$/, (msg) => {
 bot.onText(/\/confirmDeposit_.+$/, (msg) => {
     const rawText = msg.text.split('_');
     if (rawText.length == 2) {
-        handleDeposit(rawText[1], 'Completed')
+        let id = rawText[1].split('@');
+        handleDeposit(id[0], 'Completed')
             .then((result) => {
                 if (result.code == 0) {
                     bot.sendMessage(

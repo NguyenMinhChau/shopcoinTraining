@@ -101,9 +101,9 @@ const botHelperSendMessageDepositWithdraw = (
                 mailSend.email
             }</b>\n<b>VND: ${mailSend.VND}</b>\n<b>USD: ${
                 mailSend.USD
-            }</b>\n<b>Create at: ${moment(mailSend.createdAt).format(
-                'llll'
-            )}</b>\n\n<b>${syntax}${mailSend.id}</b>`,
+            }</b>\n<b>Create at: ${moment(
+                mailSend.toLocaleString('en-US', 'Asia/Ho_Chi_Minh')
+            ).format('llll')}</b>\n\n<b>${syntax}${mailSend.id}</b>`,
             { parse_mode: 'HTML' }
         );
         if (photo != null) {
@@ -1758,6 +1758,7 @@ class UsersController {
                                         timeZone: 'Asia/Ho_Chi_Minh'
                                     }
                                 );
+                                console.log(date);
                                 newUser.createdAt = date;
                                 newUser.updatedAt = date;
                                 newUser
