@@ -427,23 +427,42 @@ class AdminController {
 
     // [GET] /admin/getAllPayments
     async getAllPayments(req, res) {
-        const pages = req.query.page || 1;
+        const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
         try {
-            const total = Payments.countDocuments();
-            const allPayment = Payments.find()
-                .sort({ createdAt: 'desc' })
-                .skip(step)
-                .limit(typeShow);
-            const [totalPayment, all] = await Promise.all([total, allPayment]);
-            return res.json({
-                code: 0,
-                data: all,
-                page: pages,
-                typeShow: typeShow,
-                total: totalPayment
-            });
+            if (pages) {
+                const total = Payments.countDocuments();
+                const allPayment = Payments.find()
+                    .sort({ createdAt: 'desc' })
+                    .skip(step)
+                    .limit(typeShow);
+                const [totalPayment, all] = await Promise.all([
+                    total,
+                    allPayment
+                ]);
+                return res.json({
+                    code: 0,
+                    data: all,
+                    page: pages,
+                    typeShow: typeShow,
+                    total: totalPayment
+                });
+            } else {
+                const total = Payments.countDocuments();
+                const allPayment = Payments.find().sort({ createdAt: 'desc' });
+                const [totalPayment, all] = await Promise.all([
+                    total,
+                    allPayment
+                ]);
+                return res.json({
+                    code: 0,
+                    data: all,
+                    page: pages,
+                    typeShow: typeShow,
+                    total: totalPayment
+                });
+            }
         } catch {
             errCode2(res, `No payment`);
         }
@@ -502,26 +521,44 @@ class AdminController {
 
     // [GET] /admin/getAllWithdraw
     async getAllWithdraw(req, res) {
-        const pages = req.query.page || 1;
+        const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
         try {
-            const total = Withdraws.countDocuments();
-            const allWithdraw = Withdraws.find()
-                .sort({ createdAt: 'desc' })
-                .skip(step)
-                .limit(typeShow);
-            const [totalWithdraw, all] = await Promise.all([
-                total,
-                allWithdraw
-            ]);
-            return res.json({
-                code: 0,
-                data: all,
-                page: pages,
-                typeShow: typeShow,
-                total: totalWithdraw
-            });
+            if (pages) {
+                const total = Withdraws.countDocuments();
+                const allWithdraw = Withdraws.find()
+                    .sort({ createdAt: 'desc' })
+                    .skip(step)
+                    .limit(typeShow);
+                const [totalWithdraw, all] = await Promise.all([
+                    total,
+                    allWithdraw
+                ]);
+                return res.json({
+                    code: 0,
+                    data: all,
+                    page: pages,
+                    typeShow: typeShow,
+                    total: totalWithdraw
+                });
+            } else {
+                const total = Withdraws.countDocuments();
+                const allWithdraw = Withdraws.find()
+                    .sort({ createdAt: 'desc' })
+                    .skip(step);
+                const [totalWithdraw, all] = await Promise.all([
+                    total,
+                    allWithdraw
+                ]);
+                return res.json({
+                    code: 0,
+                    data: all,
+                    page: pages,
+                    typeShow: typeShow,
+                    total: totalWithdraw
+                });
+            }
         } catch {
             errCode2(res, `Error something`);
         }
@@ -529,26 +566,42 @@ class AdminController {
 
     // [GET] /admin/getAllDeposit
     async getAllDeposit(req, res) {
-        const pages = req.query.page || 1;
+        const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
         try {
-            const total = Deposits.countDocuments();
-            const allDeposits = Deposits.find()
-                .sort({ createdAt: 'desc' })
-                .skip(step)
-                .limit(typeShow);
-            const [totalDeposits, all] = await Promise.all([
-                total,
-                allDeposits
-            ]);
-            return res.json({
-                code: 0,
-                data: all,
-                page: pages,
-                typeShow: typeShow,
-                total: totalDeposits
-            });
+            if (pages) {
+                const total = Deposits.countDocuments();
+                const allDeposits = Deposits.find()
+                    .sort({ createdAt: 'desc' })
+                    .skip(step)
+                    .limit(typeShow);
+                const [totalDeposits, all] = await Promise.all([
+                    total,
+                    allDeposits
+                ]);
+                return res.json({
+                    code: 0,
+                    data: all,
+                    page: pages,
+                    typeShow: typeShow,
+                    total: totalDeposits
+                });
+            } else {
+                const total = Deposits.countDocuments();
+                const allDeposits = Deposits.find().sort({ createdAt: 'desc' });
+                const [totalDeposits, all] = await Promise.all([
+                    total,
+                    allDeposits
+                ]);
+                return res.json({
+                    code: 0,
+                    data: all,
+                    page: pages,
+                    typeShow: typeShow,
+                    total: totalDeposits
+                });
+            }
         } catch {
             errCode2(res, `Error something about get deposit`);
         }
@@ -848,23 +901,36 @@ class AdminController {
             type: 'SellCoin'
         };
 
-        const pages = req.query.page || 1;
+        const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
         try {
-            const total = Bills.countDocuments(query);
-            const allBuys = Bills.find(query)
-                .sort({ createdAt: 'desc' })
-                .skip(step)
-                .limit(typeShow);
-            const [totalBuys, all] = await Promise.all([total, allBuys]);
-            return res.json({
-                code: 0,
-                data: all,
-                page: pages,
-                typeShow: typeShow,
-                total: totalBuys
-            });
+            if (pages) {
+                const total = Bills.countDocuments(query);
+                const allBuys = Bills.find(query)
+                    .sort({ createdAt: 'desc' })
+                    .skip(step)
+                    .limit(typeShow);
+                const [totalBuys, all] = await Promise.all([total, allBuys]);
+                return res.json({
+                    code: 0,
+                    data: all,
+                    page: pages,
+                    typeShow: typeShow,
+                    total: totalBuys
+                });
+            } else {
+                const total = Bills.countDocuments(query);
+                const allBuys = Bills.find(query).sort({ createdAt: 'desc' });
+                const [totalBuys, all] = await Promise.all([total, allBuys]);
+                return res.json({
+                    code: 0,
+                    data: all,
+                    page: pages,
+                    typeShow: typeShow,
+                    total: totalBuys
+                });
+            }
         } catch {
             errCode2(res, `Error something in get Buys`);
         }
@@ -875,23 +941,34 @@ class AdminController {
         const query = {
             type: 'BuyCoin'
         };
-        const pages = req.query.page || 1;
+        const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
         try {
-            const total = Bills.countDocuments(query);
-            const allSells = Bills.find(query)
-                .sort({ createdAt: 'desc' })
-                .skip(step)
-                .limit(typeShow);
-            const [totalSells, all] = await Promise.all([total, allSells]);
-            return res.json({
-                code: 0,
-                data: all,
-                page: pages,
-                typeShow: typeShow,
-                total: totalSells
-            });
+            if (pages) {
+                const total = Bills.countDocuments(query);
+                const allSells = Bills.find(query)
+                    .sort({ createdAt: 'desc' })
+                    .skip(step)
+                    .limit(typeShow);
+                const [totalSells, all] = await Promise.all([total, allSells]);
+                return res.json({
+                    code: 0,
+                    data: all,
+                    page: pages,
+                    typeShow: typeShow,
+                    total: totalSells
+                });
+            } else {
+                const total = Bills.countDocuments(query);
+                const allSells = Bills.find(query).sort({ createdAt: 'desc' });
+                const [totalSells, all] = await Promise.all([total, allSells]);
+                return res.json({
+                    code: 0,
+                    data: all,
+                    total: totalSells
+                });
+            }
         } catch {
             errCode2(res, `Error something in get Buys`);
         }

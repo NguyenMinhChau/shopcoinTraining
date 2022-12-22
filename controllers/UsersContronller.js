@@ -808,33 +808,103 @@ class UsersController {
     }
 
     // [GET] /users/getAllBuy/:id
-    getAllBuy(req, res) {
+    async getAllBuy(req, res) {
         const { id } = req.params;
-        Users.findById(id, (err, user) => {
-            if (err) methods.errCode1(res, err);
-            if (user) {
-                Bills.find(
-                    {
-                        'buyer.gmailUSer': user.payment.email,
-                        type: 'BuyCoin'
-                        // status: 'Completed'
-                    },
-                    (err, allBuy) => {
-                        if (err) methods.errCode1(res, err);
-                        if (allBuy) {
-                            methods.dataCode(res, allBuy);
-                        } else {
-                            methods.errCode2(
-                                res,
-                                `Bill of buy is empty of user with id ${id}`
-                            );
-                        }
+        const pages = req.query.page;
+        const typeShow = req.query.show || 10;
+        const step = parseInt(pages - 1) * parseInt(typeShow);
+        const { search } = req.query;
+        try {
+            if (pages) {
+                if (search) {
+                    const userFind = await Users.findById(id);
+                    if (userFind) {
+                        const searchBuy = await Bills.find({
+                            'buyer.gmailUSer': userFind.payment.email,
+                            $text: { $search: `/${search}/` }
+                        })
+                            .sort({ createdAt: 'desc' })
+                            .skip(step)
+                            .limit(typeShow);
+
+                        dataCode(res, {
+                            buys: searchBuy,
+                            total: searchBuy.length,
+                            page: pages,
+                            show: typeShow
+                        });
                     }
-                );
+                } else {
+                    const userFind = await Users.findById(id);
+                    if (userFind) {
+                        const allBuy = await Bills.find({
+                            'buyer.gmailUSer': userFind.payment.email,
+                            type: 'BuyCoin'
+                        })
+                            .sort({ createdAt: 'desc' })
+                            .skip(step)
+                            .limit(typeShow);
+
+                        if (allBuy.length > 0) {
+                            const total = allBuy.length;
+                            dataCode(res, {
+                                buys: allBuy,
+                                total: total,
+                                show: typeShow
+                            });
+                        } else {
+                            dataCode(res, allBuy);
+                        }
+                    } else {
+                        throw {
+                            message: `User is not valid with id = ${id}`
+                        };
+                    }
+                }
             } else {
-                methods.errCode2(res, `User is not valid with id = ${id}`);
+                if (search) {
+                    const userFind = await Users.findById(id);
+                    if (userFind) {
+                        const searchBuy = await Bills.find({
+                            'buyer.gmailUSer': userFind.payment.email,
+                            $text: { $search: `/${search}/` }
+                        }).sort({ createdAt: 'desc' });
+
+                        dataCode(res, {
+                            buys: searchBuy,
+                            total: searchBuy.length,
+                            page: pages,
+                            show: typeShow
+                        });
+                    }
+                } else {
+                    const userFind = await Users.findById(id);
+                    if (userFind) {
+                        const allBuy = await Bills.find({
+                            'buyer.gmailUSer': userFind.payment.email,
+                            type: 'BuyCoin'
+                        }).sort({ createdAt: 'desc' });
+
+                        if (allBuy.length > 0) {
+                            const total = allBuy.length;
+                            dataCode(res, {
+                                buys: allBuy,
+                                total: total,
+                                show: typeShow
+                            });
+                        } else {
+                            throw {
+                                message: `No bill`
+                            };
+                        }
+                    } else {
+                        dataCode(res, allBuy);
+                    }
+                }
             }
-        });
+        } catch (error) {
+            errCode1(res, error);
+        }
     }
 
     // [GET] /users/getAllCoinOfUser/:id

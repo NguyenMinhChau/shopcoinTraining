@@ -11,8 +11,13 @@ let idAdmin = 5752059699;
 let groupIdTest = -810427672;
 
 const handleService = async (status, url, note) => {
-    const data = await axios.put(url, { status: status, note: note });
-    return data.data;
+    try {
+        const data = await axios.put(url, { status: status, note: note });
+
+        return data.data;
+    } catch (err) {
+        console.log(err);
+    }
 };
 
 const handleConfirmBuyCoin = async (id, status) => {
@@ -136,14 +141,22 @@ const get_coin_user = async (id, symbol) => {
     return coin.data;
 };
 
-const handleChangeCoin = async (bot, chatId, id, amount, symbol, time) => {
+const handleChangeCoin = async (
+    bot,
+    chatId,
+    id,
+    amount,
+    symbol,
+    time,
+    createBy
+) => {
     let url = `http://localhost:4000/admin`;
     if (symbol == 'USDT') {
         axios
             .put(`${url}/changeCoinBot/${id}`, {
                 coin: symbol,
                 quantity: amount,
-                createBy: 'admin',
+                createBy: createBy,
                 time: time
             })
             .then(async (res) => {
@@ -184,7 +197,7 @@ const handleChangeCoin = async (bot, chatId, id, amount, symbol, time) => {
             .put(`${url}/changeCoinBot/${id}`, {
                 coin: symbol,
                 quantity: amount,
-                createBy: 'admin',
+                createBy: createBy,
                 time: time
             })
             .then(async (res) => {
@@ -328,6 +341,7 @@ const handleBuySellCoin = async (
                             bill._id,
                             'Completed'
                         );
+                        console.log(completeSellCoin);
 
                         if (completeSellCoin.code == 0) {
                             const get_coin = await get_coin_user(id, symbol);
@@ -342,7 +356,7 @@ const handleBuySellCoin = async (
                             } else {
                                 bot.sendMessage(
                                     chatId,
-                                    `${completeBuyCoin.message}`,
+                                    `${completeSellCoin.message}`,
                                     { parse_mode: 'HTML' }
                                 );
                             }
@@ -367,135 +381,155 @@ const handleBuySellCoin = async (
 };
 
 bot.on('message', async (msg) => {
-    const chatIdUser = msg.chat.id;
-    if (chatIdUser == chatId) {
-    } else if (chatIdUser == idAdmin || chatIdUser == idAdminServer) {
-        const rawText = msg.text.split(';');
-        if (rawText[0] == 'newuser') {
-            if (rawText.length == 5) {
-                handleCreateUser(bot, chatIdUser, rawText);
-            } else {
-                bot.sendMessage(chatIdUser, `newuser;username;email;pass;time`);
-            }
-        } else if (rawText[0] == 'addbalance') {
-            if (rawText.length == 4) {
-                let email = rawText[1];
-                let amount = rawText[2];
-                const userFind = await User.findOne({ 'payment.email': email });
-                // console.log(userFind);
-                if (userFind) {
-                    handleChangeCoin(
-                        bot,
-                        chatIdUser,
-                        userFind._id,
-                        rawText[2],
-                        'USDT',
-                        rawText[3]
-                    );
+    if (msg.text.includes(',')) {
+        bot.sendMessage(msg.chat.id, 'Error command');
+    } else {
+        const chatIdUser = msg.chat.id;
+        if (chatIdUser == chatId) {
+        } else if (chatIdUser == idAdmin || chatIdUser == idAdminServer) {
+            const rawText = msg.text.split(';');
+            if (rawText[0] == 'newuser') {
+                if (rawText.length == 5) {
+                    handleCreateUser(bot, chatIdUser, rawText);
                 } else {
                     bot.sendMessage(
                         chatIdUser,
-                        `<b>Error Change Coin failed</b> \n <b>${rawText[1]} is valid ?</b>`,
-                        { parse_mode: 'HTML' }
+                        `newuser;username;email;pass;time`
                     );
                 }
-            } else {
-                bot.sendMessage(chatIdUser, `addbalance;email;amount;time`);
-            }
-        } else if (rawText[0] == 'addcoin') {
-            if (rawText.length == 5) {
-                const userFind = await User.findOne({
-                    'payment.email': rawText[1]
-                });
-                if (userFind) {
-                    handleChangeCoin(
-                        bot,
-                        chatIdUser,
-                        userFind._id,
-                        rawText[3],
-                        `${rawText[2].toUpperCase()}USDT`,
-                        rawText[4]
-                    );
-                    // bot.sendMessage(chatIdUser, JSON.stringify(userFind._id));
+            } else if (rawText[0] == 'addbalance') {
+                if (rawText.length == 4) {
+                    let email = rawText[1];
+                    let amount = rawText[2];
+                    let createBy = `telegram_${msg.from.first_name}_${msg.from.last_name}`;
+                    const userFind = await User.findOne({
+                        'payment.email': email
+                    });
+                    // console.log(userFind);
+                    if (userFind) {
+                        handleChangeCoin(
+                            bot,
+                            chatIdUser,
+                            userFind._id,
+                            amount,
+                            'USDT',
+                            rawText[3],
+                            createBy
+                        );
+                    } else {
+                        bot.sendMessage(
+                            chatIdUser,
+                            `<b>Error Change Coin failed</b> \n <b>${rawText[1]} is valid ?</b>`,
+                            { parse_mode: 'HTML' }
+                        );
+                    }
+                } else {
+                    bot.sendMessage(chatIdUser, `addbalance;email;amount;time`);
+                }
+            } else if (rawText[0] == 'addcoin') {
+                let createBy = `telegram_${msg.from.first_name}_${msg.from.last_name}`;
+                if (rawText.length == 5) {
+                    const userFind = await User.findOne({
+                        'payment.email': rawText[1]
+                    });
+                    if (userFind) {
+                        handleChangeCoin(
+                            bot,
+                            chatIdUser,
+                            userFind._id,
+                            rawText[3],
+                            `${rawText[2].toUpperCase()}USDT`,
+                            rawText[4],
+                            createBy
+                        );
+                        // bot.sendMessage(chatIdUser, JSON.stringify(userFind._id));
+                    } else {
+                        bot.sendMessage(
+                            chatIdUser,
+                            `<b>Error Change Coin failed</b> \n <b>${rawText[1]} is valid ?</b>`,
+                            { parse_mode: 'HTML' }
+                        );
+                    }
                 } else {
                     bot.sendMessage(
                         chatIdUser,
-                        `<b>Error Change Coin failed</b> \n <b>${rawText[1]} is valid ?</b>`,
-                        { parse_mode: 'HTML' }
+                        `addcoin;email;symbol;amount;time`
                     );
                 }
-            } else {
-                bot.sendMessage(chatIdUser, `addcoin;email;symbol;amount;time`);
-            }
-        } else if (rawText[0] == 'buy') {
-            if (rawText.length == 6) {
-                let email = rawText[1].trim();
-                let symbol = rawText[2];
-                let amount = rawText[3];
-                let price = rawText[4];
-                let time = rawText[5];
-                const createBy = `telegram_${msg.from.first_name}${msg.from.last_name}`;
-                const userFind = await User.findOne({ 'payment.email': email });
-                if (userFind) {
-                    handleBuySellCoin(
-                        bot,
-                        chatIdUser,
-                        userFind._id,
-                        email,
-                        amount,
-                        `${symbol.toUpperCase()}USDT`,
-                        price,
-                        'BuyCoin',
-                        userFind.fee,
-                        time,
-                        createBy
-                    );
+            } else if (rawText[0] == 'buy') {
+                if (rawText.length == 6) {
+                    let email = rawText[1].trim();
+                    let symbol = rawText[2];
+                    let amount = rawText[3];
+                    let price = rawText[4];
+                    let time = rawText[5];
+                    const createBy = `telegram_${msg.from.first_name}${msg.from.last_name}`;
+                    const userFind = await User.findOne({
+                        'payment.email': email
+                    });
+                    if (userFind) {
+                        handleBuySellCoin(
+                            bot,
+                            chatIdUser,
+                            userFind._id,
+                            email,
+                            amount,
+                            `${symbol.toUpperCase()}USDT`,
+                            price,
+                            'BuyCoin',
+                            userFind.fee,
+                            time,
+                            createBy
+                        );
+                    } else {
+                        bot.sendMessage(
+                            chatIdUser,
+                            `User is not valid with email = ${email}`
+                        );
+                    }
                 } else {
                     bot.sendMessage(
                         chatIdUser,
-                        `User is not valid with email = ${email}`
+                        `buy;email;symbol;amount;price;time`
                     );
                 }
-            } else {
-                bot.sendMessage(
-                    chatIdUser,
-                    `buy;email;symbol;amount;price;time`
-                );
-            }
-        } else if (rawText[0] == 'sell') {
-            if (rawText.length == 6) {
-                let email = rawText[1].trim();
-                let symbol = rawText[2];
-                let amount = rawText[3];
-                let price = rawText[4];
-                let time = rawText[5];
-                const createBy = `telegram_${msg.from.first_name}${msg.from.last_name}`;
-                const userFind = await User.findOne({ 'payment.email': email });
-                if (userFind) {
-                    handleBuySellCoin(
-                        bot,
-                        chatIdUser,
-                        userFind._id,
-                        email,
-                        amount,
-                        `${symbol.toUpperCase()}USDT`,
-                        price,
-                        'SellCoin',
-                        userFind.fee,
-                        time,
-                        createBy
-                    );
+            } else if (rawText[0] == 'sell') {
+                if (rawText.length == 6) {
+                    let email = rawText[1].trim();
+                    let symbol = rawText[2];
+                    let amount = rawText[3];
+                    let price = rawText[4];
+                    let time = rawText[5];
+                    const createBy = `telegram_${msg.from.first_name}${msg.from.last_name}`;
+                    const userFind = await User.findOne({
+                        'payment.email': email
+                    });
+                    if (userFind) {
+                        handleBuySellCoin(
+                            bot,
+                            chatIdUser,
+                            userFind._id,
+                            email,
+                            amount,
+                            `${symbol.toUpperCase()}USDT`,
+                            price,
+                            'SellCoin',
+                            userFind.fee,
+                            time,
+                            createBy
+                        );
+                    } else {
+                        bot.sendMessage(
+                            chatIdUser,
+                            `User is not valid with email = ${email}`
+                        );
+                    }
                 } else {
                     bot.sendMessage(
                         chatIdUser,
-                        `User is not valid with email = ${email}`
+                        `sell;email;symbol;amount;price;time`
                     );
                 }
-            } else {
-                bot.sendMessage(
-                    chatIdUser,
-                    `sell;email;symbol;amount;price;time`
-                );
             }
         }
     }

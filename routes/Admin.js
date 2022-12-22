@@ -120,7 +120,7 @@ router.get('/getUser/:id', AdminController.getUser);
 // [GET]/admin/getAllSell
 router.get('/getAllSell', AdminController.getAllSell);
 
-// [GET]/admin/getAllBuy
+// [GET]/admin/getAllBuy/:search
 router.get('/getAllBuy', AdminController.getAllBuy);
 
 // [GET] /admin/getSell

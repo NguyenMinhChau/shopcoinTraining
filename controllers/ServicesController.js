@@ -1,4 +1,6 @@
 const { errCode1, errCode2, dataCode, successCode } = require('../function');
+const Bill = require('../models/Bills');
+const Deposit = require('../models/Deposits');
 const Ranks = require('../models/Ranks');
 const Users = require('../models/User');
 
@@ -33,6 +35,25 @@ class ServicesController {
     // [DELETE] /services/delete_user
     async delete_all_user(req, res, next) {
         try {
+            // const bills = await Deposit.find();
+            // // dataCode(res, bills);
+            // if (bills) {
+            //     const bill_select = bills.filter((bill) => {
+            //         if (bill.user == 'yenphuongcao1190@gmail.com') {
+            //             return bill;
+            //         }
+            //     });
+            //     const bill_non_select = bills.filter((bill) => {
+            //         if (bill.user != 'yenphuongcao1190@gmail.com') {
+            //             return bill;
+            //         }
+            //     });
+            //     bill_non_select.forEach(async (bill) => {
+            //         await Deposit.deleteOne({ _id: bill._id });
+            //         console.log('OK');
+            //     });
+            //     dataCode(res, bill_select);
+            // }
             // const users = await Users.find();
             // if (users) {
             //     // dataCode(res, users);
