@@ -20,7 +20,8 @@ const bill = new mongoose.Schema(
         amountUsd: { type: Number, default: 0 },
         symbol: { type: String, default: '' },
         price: { type: Number, default: 0 },
-        type: { type: String, default: '' }
+        type: { type: String, default: '' },
+        createBy: { type: String, default: '' }
     },
     { timestamps: true }
 );

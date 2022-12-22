@@ -81,7 +81,7 @@ router.post(
 router.put(
     '/updateImageDeposit/:id',
     checkAuth,
-    upload.array('image', 3),
+    single.single('statement'),
     UsersContronller.updateImageDeposit
 );
 

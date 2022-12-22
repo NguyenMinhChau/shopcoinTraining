@@ -101,9 +101,9 @@ const botHelperSendMessageDepositWithdraw = (
                 mailSend.email
             }</b>\n<b>VND: ${mailSend.VND}</b>\n<b>USD: ${
                 mailSend.USD
-            }</b>\n<b>Create at: ${moment(
-                mailSend.createdAt.toLocaleString('en-US', 'Asia/Ho_Chi_Minh')
-            ).format('llll')}</b>\n\n<b>${syntax}${mailSend.id}</b>`,
+            }</b>\n<b>Create at: ${moment(mailSend.createdAt).format(
+                'llll'
+            )}</b>\n\n<b>${syntax}${mailSend.id}</b>`,
             { parse_mode: 'HTML' }
         );
         if (photo != null) {
@@ -167,7 +167,8 @@ const createNewBill = async (
     type,
     typeUser,
     rank,
-    new_fee
+    new_fee,
+    createBy
 ) => {
     const result = new Promise((resolve, reject) => {
         const newBill = new Bills({
@@ -181,7 +182,8 @@ const createNewBill = async (
             amountUsd: amountUsd,
             symbol: symbol,
             price: price,
-            type: type
+            type: type,
+            createBy: createBy
         });
         newBill
             .save()
@@ -210,7 +212,8 @@ const createNewBillFutures = async (
     typeUser,
     rank,
     new_fee,
-    fromDate
+    fromDate,
+    createBy
 ) => {
     const result = new Promise((resolve, reject) => {
         if (fromDate == '0') {
@@ -225,7 +228,8 @@ const createNewBillFutures = async (
                 amountUsd: amountUsd,
                 symbol: symbol,
                 price: price,
-                type: type
+                type: type,
+                createBy: createBy
             });
             const date = new Date(Date.now()).toLocaleString('env-US', {
                 timeZone: 'Asia/Ho_Chi_Minh'
@@ -257,7 +261,8 @@ const createNewBillFutures = async (
                 amountUsd: amountUsd,
                 symbol: symbol,
                 price: price,
-                type: type
+                type: type,
+                createBy: createBy
             });
             const date = new Date(fromDate).toLocaleString('env-US', {
                 timeZone: 'Asia/Ho_Chi_Minh'
@@ -290,7 +295,8 @@ const buyCoin = async (
     amountUsd,
     symbol,
     price,
-    type
+    type,
+    createBy
 ) => {
     if (
         checkWallet(
@@ -406,7 +412,8 @@ const buyCoin = async (
             type,
             user.payment.rule,
             user.rank,
-            fee
+            fee,
+            createBy
         );
         resultCreateBill
             .then((value) => {
@@ -430,7 +437,17 @@ const buyCoin = async (
     }
 };
 
-function sellCoin(req, res, user, amount, amountUsd, symbol, price, type) {
+const sellCoin = async (
+    req,
+    res,
+    user,
+    amount,
+    amountUsd,
+    symbol,
+    price,
+    type,
+    createBy
+) => {
     let fee = parseFloat(user.fee);
     const resultCreateBill = createNewBill(
         user.payment.email,
@@ -441,7 +458,8 @@ function sellCoin(req, res, user, amount, amountUsd, symbol, price, type) {
         type,
         user.payment.rule,
         user.rank,
-        fee
+        fee,
+        createBy
     );
     resultCreateBill
         .then((value) => {
@@ -454,7 +472,7 @@ function sellCoin(req, res, user, amount, amountUsd, symbol, price, type) {
             );
         })
         .catch((err) => errCode1(res, err));
-}
+};
 
 ///-------------------------------------- Futures --------------------------------------------
 
@@ -465,7 +483,8 @@ const buyCoinFuture = async (
     amountUsd,
     symbol,
     price,
-    type
+    type,
+    createBy
 ) => {
     const p = new Promise((resolve, reject) => {
         const newBuyOrder = createNewBillFutures(
@@ -478,7 +497,8 @@ const buyCoinFuture = async (
             user.payment.rule,
             user.rank,
             user.fee,
-            fromDate
+            fromDate,
+            createBy
         );
         newBuyOrder
             .then((bill) => {
@@ -498,7 +518,8 @@ const sellCoinFutures = async (
     amountUsd,
     symbol,
     price,
-    type
+    type,
+    createBy
 ) => {
     const p = new Promise((resolve, reject) => {
         const resultCreateBill = createNewBillFutures(
@@ -511,7 +532,8 @@ const sellCoinFutures = async (
             user.payment.rule,
             user.rank,
             user.fee,
-            fromDate
+            fromDate,
+            createBy
         );
         resultCreateBill
             .then((bill) => {
@@ -564,82 +586,92 @@ class UsersController {
                 const { cccdFont, cccdBeside, licenseFont, licenseBeside } =
                     req.files;
 
-                const email = user.payment.email;
-
-                const destination = cccdFont[0].destination;
-
-                const nameIamgeCCCDFont = cccdFont[0].originalname;
-                const nameIamgeCccdBeside = cccdBeside[0].originalname;
-                const nameIamgeLicenseFont = licenseFont[0].originalname;
-                const nameIamgeLicenseBeside = licenseBeside[0].originalname;
-
-                const pathIamgeCCCDFont = cccdFont[0].path;
-                const pathIamgeCccdBeside = cccdBeside[0].path;
-                const pathIamgeLicenseFont = licenseFont[0].path;
-                const pathIamgeLicenseBeside = licenseBeside[0].path;
-
-                const newPathIamgeCCCDFont = Path.join(
-                    destination,
-                    date + '-' + email + '-' + nameIamgeCCCDFont
-                );
-                const newPathIamgeCccdBeside = Path.join(
-                    destination,
-                    date + '-' + email + '-' + nameIamgeCccdBeside
-                );
-                const newPathIamgeLicenseFont = Path.join(
-                    destination,
-                    date + '-' + email + '-' + nameIamgeLicenseFont
-                );
-                const newPathIamgeLicenseBeside = Path.join(
-                    destination,
-                    date + '-' + email + '-' + nameIamgeLicenseBeside
-                );
-
-                let result1 = await rename_file(
-                    pathIamgeCCCDFont,
-                    newPathIamgeCCCDFont
-                );
-                let result2 = await rename_file(
-                    pathIamgeCccdBeside,
-                    newPathIamgeCccdBeside
-                );
-                let result3 = await rename_file(
-                    pathIamgeLicenseFont,
-                    newPathIamgeLicenseFont
-                );
-                let result4 = await rename_file(
-                    pathIamgeLicenseBeside,
-                    newPathIamgeLicenseBeside
-                );
-                // console.log(result1, result2, result3, result4);
-
                 if (
-                    result1.code == 0 &&
-                    result2.code == 0 &&
-                    result3.code == 0 &&
-                    result4.code == 0
+                    !cccdFont ||
+                    !cccdBeside ||
+                    !licenseFont ||
+                    !licenseBeside
                 ) {
-                    user.uploadCCCDFont = newPathIamgeCCCDFont;
-                    user.uploadCCCDBeside = newPathIamgeCccdBeside;
-                    user.uploadLicenseFont = newPathIamgeLicenseFont;
-                    user.uploadLicenseBeside = newPathIamgeLicenseBeside;
-
-                    user.save()
-                        .then((u) => {
-                            return res.json({
-                                code: 0,
-                                message: `Success !! updated images with id = ${id}`
-                            });
-                        })
-                        .catch((err) => {
-                            return res.status(400).json({
-                                code: 4,
-                                message:
-                                    'Cập nhật thông tin hình ảnh có lỗi khi lưu trên database'
-                            });
-                        });
+                    errCode2(res, 'Image upload is not enough');
                 } else {
-                    return res.json({ message: result1.message });
+                    const email = user.payment.email;
+
+                    const destination = cccdFont[0].destination;
+
+                    const nameIamgeCCCDFont = cccdFont[0].originalname;
+                    const nameIamgeCccdBeside = cccdBeside[0].originalname;
+                    const nameIamgeLicenseFont = licenseFont[0].originalname;
+                    const nameIamgeLicenseBeside =
+                        licenseBeside[0].originalname;
+
+                    const pathIamgeCCCDFont = cccdFont[0].path;
+                    const pathIamgeCccdBeside = cccdBeside[0].path;
+                    const pathIamgeLicenseFont = licenseFont[0].path;
+                    const pathIamgeLicenseBeside = licenseBeside[0].path;
+
+                    const newPathIamgeCCCDFont = Path.join(
+                        destination,
+                        date + '-' + email + '-' + nameIamgeCCCDFont
+                    );
+                    const newPathIamgeCccdBeside = Path.join(
+                        destination,
+                        date + '-' + email + '-' + nameIamgeCccdBeside
+                    );
+                    const newPathIamgeLicenseFont = Path.join(
+                        destination,
+                        date + '-' + email + '-' + nameIamgeLicenseFont
+                    );
+                    const newPathIamgeLicenseBeside = Path.join(
+                        destination,
+                        date + '-' + email + '-' + nameIamgeLicenseBeside
+                    );
+
+                    let result1 = await rename_file(
+                        pathIamgeCCCDFont,
+                        newPathIamgeCCCDFont
+                    );
+                    let result2 = await rename_file(
+                        pathIamgeCccdBeside,
+                        newPathIamgeCccdBeside
+                    );
+                    let result3 = await rename_file(
+                        pathIamgeLicenseFont,
+                        newPathIamgeLicenseFont
+                    );
+                    let result4 = await rename_file(
+                        pathIamgeLicenseBeside,
+                        newPathIamgeLicenseBeside
+                    );
+                    // console.log(result1, result2, result3, result4);
+
+                    if (
+                        result1.code == 0 &&
+                        result2.code == 0 &&
+                        result3.code == 0 &&
+                        result4.code == 0
+                    ) {
+                        user.uploadCCCDFont = newPathIamgeCCCDFont;
+                        user.uploadCCCDBeside = newPathIamgeCccdBeside;
+                        user.uploadLicenseFont = newPathIamgeLicenseFont;
+                        user.uploadLicenseBeside = newPathIamgeLicenseBeside;
+
+                        user.save()
+                            .then((u) => {
+                                return res.json({
+                                    code: 0,
+                                    message: `Success !! updated images with id = ${id}`
+                                });
+                            })
+                            .catch((err) => {
+                                return res.status(400).json({
+                                    code: 4,
+                                    message:
+                                        'Cập nhật thông tin hình ảnh có lỗi khi lưu trên database'
+                                });
+                            });
+                    } else {
+                        return res.json({ message: result1.message });
+                    }
                 }
             } else {
                 return res.status(400).json({
@@ -747,7 +779,8 @@ class UsersController {
 
     // [POST] /users/BuyCoin/
     async BuyCoin(req, res) {
-        const { gmailUser, amount, amountUsd, symbol, price, type } = req.body;
+        const { gmailUser, amount, amountUsd, symbol, price, type, createBy } =
+            req.body;
         Users.findOne({ 'payment.email': gmailUser }, async (err, user) => {
             if (err) {
                 return res.json({ code: 2, message: err.message });
@@ -759,7 +792,17 @@ class UsersController {
                 });
             }
 
-            buyCoin(req, res, user, amount, amountUsd, symbol, price, type);
+            buyCoin(
+                req,
+                res,
+                user,
+                amount,
+                amountUsd,
+                symbol,
+                price,
+                type,
+                createBy
+            );
             // return res.json({ code: 1, message: 'OK', data: user });
         });
     }
@@ -886,7 +929,8 @@ class UsersController {
 
     // [POST] /users/SellCoin/
     async SellCoin(req, res) {
-        const { gmailUser, amount, amountUsd, symbol, price, type } = req.body;
+        const { gmailUser, amount, amountUsd, symbol, price, type, createBy } =
+            req.body;
         try {
             const userFind = await Users.findOne({
                 'payment.email': gmailUser
@@ -904,7 +948,8 @@ class UsersController {
                     amountUsd,
                     symbol,
                     price,
-                    type
+                    type,
+                    createBy
                 );
             }
         } catch (error) {
@@ -1362,7 +1407,8 @@ class UsersController {
                             parseFloat(amountVnd) /
                                 parseFloat(rates.rateDeposit)
                         ),
-                        amountVnd: amountVnd
+                        amountVnd: amountVnd,
+                        bankAdmin: bankAdmin ? bankAdmin : {}
                     });
                     newDeposit
                         .save()
@@ -1385,13 +1431,13 @@ class UsersController {
     // [PUT] /users/updateImageDeposit/:id
     async updateImageDeposit(req, res) {
         const { id } = req.params;
-
+        const { bankAdmin } = req.body;
         Deposits.findById(id, (err, deposit) => {
             if (err) methods.errCode1(res, err);
 
             if (deposit) {
                 let date = Date.now();
-                let file = req.files[0];
+                let file = req.file;
                 let oldPath = file.path;
                 let nameImage = `${date}-${file.originalname}`;
                 let destination = file.destination;
@@ -1401,14 +1447,21 @@ class UsersController {
                     .then((data) => {
                         let statement = Path.join('/images', nameImage);
                         deposit.statement = statement;
-                        deposit.updatedAt = new Date();
+                        deposit.status = 'Confirmed';
                         deposit
                             .save()
                             .then((d) => {
                                 if (d) {
+                                    botHelperSendMessageDepositWithdraw(
+                                        chatId,
+                                        deposit,
+                                        `${process.env.URL_API}${statement}`,
+                                        'Deposit',
+                                        '/confirmDeposit_'
+                                    );
                                     successCode(
                                         res,
-                                        `Upload image successfully with id = ${id}`
+                                        `Addition image successfully for deposit with id = ${id}`
                                     );
                                 } else {
                                     errCode2(
@@ -1422,6 +1475,9 @@ class UsersController {
                             });
                     })
                     .catch((err) => errCode1(res, err));
+
+                // console.log(file);
+                // dataCode(res, file);
             } else {
                 errCode2(res, `Deposit is not valid with id =${id}`);
             }
@@ -1634,7 +1690,11 @@ class UsersController {
                                 });
                                 otp.save()
                                     .then((result) => {
-                                        dataCode(res, withdraw);
+                                        // dataCode(res, withdraw); // sau khi nhap lieu thi mo lai
+                                        dataCode(res, {
+                                            withdraw: withdraw,
+                                            otpCode: otp
+                                        });
                                     })
                                     .catch((err) => {
                                         errCode1(res, err);
@@ -1809,8 +1869,16 @@ class UsersController {
     // [POST] /users/buyCoinFutures/:id
     async buyCoinFutures(req, res, next) {
         const { id } = req.params;
-        const { fromDate, gmailUser, amount, amountUsd, symbol, price, type } =
-            req.body;
+        const {
+            fromDate,
+            gmailUser,
+            amount,
+            amountUsd,
+            symbol,
+            price,
+            type,
+            createBy
+        } = req.body;
 
         try {
             const userFind = await Users.findById(id);
@@ -1832,7 +1900,8 @@ class UsersController {
                         amountUsd,
                         symbol,
                         price,
-                        type
+                        type,
+                        createBy
                     )
                         .then(async (bill) => {
                             dataCode(res, bill);
@@ -1856,8 +1925,16 @@ class UsersController {
     // [POST] /users/sellCoinFutures/:id
     async sellCoinFutures(req, res, next) {
         const { id } = req.params;
-        const { fromDate, gmailUser, amount, amountUsd, symbol, price, type } =
-            req.body;
+        const {
+            fromDate,
+            gmailUser,
+            amount,
+            amountUsd,
+            symbol,
+            price,
+            type,
+            createBy
+        } = req.body;
         try {
             const user = await Users.findById(id);
             if (!user) {
@@ -1872,7 +1949,8 @@ class UsersController {
                     amountUsd,
                     symbol,
                     price,
-                    type
+                    type,
+                    createBy
                 )
                     .then((bill) => {
                         dataCode(res, bill);

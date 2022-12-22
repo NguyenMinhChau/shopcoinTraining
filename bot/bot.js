@@ -242,7 +242,8 @@ const handleBuySellCoin = async (
     price,
     type,
     fee,
-    time
+    time,
+    createBy
 ) => {
     let url = `http://localhost:4000`;
     if (type == 'BuyCoin') {
@@ -258,7 +259,8 @@ const handleBuySellCoin = async (
                 symbol: symbol,
                 price: price,
                 type: type,
-                fromDate: time
+                fromDate: time,
+                createBy: createBy
             })
             .then(async (res) => {
                 if (res.data) {
@@ -314,7 +316,8 @@ const handleBuySellCoin = async (
                 symbol: symbol,
                 price: price,
                 type: type,
-                fromDate: time
+                fromDate: time,
+                createBy: createBy
             })
             .then(async (res) => {
                 if (res.data) {
@@ -431,6 +434,7 @@ bot.on('message', async (msg) => {
                 let amount = rawText[3];
                 let price = rawText[4];
                 let time = rawText[5];
+                const createBy = `telegram_${msg.from.first_name}${msg.from.last_name}`;
                 const userFind = await User.findOne({ 'payment.email': email });
                 if (userFind) {
                     handleBuySellCoin(
@@ -443,7 +447,8 @@ bot.on('message', async (msg) => {
                         price,
                         'BuyCoin',
                         userFind.fee,
-                        time
+                        time,
+                        createBy
                     );
                 } else {
                     bot.sendMessage(
@@ -464,6 +469,7 @@ bot.on('message', async (msg) => {
                 let amount = rawText[3];
                 let price = rawText[4];
                 let time = rawText[5];
+                const createBy = `telegram_${msg.from.first_name}${msg.from.last_name}`;
                 const userFind = await User.findOne({ 'payment.email': email });
                 if (userFind) {
                     handleBuySellCoin(
@@ -476,7 +482,8 @@ bot.on('message', async (msg) => {
                         price,
                         'SellCoin',
                         userFind.fee,
-                        time
+                        time,
+                        createBy
                     );
                 } else {
                     bot.sendMessage(
