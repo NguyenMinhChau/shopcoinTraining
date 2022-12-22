@@ -819,9 +819,20 @@ class UsersController {
                 if (search) {
                     const userFind = await Users.findById(id);
                     if (userFind) {
+                        // const searchBuy = await Bills.find({
+                        //     'buyer.gmailUSer': userFind.payment.email,
+                        //     $text: {
+                        //         $search: new RegExp('^' + search + '$')
+                        //     }
+                        // })
+
                         const searchBuy = await Bills.find({
                             'buyer.gmailUSer': userFind.payment.email,
-                            $text: { $search: `/${search}/` }
+                            $or: [
+                                { status: { $regex: search, $options: 'xi' } },
+                                { symbol: { $regex: search, $options: 'xi' } },
+                                { createBy: { $regex: search, $options: 'xi' } }
+                            ]
                         })
                             .sort({ createdAt: 'desc' })
                             .skip(step)

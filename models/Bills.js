@@ -26,7 +26,5 @@ const bill = new mongoose.Schema(
     { timestamps: true }
 );
 
-bill.index({ symbol: 'text', createBy: 'text', status: 'text' });
-
 const Bill = mongoose.model('Bill', bill);
 module.exports = Bill;
