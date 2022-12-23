@@ -373,35 +373,73 @@ class CoinsController {
         const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = typeShow * pages - typeShow;
+        const { search } = req.query;
         try {
             if (pages) {
+                if (search) {
+                    const searchCoin = await Coins.find({
+                        $or: [
+                            { name: { $regex: search, $options: 'xi' } },
+                            {
+                                symbol: { $regex: search, $options: 'xi' }
+                            },
+                            { fullName: { $regex: search, $options: 'xi' } }
+                        ]
+                    })
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+
+                    dataCode(res, {
+                        coins: searchCoin,
+                        total: searchCoin.length
+                    });
+                } else {
+                    const totalCoin = Coins.find({});
+                    const [coins] = await Promise.all([totalCoin]);
+                    const coinsFound = coins.filter((coin) => {
+                        if (coin.total > 0) {
+                            return coin;
+                        }
+                    });
+                    let coinsShow = coinsFound.slice(step, step + typeShow);
+                    const lenCoins = coinsFound.length;
+                    dataCode(res, {
+                        coins: coinsShow,
+                        total: lenCoins
+                    });
+                }
                 // console.log('Connect to have page');
-                const totalCoin = Coins.find({});
-                const [coins] = await Promise.all([totalCoin]);
-                const coinsFound = coins.filter((coin) => {
-                    if (coin.total > 0) {
-                        return coin;
-                    }
-                });
-                let coinsShow = coinsFound.slice(step, step + typeShow);
-                const lenCoins = coinsFound.length;
-                dataCode(res, {
-                    coins: coinsShow,
-                    total: lenCoins
-                });
             } else {
-                const totalCoin = Coins.find({});
-                const [coins] = await Promise.all([totalCoin]);
-                const coinsFound = coins.filter((coin) => {
-                    if (coin.total > 0) {
-                        return coin;
-                    }
-                });
-                const lenCoins = coinsFound.length;
-                dataCode(res, {
-                    coins: coinsFound,
-                    total: lenCoins
-                });
+                if (search) {
+                    const searchCoin = await Coins.find({
+                        $or: [
+                            { name: { $regex: search, $options: 'xi' } },
+                            {
+                                symbol: { $regex: search, $options: 'xi' }
+                            },
+                            { fullName: { $regex: search, $options: 'xi' } }
+                        ]
+                    }).sort({ createdAt: 'desc' });
+
+                    dataCode(res, {
+                        coins: searchCoin,
+                        total: searchCoin.length
+                    });
+                } else {
+                    const totalCoin = Coins.find({});
+                    const [coins] = await Promise.all([totalCoin]);
+                    const coinsFound = coins.filter((coin) => {
+                        if (coin.total > 0) {
+                            return coin;
+                        }
+                    });
+                    const lenCoins = coinsFound.length;
+                    dataCode(res, {
+                        coins: coinsFound,
+                        total: lenCoins
+                    });
+                }
             }
         } catch (err) {
             errCode1(res, err);

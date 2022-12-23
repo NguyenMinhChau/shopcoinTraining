@@ -4530,63 +4530,194 @@ class AdminController {
         const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = typeShow * pages - typeShow;
+        const { search } = req.query;
         try {
             if (pages) {
-                const totalUser = User.find();
-                const [users] = await Promise.all([totalUser]);
-                if (users.length == 0) {
-                    errCode2(res, `No Balance of user !!`);
-                } else {
-                    let total = 0;
-                    for (let i = 0; i < users.length; i++) {
-                        total = methods.precisionRound(
-                            parseFloat(total) +
-                                parseFloat(users[i].Wallet.balance)
-                        );
-                    }
-                    const userHaveBalance = users.filter((user) => {
-                        if (parseFloat(user.Wallet.balance) > 0) {
-                            return user;
+                if (search) {
+                    const totalUser = User.find({
+                        $or: [
+                            {
+                                'payment.bank.bankName': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.bank.name': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.bank.account': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.email': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.username': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                rank: { $regex: search, $options: 'xi' }
+                            }
+                        ]
+                    });
+                    const [users] = await Promise.all([totalUser]);
+                    if (users.length == 0) {
+                        errCode2(res, `No Balance of user !!`);
+                    } else {
+                        let total = 0;
+                        for (let i = 0; i < users.length; i++) {
+                            total = methods.precisionRound(
+                                parseFloat(total) +
+                                    parseFloat(users[i].Wallet.balance)
+                            );
                         }
-                    });
-                    const userFinal = userHaveBalance.slice(
-                        step,
-                        step + typeShow
-                    );
-                    const lenOfUserHaveBalance = userHaveBalance.length;
-                    dataCode(res, {
-                        users: userFinal,
-                        total: total,
-                        totalUser: lenOfUserHaveBalance
-                    });
-                }
-            } else {
-                const totalUser = User.find();
-                const [users] = await Promise.all([totalUser]);
-                if (users.length == 0) {
-                    errCode2(res, `No Balance of user !!`);
-                } else {
-                    let total = 0;
-                    for (let i = 0; i < users.length; i++) {
-                        total = methods.precisionRound(
-                            parseFloat(total) +
-                                parseFloat(users[i].Wallet.balance)
-                        );
-                    }
-                    const userHaveBalance = users
-                        .filter((user) => {
+                        const userHaveBalance = users.filter((user) => {
                             if (parseFloat(user.Wallet.balance) > 0) {
                                 return user;
                             }
-                        })
-                        .slice(0, typeShow);
-
-                    const lenOfUserHaveBalance = userHaveBalance.length;
-                    dataCode(res, {
-                        users: userHaveBalance,
-                        total: total,
-                        totalUser: lenOfUserHaveBalance
+                        });
+                        const userFinal = userHaveBalance.slice(
+                            step,
+                            step + typeShow
+                        );
+                        const lenOfUserHaveBalance = userHaveBalance.length;
+                        dataCode(res, {
+                            users: userFinal,
+                            total: total,
+                            totalUser: lenOfUserHaveBalance
+                        });
+                    }
+                } else {
+                    const totalUser = User.find();
+                    const [users] = await Promise.all([totalUser]);
+                    if (users.length == 0) {
+                        errCode2(res, `No Balance of user !!`);
+                    } else {
+                        let total = 0;
+                        for (let i = 0; i < users.length; i++) {
+                            total = methods.precisionRound(
+                                parseFloat(total) +
+                                    parseFloat(users[i].Wallet.balance)
+                            );
+                        }
+                        const userHaveBalance = users.filter((user) => {
+                            if (parseFloat(user.Wallet.balance) > 0) {
+                                return user;
+                            }
+                        });
+                        const userFinal = userHaveBalance.slice(
+                            step,
+                            step + typeShow
+                        );
+                        const lenOfUserHaveBalance = userHaveBalance.length;
+                        dataCode(res, {
+                            users: userFinal,
+                            total: total,
+                            totalUser: lenOfUserHaveBalance
+                        });
+                    }
+                }
+            } else {
+                if (search) {
+                    const totalUser = User.find({
+                        $or: [
+                            {
+                                'payment.bank.bankName': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.bank.name': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.bank.account': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.email': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.username': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                rank: { $regex: search, $options: 'xi' }
+                            }
+                        ]
                     });
+                    const [users] = await Promise.all([totalUser]);
+                    if (users.length == 0) {
+                        errCode2(res, `No Balance of user !!`);
+                    } else {
+                        let total = 0;
+                        for (let i = 0; i < users.length; i++) {
+                            total = methods.precisionRound(
+                                parseFloat(total) +
+                                    parseFloat(users[i].Wallet.balance)
+                            );
+                        }
+                        const userHaveBalance = users.filter((user) => {
+                            if (parseFloat(user.Wallet.balance) > 0) {
+                                return user;
+                            }
+                        });
+                        const lenOfUserHaveBalance = userHaveBalance.length;
+                        dataCode(res, {
+                            users: userHaveBalance,
+                            total: total,
+                            totalUser: lenOfUserHaveBalance
+                        });
+                    }
+                } else {
+                    const totalUser = User.find();
+                    const [users] = await Promise.all([totalUser]);
+                    if (users.length == 0) {
+                        errCode2(res, `No Balance of user !!`);
+                    } else {
+                        let total = 0;
+                        for (let i = 0; i < users.length; i++) {
+                            total = methods.precisionRound(
+                                parseFloat(total) +
+                                    parseFloat(users[i].Wallet.balance)
+                            );
+                        }
+                        const userHaveBalance = users
+                            .filter((user) => {
+                                if (parseFloat(user.Wallet.balance) > 0) {
+                                    return user;
+                                }
+                            })
+                            .slice(0, typeShow);
+
+                        const lenOfUserHaveBalance = userHaveBalance.length;
+                        dataCode(res, {
+                            users: userHaveBalance,
+                            total: total,
+                            totalUser: lenOfUserHaveBalance
+                        });
+                    }
                 }
             }
         } catch (error) {

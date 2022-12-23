@@ -399,7 +399,7 @@ bot.on('message', async (msg) => {
                 }
             } else if (rawText[0] == 'addbalance') {
                 if (rawText.length == 4) {
-                    let email = rawText[1];
+                    let email = rawText[1].trim();
                     let amount = rawText[2];
                     let createBy = `telegram_${msg.from.first_name}_${msg.from.last_name}`;
                     const userFind = await User.findOne({

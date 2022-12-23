@@ -7,7 +7,8 @@ const upload = multer({ dest: 'uploads/images' });
 
 // auth
 const checkAuth = require('../auth/auth');
-const checkAdmin = require('../auth/checkAmin');
+// const verifyPermission(['admin', 'manager']) = require('../auth/checkAmin');
+const verifyPermission = require('../auth/permission');
 
 // import validator
 const updateCoinValidator = require('./validators/updateCoinValidator');
@@ -16,7 +17,7 @@ const updateCoinValidator = require('./validators/updateCoinValidator');
 router.post(
     '/add',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     upload.single('logo'),
     CoinsController.addCoin
 );
@@ -34,7 +35,7 @@ router.get('/getCoinSymbol/:symbol', CoinsController.getCoinSymbol);
 router.put(
     '/updateCoin/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     upload.single('logo'),
     updateCoinValidator,
     CoinsController.updateCoin
@@ -44,7 +45,7 @@ router.put(
 router.delete(
     '/deleteCoin/:id',
     checkAuth,
-    checkAdmin,
+    verifyPermission(['admin', 'manager']),
     CoinsController.deleteCoin
 );
 
@@ -56,6 +57,5 @@ router.get('/updateHighLowAllCoin', CoinsController.updateHighLowAllCoin);
 
 // [GET] /coins/getAmountCoinUserBuy
 router.get('/getAmountCoinUserBuy', CoinsController.getAmountCoinUserBuy);
-
 
 module.exports = router;

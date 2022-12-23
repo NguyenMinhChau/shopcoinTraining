@@ -42,6 +42,10 @@ const {
 } = require('../function');
 const { default: axios } = require('axios');
 
+const capitalized = async (text) => {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+};
+
 // support function
 let chatId = 5752059699;
 // let chatId = -756899178;
@@ -924,33 +928,195 @@ class UsersController {
     // [GET] /users/getAllCoinOfUser/:id
     async getAllCoinOfUser(req, res) {
         const { id } = req.params;
-        Users.findById(id, (err, user) => {
-            if (err) errCode1(res, err);
+        const pages = req.query.page;
+        const typeShow = req.query.show || 10;
+        const step = parseInt(pages - 1) * parseInt(typeShow);
+        const { search } = req.query;
 
-            if (user) {
-                let coins = user.coins;
-                let listCoins = [];
-                coins.forEach(async (coin) => {
-                    listCoins.push(
-                        new Promise((resolve) => {
-                            getCoinByIdSupport(
-                                coin._id,
-                                coin.amount,
-                                (result) => {
-                                    resolve(result);
-                                }
+        try {
+            const userFind = await Users.findById(id);
+            if (userFind) {
+                if (pages) {
+                    if (search) {
+                        let coins = userFind.coins;
+                        let listCoins = [];
+                        coins.forEach(async (coin) => {
+                            listCoins.push(
+                                new Promise((resolve) => {
+                                    getCoinByIdSupport(
+                                        coin._id,
+                                        coin.amount,
+                                        (result) => {
+                                            resolve(result);
+                                        }
+                                    );
+                                })
                             );
-                        })
-                    );
-                });
-                // listCoins
-                Promise.all(listCoins).then((coins) => {
-                    dataCode(res, coins);
-                });
+                        });
+                        // listCoins
+                        Promise.all(listCoins).then(async (coins) => {
+                            let coinsFinal = await coins;
+                            let coinSearch = coinsFinal.filter((obj) => {
+                                let coin = obj.coin;
+                                let name = coin.name.toLowerCase();
+                                let fullName = coin.fullName.toLowerCase();
+                                let symbol = coin.symbol.toLowerCase();
+                                if (
+                                    name.includes(search) ||
+                                    fullName.includes(search) ||
+                                    symbol.includes(search)
+                                ) {
+                                    return obj;
+                                }
+                            });
+                            let coinsShow = coinSearch.slice(
+                                step,
+                                step + typeShow
+                            );
+                            let total = coinsShow.length;
+                            dataCode(res, {
+                                coins: coinsShow,
+                                total: total,
+                                page: pages,
+                                show: typeShow
+                            });
+                        });
+                    } else {
+                        let coins = userFind.coins;
+                        let listCoins = [];
+                        coins.forEach(async (coin) => {
+                            listCoins.push(
+                                new Promise((resolve) => {
+                                    getCoinByIdSupport(
+                                        coin._id,
+                                        coin.amount,
+                                        (result) => {
+                                            resolve(result);
+                                        }
+                                    );
+                                })
+                            );
+                        });
+                        // listCoins
+                        Promise.all(listCoins).then(async (coins) => {
+                            let coinsFinal = await coins;
+                            let coinsShow = coinsFinal.slice(
+                                step,
+                                step + typeShow
+                            );
+                            let total = coinsShow.length;
+                            dataCode(res, {
+                                coins: coinsShow,
+                                total: total,
+                                page: pages,
+                                show: typeShow
+                            });
+                        });
+                    }
+                } else {
+                    if (search) {
+                        let coins = userFind.coins;
+                        let listCoins = [];
+                        coins.forEach(async (coin) => {
+                            listCoins.push(
+                                new Promise((resolve) => {
+                                    getCoinByIdSupport(
+                                        coin._id,
+                                        coin.amount,
+                                        (result) => {
+                                            resolve(result);
+                                        }
+                                    );
+                                })
+                            );
+                        });
+                        // listCoins
+                        Promise.all(listCoins).then(async (coins) => {
+                            let coinsFinal = await coins;
+                            let coinSearch = coinsFinal.filter((obj) => {
+                                let coin = obj.coin;
+                                let name = coin.name.toLowerCase();
+                                let fullName = coin.fullName.toLowerCase();
+                                let symbol = coin.symbol.toLowerCase();
+                                if (
+                                    name.includes(search) ||
+                                    fullName.includes(search) ||
+                                    symbol.includes(search)
+                                ) {
+                                    return obj;
+                                }
+                            });
+                            let total = coinSearch.length;
+                            dataCode(res, {
+                                coins: coinSearch,
+                                total: total,
+                                page: pages,
+                                show: typeShow
+                            });
+                        });
+                    } else {
+                        let coins = userFind.coins;
+                        let listCoins = [];
+                        coins.forEach(async (coin) => {
+                            listCoins.push(
+                                new Promise((resolve) => {
+                                    getCoinByIdSupport(
+                                        coin._id,
+                                        coin.amount,
+                                        (result) => {
+                                            resolve(result);
+                                        }
+                                    );
+                                })
+                            );
+                        });
+                        // listCoins
+                        Promise.all(listCoins).then(async (coins) => {
+                            let coinsFinal = await coins;
+                            let total = coinsFinal.length;
+                            dataCode(res, {
+                                coins: coinsFinal,
+                                total: total
+                            });
+                        });
+                    }
+                }
             } else {
-                errCode2(res, `User is not valid with id = ${id}`);
+                throw {
+                    message: `User is not valid with id = ${id}`
+                };
             }
-        });
+        } catch (error) {
+            errCode1(res, error);
+        }
+
+        // Users.findById(id, (err, user) => {
+        //     if (err) errCode1(res, err);
+
+        //     if (user) {
+        //         let coins = user.coins;
+        //         let listCoins = [];
+        //         coins.forEach(async (coin) => {
+        //             listCoins.push(
+        //                 new Promise((resolve) => {
+        //                     getCoinByIdSupport(
+        //                         coin._id,
+        //                         coin.amount,
+        //                         (result) => {
+        //                             resolve(result);
+        //                         }
+        //                     );
+        //                 })
+        //             );
+        //         });
+        //         // listCoins
+        //         Promise.all(listCoins).then((coins) => {
+        //             dataCode(res, coins);
+        //         });
+        //     } else {
+        //         errCode2(res, `User is not valid with id = ${id}`);
+        //     }
+        // });
     }
 
     // [GET] /users/getAllDeposits/:email
