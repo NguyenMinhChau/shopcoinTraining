@@ -355,33 +355,142 @@ class AdminController {
         const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = typeShow * pages - typeShow;
-
+        const { search } = req.query;
         try {
             if (pages) {
-                const total = User.countDocuments();
-                const allUser = User.find()
-                    .sort({ 'payment.username': '1' })
-                    .skip(step)
-                    .limit(typeShow);
-                const [totalUser, all] = await Promise.all([total, allUser]);
-                return res.json({
-                    code: 0,
-                    dataUser: all,
-                    page: pages,
-                    typeShow: typeShow,
-                    total: totalUser
-                });
+                if (search) {
+                    const searchUser = await User.find({
+                        $or: [
+                            {
+                                'payment.bank.bankName': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.bank.name': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.bank.account': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.email': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.username': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                rank: { $regex: search, $options: 'xi' }
+                            }
+                        ]
+                    })
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+
+                    const total = searchUser.length;
+                    return res.json({
+                        code: 0,
+                        data: searchUser,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: total
+                    });
+                } else {
+                    const total = User.countDocuments();
+                    const allUser = User.find()
+                        .sort({ 'payment.username': '1' })
+                        .skip(step)
+                        .limit(typeShow);
+                    const [totalUser, all] = await Promise.all([
+                        total,
+                        allUser
+                    ]);
+                    return res.json({
+                        code: 0,
+                        dataUser: all,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: totalUser
+                    });
+                }
             } else {
-                const total = User.countDocuments();
-                const allUser = User.find().sort({ 'payment.username': '1' });
-                const [totalUser, all] = await Promise.all([total, allUser]);
-                return res.json({
-                    code: 0,
-                    dataUser: all,
-                    page: pages,
-                    typeShow: typeShow,
-                    total: totalUser
-                });
+                if (search) {
+                    const searchUser = await User.find({
+                        $or: [
+                            {
+                                'payment.bank.bankName': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.bank.name': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.bank.account': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.email': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                'payment.username': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            {
+                                rank: { $regex: search, $options: 'xi' }
+                            }
+                        ]
+                    }).sort({ createdAt: 'desc' });
+
+                    const total = searchUser.length;
+                    return res.json({
+                        code: 0,
+                        data: searchUser,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: total
+                    });
+                } else {
+                    const total = User.countDocuments();
+                    const allUser = User.find().sort({
+                        'payment.username': '1'
+                    });
+                    const [totalUser, all] = await Promise.all([
+                        total,
+                        allUser
+                    ]);
+                    return res.json({
+                        code: 0,
+                        dataUser: all,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: totalUser
+                    });
+                }
             }
         } catch {
             errCode2(res, `Error something in get all users`);
@@ -430,38 +539,96 @@ class AdminController {
         const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
+        const { search } = req.query;
         try {
             if (pages) {
-                const total = Payments.countDocuments();
-                const allPayment = Payments.find()
-                    .sort({ createdAt: 'desc' })
-                    .skip(step)
-                    .limit(typeShow);
-                const [totalPayment, all] = await Promise.all([
-                    total,
-                    allPayment
-                ]);
-                return res.json({
-                    code: 0,
-                    data: all,
-                    page: pages,
-                    typeShow: typeShow,
-                    total: totalPayment
-                });
+                if (search) {
+                    const searchPayment = await Payments.find({
+                        $or: [
+                            { code: { $regex: search, $options: 'xi' } },
+                            {
+                                methodName: { $regex: search, $options: 'xi' }
+                            },
+                            { accountName: { $regex: search, $options: 'xi' } },
+                            {
+                                accountNumber: {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            { type: { $regex: search, $options: 'xi' } }
+                        ]
+                    })
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+
+                    dataCode(res, {
+                        payments: searchPayment,
+                        total: searchPayment.length,
+                        page: pages,
+                        show: typeShow
+                    });
+                } else {
+                    const total = Payments.countDocuments();
+                    const allPayment = Payments.find()
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+                    const [totalPayment, all] = await Promise.all([
+                        total,
+                        allPayment
+                    ]);
+                    return res.json({
+                        code: 0,
+                        data: all,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: totalPayment
+                    });
+                }
             } else {
-                const total = Payments.countDocuments();
-                const allPayment = Payments.find().sort({ createdAt: 'desc' });
-                const [totalPayment, all] = await Promise.all([
-                    total,
-                    allPayment
-                ]);
-                return res.json({
-                    code: 0,
-                    data: all,
-                    page: pages,
-                    typeShow: typeShow,
-                    total: totalPayment
-                });
+                if (search) {
+                    const searchPayment = await Payments.find({
+                        $or: [
+                            { code: { $regex: search, $options: 'xi' } },
+                            {
+                                methodName: { $regex: search, $options: 'xi' }
+                            },
+                            { accountName: { $regex: search, $options: 'xi' } },
+                            {
+                                accountNumber: {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            { type: { $regex: search, $options: 'xi' } }
+                        ]
+                    }).sort({ createdAt: 'desc' });
+
+                    dataCode(res, {
+                        payments: searchPayment,
+                        total: searchPayment.length,
+                        page: pages,
+                        show: typeShow
+                    });
+                } else {
+                    const total = Payments.countDocuments();
+                    const allPayment = Payments.find().sort({
+                        createdAt: 'desc'
+                    });
+                    const [totalPayment, all] = await Promise.all([
+                        total,
+                        allPayment
+                    ]);
+                    return res.json({
+                        code: 0,
+                        data: all,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: totalPayment
+                    });
+                }
             }
         } catch {
             errCode2(res, `No payment`);
@@ -524,43 +691,90 @@ class AdminController {
         const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
+        const { search } = req.query;
         try {
             if (pages) {
-                const total = Withdraws.countDocuments();
-                const allWithdraw = Withdraws.find()
-                    .sort({ createdAt: 'desc' })
-                    .skip(step)
-                    .limit(typeShow);
-                const [totalWithdraw, all] = await Promise.all([
-                    total,
-                    allWithdraw
-                ]);
-                return res.json({
-                    code: 0,
-                    data: all,
-                    page: pages,
-                    typeShow: typeShow,
-                    total: totalWithdraw
-                });
+                if (search) {
+                    const searchWithdraw = await Withdraws.find({
+                        $or: [
+                            { status: { $regex: search, $options: 'xi' } },
+                            {
+                                createBy: { $regex: search, $options: 'xi' }
+                            },
+                            { note: { $regex: search, $options: 'xi' } },
+                            { code: { $regex: search, $options: 'xi' } },
+                            { user: { $regex: search, $options: 'xi' } }
+                        ]
+                    })
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+
+                    dataCode(res, {
+                        withdraws: searchWithdraw,
+                        total: searchWithdraw.length,
+                        page: pages,
+                        show: typeShow
+                    });
+                } else {
+                    const total = Withdraws.countDocuments();
+                    const allWithdraw = Withdraws.find()
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+                    const [totalWithdraw, all] = await Promise.all([
+                        total,
+                        allWithdraw
+                    ]);
+                    return res.json({
+                        code: 0,
+                        data: all,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: totalWithdraw
+                    });
+                }
             } else {
-                const total = Withdraws.countDocuments();
-                const allWithdraw = Withdraws.find()
-                    .sort({ createdAt: 'desc' })
-                    .skip(step);
-                const [totalWithdraw, all] = await Promise.all([
-                    total,
-                    allWithdraw
-                ]);
-                return res.json({
-                    code: 0,
-                    data: all,
-                    page: pages,
-                    typeShow: typeShow,
-                    total: totalWithdraw
-                });
+                if (search) {
+                    const searchWithdraw = await Withdraws.find({
+                        $or: [
+                            { status: { $regex: search, $options: 'xi' } },
+                            { note: { $regex: search, $options: 'xi' } },
+                            { code: { $regex: search, $options: 'xi' } },
+                            {
+                                createBy: { $regex: search, $options: 'xi' }
+                            },
+                            { user: { $regex: search, $options: 'xi' } }
+                        ]
+                    }).sort({ createdAt: 'desc' });
+
+                    dataCode(res, {
+                        withdraws: searchWithdraw,
+                        total: searchWithdraw.length,
+                        page: pages,
+                        show: typeShow
+                    });
+                } else {
+                    const total = Withdraws.countDocuments();
+                    const allWithdraw = Withdraws.find().sort({
+                        createdAt: 'desc'
+                    });
+                    const [totalWithdraw, all] = await Promise.all([
+                        total,
+                        allWithdraw
+                    ]);
+                    return res.json({
+                        code: 0,
+                        data: all,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: totalWithdraw
+                    });
+                }
             }
-        } catch {
-            errCode2(res, `Error something`);
+        } catch (error) {
+            // errCode2(res, `Error something`);
+            errCode1(res, error);
         }
     }
 
@@ -569,41 +783,90 @@ class AdminController {
         const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
+        const { search } = req.query;
         try {
             if (pages) {
-                const total = Deposits.countDocuments();
-                const allDeposits = Deposits.find()
-                    .sort({ createdAt: 'desc' })
-                    .skip(step)
-                    .limit(typeShow);
-                const [totalDeposits, all] = await Promise.all([
-                    total,
-                    allDeposits
-                ]);
-                return res.json({
-                    code: 0,
-                    data: all,
-                    page: pages,
-                    typeShow: typeShow,
-                    total: totalDeposits
-                });
+                if (search) {
+                    const searchDeposit = await Deposits.find({
+                        $or: [
+                            { status: { $regex: search, $options: 'xi' } },
+                            {
+                                createBy: { $regex: search, $options: 'xi' }
+                            },
+                            { note: { $regex: search, $options: 'xi' } },
+                            { code: { $regex: search, $options: 'xi' } },
+                            { user: { $regex: search, $options: 'xi' } }
+                        ]
+                    })
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+
+                    dataCode(res, {
+                        deposits: searchDeposit,
+                        total: searchDeposit.length,
+                        page: pages,
+                        show: typeShow
+                    });
+                } else {
+                    const total = Deposits.countDocuments();
+                    const allDeposits = Deposits.find()
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+                    const [totalDeposits, all] = await Promise.all([
+                        total,
+                        allDeposits
+                    ]);
+                    return res.json({
+                        code: 0,
+                        data: all,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: totalDeposits
+                    });
+                }
             } else {
-                const total = Deposits.countDocuments();
-                const allDeposits = Deposits.find().sort({ createdAt: 'desc' });
-                const [totalDeposits, all] = await Promise.all([
-                    total,
-                    allDeposits
-                ]);
-                return res.json({
-                    code: 0,
-                    data: all,
-                    page: pages,
-                    typeShow: typeShow,
-                    total: totalDeposits
-                });
+                if (search) {
+                    const searchDeposit = await Deposits.find({
+                        $or: [
+                            { status: { $regex: search, $options: 'xi' } },
+                            {
+                                createBy: { $regex: search, $options: 'xi' }
+                            },
+                            { note: { $regex: search, $options: 'xi' } },
+                            { code: { $regex: search, $options: 'xi' } },
+                            { user: { $regex: search, $options: 'xi' } }
+                        ]
+                    }).sort({ createdAt: 'desc' });
+
+                    dataCode(res, {
+                        deposits: searchDeposit,
+                        total: searchDeposit.length,
+                        page: pages,
+                        show: typeShow
+                    });
+                } else {
+                    const total = Deposits.countDocuments();
+                    const allDeposits = Deposits.find().sort({
+                        createdAt: 'desc'
+                    });
+                    const [totalDeposits, all] = await Promise.all([
+                        total,
+                        allDeposits
+                    ]);
+                    return res.json({
+                        code: 0,
+                        data: all,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: totalDeposits
+                    });
+                }
             }
-        } catch {
-            errCode2(res, `Error something about get deposit`);
+        } catch (error) {
+            // errCode2(res, `Error something about get deposit`);
+            errCode1(res, error);
         }
     }
 
@@ -900,36 +1163,103 @@ class AdminController {
         const query = {
             type: 'SellCoin'
         };
-
+        const { search } = req.query;
         const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
         try {
             if (pages) {
-                const total = Bills.countDocuments(query);
-                const allBuys = Bills.find(query)
-                    .sort({ createdAt: 'desc' })
-                    .skip(step)
-                    .limit(typeShow);
-                const [totalBuys, all] = await Promise.all([total, allBuys]);
-                return res.json({
-                    code: 0,
-                    data: all,
-                    page: pages,
-                    typeShow: typeShow,
-                    total: totalBuys
-                });
+                if (search) {
+                    const searchSell = await Bills.find({
+                        type: 'SellCoin',
+                        $or: [
+                            { status: { $regex: search, $options: 'xi' } },
+                            { symbol: { $regex: search, $options: 'xi' } },
+                            {
+                                createBy: { $regex: search, $options: 'xi' }
+                            },
+                            {
+                                'buyer.gmailUSer': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            }
+                        ]
+                    })
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+
+                    const total = searchSell.length;
+                    return res.json({
+                        code: 0,
+                        data: searchSell,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: total
+                    });
+                } else {
+                    const total = Bills.countDocuments(query);
+                    const allBuys = Bills.find(query)
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+                    const [totalBuys, all] = await Promise.all([
+                        total,
+                        allBuys
+                    ]);
+                    return res.json({
+                        code: 0,
+                        data: all,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: totalBuys
+                    });
+                }
             } else {
-                const total = Bills.countDocuments(query);
-                const allBuys = Bills.find(query).sort({ createdAt: 'desc' });
-                const [totalBuys, all] = await Promise.all([total, allBuys]);
-                return res.json({
-                    code: 0,
-                    data: all,
-                    page: pages,
-                    typeShow: typeShow,
-                    total: totalBuys
-                });
+                if (search) {
+                    const searchSell = await Bills.find({
+                        type: 'SellCoin',
+                        $or: [
+                            { status: { $regex: search, $options: 'xi' } },
+                            { symbol: { $regex: search, $options: 'xi' } },
+                            {
+                                createBy: { $regex: search, $options: 'xi' }
+                            },
+                            {
+                                'buyer.gmailUSer': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            }
+                        ]
+                    }).sort({ createdAt: 'desc' });
+
+                    const total = searchSell.length;
+                    return res.json({
+                        code: 0,
+                        data: searchSell,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: total
+                    });
+                } else {
+                    const total = Bills.countDocuments(query);
+                    const allBuys = Bills.find(query).sort({
+                        createdAt: 'desc'
+                    });
+                    const [totalBuys, all] = await Promise.all([
+                        total,
+                        allBuys
+                    ]);
+                    return res.json({
+                        code: 0,
+                        data: all,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: totalBuys
+                    });
+                }
             }
         } catch {
             errCode2(res, `Error something in get Buys`);
@@ -941,33 +1271,101 @@ class AdminController {
         const query = {
             type: 'BuyCoin'
         };
+        const { search } = req.query;
         const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = parseInt(pages - 1) * parseInt(typeShow);
         try {
             if (pages) {
-                const total = Bills.countDocuments(query);
-                const allSells = Bills.find(query)
-                    .sort({ createdAt: 'desc' })
-                    .skip(step)
-                    .limit(typeShow);
-                const [totalSells, all] = await Promise.all([total, allSells]);
-                return res.json({
-                    code: 0,
-                    data: all,
-                    page: pages,
-                    typeShow: typeShow,
-                    total: totalSells
-                });
+                if (search) {
+                    const searchBuy = await Bills.find({
+                        type: 'BuyCoin',
+                        $or: [
+                            { status: { $regex: search, $options: 'xi' } },
+                            { symbol: { $regex: search, $options: 'xi' } },
+                            {
+                                createBy: { $regex: search, $options: 'xi' }
+                            },
+                            {
+                                'buyer.gmailUSer': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            }
+                        ]
+                    })
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+
+                    const total = searchBuy.length;
+                    return res.json({
+                        code: 0,
+                        data: searchBuy,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: total
+                    });
+                } else {
+                    const total = Bills.countDocuments(query);
+                    const allBuys = Bills.find(query)
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+                    const [totalBuys, all] = await Promise.all([
+                        total,
+                        allBuys
+                    ]);
+                    return res.json({
+                        code: 0,
+                        data: all,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: totalBuys
+                    });
+                }
             } else {
-                const total = Bills.countDocuments(query);
-                const allSells = Bills.find(query).sort({ createdAt: 'desc' });
-                const [totalSells, all] = await Promise.all([total, allSells]);
-                return res.json({
-                    code: 0,
-                    data: all,
-                    total: totalSells
-                });
+                if (search) {
+                    const searchBuy = await Bills.find({
+                        type: 'BuyCoin',
+                        $or: [
+                            { status: { $regex: search, $options: 'xi' } },
+                            { symbol: { $regex: search, $options: 'xi' } },
+                            {
+                                createBy: { $regex: search, $options: 'xi' }
+                            },
+                            {
+                                'buyer.gmailUSer': {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            }
+                        ]
+                    }).sort({ createdAt: 'desc' });
+
+                    const total = searchBuy.length;
+                    return res.json({
+                        code: 0,
+                        data: searchBuy,
+                        page: pages,
+                        typeShow: typeShow,
+                        total: total
+                    });
+                } else {
+                    const total = Bills.countDocuments(query);
+                    const allBuys = Bills.find(query).sort({
+                        createdAt: 'desc'
+                    });
+                    const [totalBuys, all] = await Promise.all([
+                        total,
+                        allBuys
+                    ]);
+                    return res.json({
+                        code: 0,
+                        data: all,
+                        total: totalBuys
+                    });
+                }
             }
         } catch {
             errCode2(res, `Error something in get Buys`);

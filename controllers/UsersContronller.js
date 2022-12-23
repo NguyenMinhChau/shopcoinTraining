@@ -819,19 +819,15 @@ class UsersController {
                 if (search) {
                     const userFind = await Users.findById(id);
                     if (userFind) {
-                        // const searchBuy = await Bills.find({
-                        //     'buyer.gmailUSer': userFind.payment.email,
-                        //     $text: {
-                        //         $search: new RegExp('^' + search + '$')
-                        //     }
-                        // })
-
                         const searchBuy = await Bills.find({
                             'buyer.gmailUSer': userFind.payment.email,
+                            type: 'BuyCoin',
                             $or: [
                                 { status: { $regex: search, $options: 'xi' } },
                                 { symbol: { $regex: search, $options: 'xi' } },
-                                { createBy: { $regex: search, $options: 'xi' } }
+                                {
+                                    createBy: { $regex: search, $options: 'xi' }
+                                }
                             ]
                         })
                             .sort({ createdAt: 'desc' })
@@ -878,7 +874,14 @@ class UsersController {
                     if (userFind) {
                         const searchBuy = await Bills.find({
                             'buyer.gmailUSer': userFind.payment.email,
-                            $text: { $search: `/${search}/` }
+                            type: 'BuyCoin',
+                            $or: [
+                                { status: { $regex: search, $options: 'xi' } },
+                                { symbol: { $regex: search, $options: 'xi' } },
+                                {
+                                    createBy: { $regex: search, $options: 'xi' }
+                                }
+                            ]
                         }).sort({ createdAt: 'desc' });
 
                         dataCode(res, {
@@ -951,61 +954,243 @@ class UsersController {
     }
 
     // [GET] /users/getAllDeposits/:email
-    getAllDeposits(req, res) {
+    async getAllDeposits(req, res) {
         const { email } = req.params;
-        Users.findOne({ 'payment.email': email }, (err, user) => {
-            if (err) methods.errCode1(res, err);
-            if (user) {
-                Deposits.find(
-                    { user: user.payment.email },
-                    (err, allDeposits) => {
-                        if (err) methods.errCode1(res, err);
-                        if (allDeposits) {
-                            methods.dataCode(res, allDeposits);
-                        } else {
-                            methods.errCode2(
-                                res,
-                                `Deposit is empty of user with email = ${email}`
-                            );
-                        }
+        const pages = req.query.page;
+        const typeShow = req.query.show || 10;
+        const step = parseInt(pages - 1) * parseInt(typeShow);
+        const { search } = req.query;
+        try {
+            if (pages) {
+                if (search) {
+                    const userFind = await Users.findOne({
+                        'payment.email': email
+                    });
+                    if (userFind) {
+                        const searchDeposit = await Deposits.find({
+                            user: userFind.payment.email,
+                            $or: [
+                                { status: { $regex: search, $options: 'xi' } },
+                                {
+                                    createBy: { $regex: search, $options: 'xi' }
+                                },
+                                { note: { $regex: search, $options: 'xi' } },
+                                { code: { $regex: search, $options: 'xi' } }
+                            ]
+                        })
+                            .sort({ createdAt: 'desc' })
+                            .skip(step)
+                            .limit(typeShow);
+
+                        dataCode(res, {
+                            deposits: searchDeposit,
+                            total: searchDeposit.length,
+                            page: pages,
+                            show: typeShow
+                        });
                     }
-                );
+                } else {
+                    const userFind = await Users.findOne({
+                        'payment.email': email
+                    });
+                    if (userFind) {
+                        const allDeposits = await Deposits.find({
+                            user: userFind.payment.email
+                        })
+                            .sort({ createdAt: 'desc' })
+                            .skip(step)
+                            .limit(typeShow);
+
+                        if (allDeposits.length > 0) {
+                            const total = allDeposits.length;
+                            dataCode(res, {
+                                deposits: allDeposits,
+                                total: total,
+                                show: typeShow
+                            });
+                        } else {
+                            dataCode(res, allDeposits);
+                        }
+                    } else {
+                        throw {
+                            message: `User is not valid with id = ${id}`
+                        };
+                    }
+                }
             } else {
-                methods.errCode2(
-                    res,
-                    `User is not valid with email = ${email}`
-                );
+                if (search) {
+                    const userFind = await Users.findOne({
+                        'payment.email': email
+                    });
+                    if (userFind) {
+                        const searchDeposit = await Deposits.find({
+                            user: userFind.payment.email,
+                            $or: [
+                                { status: { $regex: search, $options: 'xi' } },
+                                { note: { $regex: search, $options: 'xi' } },
+                                { code: { $regex: search, $options: 'xi' } },
+                                {
+                                    createBy: { $regex: search, $options: 'xi' }
+                                }
+                            ]
+                        }).sort({ createdAt: 'desc' });
+
+                        dataCode(res, {
+                            deposits: searchDeposit,
+                            total: searchDeposit.length,
+                            page: pages,
+                            show: typeShow
+                        });
+                    }
+                } else {
+                    const userFind = await Users.findOne({
+                        'payment.email': email
+                    });
+                    if (userFind) {
+                        const allDeposits = await Deposits.find({
+                            user: userFind.payment.email
+                        }).sort({ createdAt: 'desc' });
+
+                        if (allDeposits.length > 0) {
+                            const total = allDeposits.length;
+                            dataCode(res, {
+                                deposits: allDeposits,
+                                total: total,
+                                show: typeShow
+                            });
+                        } else {
+                            throw {
+                                message: `No bill`
+                            };
+                        }
+                    } else {
+                        dataCode(res, allDeposits);
+                    }
+                }
             }
-        });
+        } catch (error) {
+            errCode1(res, error);
+        }
     }
 
     // [GET] /users/getAllWithdraw/:email
-    getAllWithdraw(req, res) {
+    async getAllWithdraw(req, res) {
         const { email } = req.params;
-        Users.findOne({ 'payment.email': email }, (err, user) => {
-            if (err) methods.errCode1(res, err);
-            if (user) {
-                Withdraws.find(
-                    { user: user.payment.email },
-                    (err, allWithdraw) => {
-                        if (err) methods.errCode1(res, err);
-                        if (allWithdraw) {
-                            methods.dataCode(res, allWithdraw);
-                        } else {
-                            methods.errCode2(
-                                res,
-                                `Withdraw is empty of user with email = ${email}`
-                            );
-                        }
+        const pages = req.query.page;
+        const typeShow = req.query.show || 10;
+        const step = parseInt(pages - 1) * parseInt(typeShow);
+        const { search } = req.query;
+        try {
+            if (pages) {
+                if (search) {
+                    const userFind = await Users.findOne({
+                        'payment.email': email
+                    });
+                    if (userFind) {
+                        const searchWithdraw = await Withdraws.find({
+                            user: userFind.payment.email,
+                            $or: [
+                                { status: { $regex: search, $options: 'xi' } },
+                                {
+                                    createBy: { $regex: search, $options: 'xi' }
+                                },
+                                { note: { $regex: search, $options: 'xi' } },
+                                { code: { $regex: search, $options: 'xi' } }
+                            ]
+                        })
+                            .sort({ createdAt: 'desc' })
+                            .skip(step)
+                            .limit(typeShow);
+
+                        dataCode(res, {
+                            withdraws: searchWithdraw,
+                            total: searchWithdraw.length,
+                            page: pages,
+                            show: typeShow
+                        });
                     }
-                );
+                } else {
+                    const userFind = await Users.findOne({
+                        'payment.email': email
+                    });
+                    if (userFind) {
+                        const allWithdraws = await Withdraws.find({
+                            user: userFind.payment.email
+                        })
+                            .sort({ createdAt: 'desc' })
+                            .skip(step)
+                            .limit(typeShow);
+
+                        if (allWithdraws.length > 0) {
+                            const total = allWithdraws.length;
+                            dataCode(res, {
+                                withdraws: allWithdraws,
+                                total: total,
+                                show: typeShow
+                            });
+                        } else {
+                            dataCode(res, allWithdraws);
+                        }
+                    } else {
+                        throw {
+                            message: `User is not valid with id = ${id}`
+                        };
+                    }
+                }
             } else {
-                methods.errCode2(
-                    res,
-                    `User is not valid with email = ${email}`
-                );
+                if (search) {
+                    const userFind = await Users.findOne({
+                        'payment.email': email
+                    });
+                    if (userFind) {
+                        const searchWithdraw = await Withdraws.find({
+                            user: userFind.payment.email,
+                            $or: [
+                                { status: { $regex: search, $options: 'xi' } },
+                                { note: { $regex: search, $options: 'xi' } },
+                                { code: { $regex: search, $options: 'xi' } },
+                                {
+                                    createBy: { $regex: search, $options: 'xi' }
+                                }
+                            ]
+                        }).sort({ createdAt: 'desc' });
+
+                        dataCode(res, {
+                            withdraws: searchWithdraw,
+                            total: searchWithdraw.length,
+                            page: pages,
+                            show: typeShow
+                        });
+                    }
+                } else {
+                    const userFind = await Users.findOne({
+                        'payment.email': email
+                    });
+                    if (userFind) {
+                        const allWithdraws = await Withdraws.find({
+                            user: userFind.payment.email
+                        }).sort({ createdAt: 'desc' });
+
+                        if (allWithdraws.length > 0) {
+                            const total = allWithdraws.length;
+                            dataCode(res, {
+                                withdraws: allWithdraws,
+                                total: total,
+                                show: typeShow
+                            });
+                        } else {
+                            throw {
+                                message: `No bill`
+                            };
+                        }
+                    } else {
+                        dataCode(res, allWithdraws);
+                    }
+                }
             }
-        });
+        } catch (error) {
+            errCode1(res, error);
+        }
     }
 
     // [POST] /users/SellCoin/
@@ -1039,29 +1224,117 @@ class UsersController {
     }
 
     // [GET] /users/getAllSell/:id
-    getAllSell(req, res) {
+    async getAllSell(req, res) {
         const { id } = req.params;
-        Users.findById(id, (err, user) => {
-            if (err) methods.errCode1(res, err);
-            if (user) {
-                Bills.find(
-                    { 'buyer.gmailUSer': user.payment.email, type: 'SellCoin' },
-                    (err, allBuy) => {
-                        if (err) methods.errCode1(res, err);
-                        if (allBuy) {
-                            methods.dataCode(res, allBuy);
-                        } else {
-                            methods.errCode2(
-                                res,
-                                `Bill of sell is empty of user with id ${id}`
-                            );
-                        }
+        const pages = req.query.page;
+        const typeShow = req.query.show || 10;
+        const step = parseInt(pages - 1) * parseInt(typeShow);
+        const { search } = req.query;
+        try {
+            if (pages) {
+                if (search) {
+                    const userFind = await Users.findById(id);
+                    if (userFind) {
+                        const searchSell = await Bills.find({
+                            'buyer.gmailUSer': userFind.payment.email,
+                            type: 'SellCoin',
+                            $or: [
+                                { status: { $regex: search, $options: 'xi' } },
+                                { symbol: { $regex: search, $options: 'xi' } },
+                                {
+                                    createBy: { $regex: search, $options: 'xi' }
+                                }
+                            ]
+                        })
+                            .sort({ createdAt: 'desc' })
+                            .skip(step)
+                            .limit(typeShow);
+
+                        dataCode(res, {
+                            sell: searchSell,
+                            total: searchSell.length,
+                            page: pages,
+                            show: typeShow
+                        });
                     }
-                );
+                } else {
+                    const userFind = await Users.findById(id);
+                    if (userFind) {
+                        const allBuy = await Bills.find({
+                            'buyer.gmailUSer': userFind.payment.email,
+                            type: 'SellCoin'
+                        })
+                            .sort({ createdAt: 'desc' })
+                            .skip(step)
+                            .limit(typeShow);
+
+                        if (allBuy.length > 0) {
+                            const total = allBuy.length;
+                            dataCode(res, {
+                                sell: allBuy,
+                                total: total,
+                                show: typeShow
+                            });
+                        } else {
+                            dataCode(res, allBuy);
+                        }
+                    } else {
+                        throw {
+                            message: `User is not valid with id = ${id}`
+                        };
+                    }
+                }
             } else {
-                methods.errCode2(res, `User is not valid with id = ${id}`);
+                if (search) {
+                    const userFind = await Users.findById(id);
+                    if (userFind) {
+                        const searchSell = await Bills.find({
+                            'buyer.gmailUSer': userFind.payment.email,
+                            type: 'SellCoin',
+                            $or: [
+                                { status: { $regex: search, $options: 'xi' } },
+                                { symbol: { $regex: search, $options: 'xi' } },
+                                {
+                                    createBy: { $regex: search, $options: 'xi' }
+                                }
+                            ]
+                        }).sort({ createdAt: 'desc' });
+
+                        dataCode(res, {
+                            sell: searchSell,
+                            total: searchSell.length,
+                            page: pages,
+                            show: typeShow
+                        });
+                    }
+                } else {
+                    const userFind = await Users.findById(id);
+                    if (userFind) {
+                        const allBuy = await Bills.find({
+                            'buyer.gmailUSer': userFind.payment.email,
+                            type: 'SellCoin'
+                        }).sort({ createdAt: 'desc' });
+
+                        if (allBuy.length > 0) {
+                            const total = allBuy.length;
+                            dataCode(res, {
+                                sell: allBuy,
+                                total: total,
+                                show: typeShow
+                            });
+                        } else {
+                            throw {
+                                message: `No bill`
+                            };
+                        }
+                    } else {
+                        dataCode(res, allBuy);
+                    }
+                }
             }
-        });
+        } catch (error) {
+            errCode1(res, error);
+        }
     }
 
     // [PUT] /admin/changePWD/:id

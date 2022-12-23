@@ -195,27 +195,90 @@ class CoinsController {
 
     // [GET] /coins/getAllCoin
     async getAllCoins(req, res) {
-        const pages = req.query.page || 1;
+        const pages = req.query.page;
         const typeShow = req.query.show || 10;
         const step = typeShow * pages - typeShow;
-
+        const { search } = req.query;
         try {
-            const totalCoin = Coins.countDocuments();
-            const allCoins = Coins.find()
-                // .sort({ createAt: 'desc' })
-                .sort({ name: '1' })
-                .skip(step)
-                .limit(typeShow);
+            if (pages) {
+                if (search) {
+                    const searchCoin = await Coins.find({
+                        $or: [
+                            { name: { $regex: search, $options: 'xi' } },
+                            {
+                                symbol: { $regex: search, $options: 'xi' }
+                            },
+                            { fullName: { $regex: search, $options: 'xi' } }
+                        ]
+                    })
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
 
-            const [all, total] = await Promise.all([allCoins, totalCoin]);
-            return res.json({
-                code: 0,
-                message: 'Success get all coin',
-                data: all,
-                total: total,
-                page: pages,
-                show: typeShow
-            });
+                    dataCode(res, {
+                        coins: searchCoin,
+                        total: searchCoin.length,
+                        page: pages,
+                        show: typeShow
+                    });
+                } else {
+                    const totalCoin = Coins.countDocuments();
+                    const allCoins = Coins.find()
+                        // .sort({ createAt: 'desc' })
+                        .sort({ name: '1' })
+                        .skip(step)
+                        .limit(typeShow);
+
+                    const [all, total] = await Promise.all([
+                        allCoins,
+                        totalCoin
+                    ]);
+                    return res.json({
+                        code: 0,
+                        message: 'Success get all coin',
+                        data: all,
+                        total: total,
+                        page: pages,
+                        show: typeShow
+                    });
+                }
+            } else {
+                if (search) {
+                    const searchCoin = await Coins.find({
+                        $or: [
+                            { name: { $regex: search, $options: 'xi' } },
+                            {
+                                symbol: { $regex: search, $options: 'xi' }
+                            },
+                            { fullName: { $regex: search, $options: 'xi' } }
+                        ]
+                    }).sort({ createdAt: 'desc' });
+
+                    dataCode(res, {
+                        coins: searchCoin,
+                        total: searchCoin.length,
+                        page: pages,
+                        show: typeShow
+                    });
+                } else {
+                    const totalCoin = Coins.countDocuments();
+                    const allCoins = Coins.find()
+                        // .sort({ createAt: 'desc' })
+                        .sort({ name: '1' });
+                    const [all, total] = await Promise.all([
+                        allCoins,
+                        totalCoin
+                    ]);
+                    return res.json({
+                        code: 0,
+                        message: 'Success get all coin',
+                        data: all,
+                        total: total,
+                        page: pages,
+                        show: typeShow
+                    });
+                }
+            }
         } catch {
             methods.errCode2(res, 'Can not get all coin !!!');
         }
