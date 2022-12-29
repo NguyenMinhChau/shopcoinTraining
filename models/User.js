@@ -7,7 +7,8 @@ const user = new mongoose.Schema(
             balance: { type: Number, default: 0.0 },
             deposit: { type: Number, default: 0.0 },
             withdraw: { type: Number, default: 0.0 },
-            pending: { type: Number, default: 0.0 }
+            pending: { type: Number, default: 0.0 },
+            commission: { type: Number, default: 0 }
         },
         payment: {
             bank: {

@@ -56,6 +56,6 @@ router.get('/updatePriceAllCoin', CoinsController.updatePriceAllCoin);
 router.get('/updateHighLowAllCoin', CoinsController.updateHighLowAllCoin);
 
 // [GET] /coins/getAmountCoinUserBuy
-router.get('/getAmountCoinUserBuy', CoinsController.getAmountCoinUserBuy);
+router.get('/getAmountCoinUserBuy', CoinsController.getTotalCoin);
 
 module.exports = router;

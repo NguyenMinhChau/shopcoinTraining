@@ -89,7 +89,7 @@ router.delete(
     '/deleteWithdraw/:id',
     checkAuth,
     verifyPermission(['admin', 'manager']),
-    AdminController.deleteWithdraw
+    AdminController.delete_withdraw_v1
 );
 
 // [DELETE] /admin/delWithdraw/:id
@@ -111,7 +111,7 @@ router.delete(
     '/deleteDeposit/:id',
     checkAuth,
     verifyPermission(['admin', 'manager']),
-    AdminController.deleteDeposit
+    AdminController.delete_deposit_v1
 );
 
 // [GET] /admin/getUser/:id
@@ -134,22 +134,22 @@ router.put(
     '/handleBuyCoin/:id',
     checkAuth,
     verifyPermission(['admin', 'manager']),
-    AdminController.handleBuyCoin
+    AdminController.handle_buy_coin_v1
 );
 
 // [PUT] /admin/testHandleBuyCoinBot/:id
-router.put('/handleBuyCoinBot/:id', AdminController.handleBuyCoin);
+router.put('/handleBuyCoinBot/:id', AdminController.handle_buy_coin_v1);
 
-// [PUT] /admin/testHandleSellCoin/:id
+// [PUT] /admin/handleSellCoin/:id
 router.put(
     '/handleSellCoin/:id',
     checkAuth,
     verifyPermission(['admin', 'manager']),
-    AdminController.handle_sell_coin_v2
+    AdminController.handle_sell_coin_v3
 );
 
-// [PUT] /admin/testHandleSellCoinBot/:id
-router.put('/handleSellCoinBot/:id', AdminController.handle_sell_coin_v2);
+// [PUT] /admin/handleSellCoinBot/:id
+router.put('/handleSellCoinBot/:id', AdminController.handle_sell_coin_v3);
 
 //[PUT] /admin/updateRankUser/:id
 router.put(
@@ -164,7 +164,7 @@ router.delete(
     '/deleteBuy/:id',
     checkAuth,
     verifyPermission(['admin', 'manager']),
-    AdminController.deleteBuy
+    AdminController.delete_buy_v1
 );
 
 // [DELETE] /admin/deleteSell/:id
@@ -172,7 +172,7 @@ router.delete(
     '/deleteSell/:id',
     checkAuth,
     verifyPermission(['admin', 'manager']),
-    AdminController.deleteSell
+    AdminController.delete_sell_v1
 );
 
 // [PUT] /admin/changePWDForUser/:id
@@ -229,6 +229,9 @@ router.put(
 // [PUT] /admin/handleDepositBot/:id
 router.put('/handleDepositBot/:id', AdminController.handle_deposit_v2);
 
+// [PUT] /admin/supportHandleDeposit/:id
+router.put('/supportHandleDeposit/:id', AdminController.handle_deposit_v2);
+
 // [PUT] /admin/handleWithdraw/:id
 router.put(
     '/handleWithdraw/:id',
@@ -239,6 +242,9 @@ router.put(
 
 // [PUT] /admin/handleWithdrawBot/:id
 router.put('/handleWithdrawBot/:id', AdminController.handleWithdraw_v2);
+
+// [PUT] /admin/supportHandleWithdraw/:id
+router.put('/supportHandleWithdraw/:id', AdminController.handleWithdraw_v2);
 
 // [POST] /admin/totalDeposit
 router.post('/totalDeposit', AdminController.totalDeposit);
@@ -259,7 +265,7 @@ router.get('/getAllPaymentAdmin', AdminController.getAllPaymentAdmin);
 router.get('/getUSerFromWithdraw/:id', AdminController.getUSerFromWithdraw);
 
 // [GET] /admin/Commission
-router.get('/Commission', AdminController.getCommission);
+router.get('/Commission', AdminController.totalCommission);
 
 // [PUT] /admin/changeRates
 router.put(
@@ -279,10 +285,10 @@ router.get('/getRates', AdminController.getRates);
 // router.put('/testHandleDeposit/:id', AdminController.handle_deposit_v2);
 
 // [PUT] /admin/testHandleSellCoin/:id
-router.put('/testHandleSellCoin/:id', AdminController.handle_sell_coin_v2);
+router.put('/testHandleSell/:id', AdminController.handle_sell_coin_v3);
 
-// [PUT] /admin/changeCoinAdmin/:id
-// router.put('/changeCoinAdmin/:id', AdminController.change_coin_v2);
+// [PUT] /admin/testHandleBuy/:id
+router.put('/testHandleBuy/:id', AdminController.handle_buy_coin_v1);
 
 // [PUT] /admin/changeRoleUser/:id
 router.put(
@@ -291,5 +297,14 @@ router.put(
     verifyPermission(['admin']),
     AdminController.change_role
 );
+
+// [GET] /admin/getTotalCommission
+router.get('/getTotalCommission', AdminController.totalCommission);
+
+// [GET] /admin/testDeleteBuy/:id
+router.get('/testDeleteBuy/:id', AdminController.delete_buy_v1);
+
+// [GET] /admin/testDeleteSell/:id
+router.get('/testDeleteSell/:id', AdminController.delete_sell_v1);
 
 module.exports = router;

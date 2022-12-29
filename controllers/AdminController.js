@@ -27,6 +27,7 @@ const { resolve } = require('path');
 const RateWithdrawDeposit = require('../models/RateWithdrawDeposit');
 const { depositSuccess } = require('../mailform/depositForm');
 const { transSuccess, sellSuccess } = require('../mailform/BuySellForm');
+const { default: axios } = require('axios');
 
 // support function
 const calculateAdd = async (total, value, callback) => {
@@ -347,6 +348,147 @@ function handleSubCoinAuto(symbol, amount, user) {
     return p;
 }
 
+// handle buy coin for DEMO
+const handleAddCoinAutoByDemo = async (symbol, amount, user) => {
+    let p = new Promise(async (resolve, reject) => {
+        try {
+            const coin = await Coins.findOne({ symbol: symbol });
+            if (coin) {
+                let tmp = '';
+                let positionTEMP = 0;
+                for (let i = 0; i < user.coins.length; i++) {
+                    if (coin._id.equals(user.coins[i]._id)) {
+                        tmp = coin._id;
+                        positionTEMP = i;
+                    }
+                }
+
+                if (tmp != '') {
+                    let resultAddCoinExist = addCoinExist(
+                        user,
+                        amount,
+                        positionTEMP
+                    );
+                    resultAddCoinExist
+                        .then((a) => {
+                            resolve({
+                                code: 0,
+                                message: `Successfully !!! Add coin to user with id = ${user._id}`
+                            });
+                        })
+                        .catch((err) => {
+                            reject({ code: 1, message: err.message });
+                        });
+                } else {
+                    let resultAddCoinNotExist = addCoinNotExist(
+                        user,
+                        coin,
+                        amount
+                    );
+                    resultAddCoinNotExist
+                        .then((res) => {
+                            resolve({
+                                code: 0,
+                                message: `Successfully !!! Add coin coin to user with id = ${user._id}`
+                            });
+                        })
+                        .catch((err) => {
+                            reject({ code: 1, message: err.message });
+                        });
+                }
+            } else {
+                throw {
+                    code: 1,
+                    message: `Coin is not valid with symbol = ${symbol}`
+                };
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
+    return p;
+};
+
+const handleSubCoinAutoByDemo = async (symbol, amount, user) => {
+    let p = new Promise(async (resolve, reject) => {
+        try {
+            const coin = await Coins.findOne({ symbol: symbol });
+            if (coin) {
+                let positionTemp = 0;
+                for (let i = 0; i < user.coins.length; i++) {
+                    if (coin._id.equals(user.coins[i]._id)) {
+                        positionTemp = i;
+                    }
+                }
+
+                if (user.coins[positionTemp]) {
+                    let currAmount = parseFloat(
+                        user.coins[positionTemp].amount
+                    );
+                    let subAmount = parseFloat(amount);
+
+                    let afterAmount = methods.precisionRound(
+                        parseFloat(currAmount - subAmount)
+                    );
+
+                    if (afterAmount > 0) {
+                        let resultSubCoinNotDisappear = subCoinNotDisappear(
+                            user,
+                            afterAmount,
+                            positionTemp
+                        );
+                        resultSubCoinNotDisappear
+                            .then((ress) => {
+                                resolve({
+                                    code: 0,
+                                    message: `Sub coin Successfully when cancel buy coin of user with id = ${user._id}`
+                                });
+                            })
+                            .catch((err) => {
+                                throw { code: 1, message: err.message };
+                            });
+                    } else if (afterAmount == 0) {
+                        let resultSubCoinDisappear = subCoinDisappear(
+                            coin,
+                            user,
+                            afterAmount
+                        );
+                        resultSubCoinDisappear
+                            .then((ress) => {
+                                resolve({
+                                    code: 0,
+                                    message: `Sub coin Successfully when cancel buy coin !!! of user with id = ${user._id}`
+                                });
+                            })
+                            .catch((err) => {
+                                throw { code: 1, message: err.message };
+                            });
+                    } else {
+                        throw {
+                            code: 2,
+                            message: `The amount of coin want to sell is not true, own is: ${currAmount} and sell is: ${subAmount}`
+                        };
+                    }
+                } else {
+                    throw {
+                        code: 1,
+                        message: `This coin is not valid in this user`
+                    };
+                }
+            } else {
+                throw {
+                    code: 1,
+                    message: `Coin is not valid with symbol = ${symbol}`
+                };
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
+
+    return p;
+};
+
 class AdminController {
     // ---------------------------------------------services-------------------------------------------------
 
@@ -406,7 +548,7 @@ class AdminController {
                         data: searchUser,
                         page: pages,
                         typeShow: typeShow,
-                        total: total
+                        totalSearch: total
                     });
                 } else {
                     const total = User.countDocuments();
@@ -472,7 +614,7 @@ class AdminController {
                         data: searchUser,
                         page: pages,
                         typeShow: typeShow,
-                        total: total
+                        totalSearch: total
                     });
                 } else {
                     const total = User.countDocuments();
@@ -705,14 +847,17 @@ class AdminController {
                             { code: { $regex: search, $options: 'xi' } },
                             { user: { $regex: search, $options: 'xi' } }
                         ]
-                    })
-                        .sort({ createdAt: 'desc' })
-                        .skip(step)
-                        .limit(typeShow);
-
+                    }).sort({ createdAt: 'desc' });
+                    //.skip(step)
+                    //.limit(typeShow);
+                    let withdraws = searchWithdraw.slice(
+                        step,
+                        step + parseInt(typeShow)
+                    );
+                    let total = searchWithdraw.length;
                     dataCode(res, {
-                        withdraws: searchWithdraw,
-                        total: searchWithdraw.length,
+                        withdraws: withdraws,
+                        totalSearch: total,
                         page: pages,
                         show: typeShow
                     });
@@ -750,7 +895,7 @@ class AdminController {
 
                     dataCode(res, {
                         withdraws: searchWithdraw,
-                        total: searchWithdraw.length,
+                        totalSearch: searchWithdraw.length,
                         page: pages,
                         show: typeShow
                     });
@@ -797,14 +942,18 @@ class AdminController {
                             { code: { $regex: search, $options: 'xi' } },
                             { user: { $regex: search, $options: 'xi' } }
                         ]
-                    })
-                        .sort({ createdAt: 'desc' })
-                        .skip(step)
-                        .limit(typeShow);
+                    }).sort({ createdAt: 'desc' });
+                    // .skip(step)
+                    // .limit(typeShow);
+                    let deposits = searchDeposit.slice(
+                        step,
+                        step + parseInt(typeShow)
+                    );
+                    let total = searchDeposit.length;
 
                     dataCode(res, {
-                        deposits: searchDeposit,
-                        total: searchDeposit.length,
+                        deposits: deposits,
+                        totalSearch: total,
                         page: pages,
                         show: typeShow
                     });
@@ -842,7 +991,7 @@ class AdminController {
 
                     dataCode(res, {
                         deposits: searchDeposit,
-                        total: searchDeposit.length,
+                        totalSearch: searchDeposit.length,
                         page: pages,
                         show: typeShow
                     });
@@ -969,6 +1118,53 @@ class AdminController {
         });
     }
 
+    async delete_withdraw_v1(req, res) {
+        const { id } = req.params;
+        try {
+            const withdraw = await Withdraws.findById(id);
+            if (withdraw) {
+                axios
+                    .put(
+                        `${process.env.URL_API}/admin/supportHandleWithdraw/${id}`,
+                        {
+                            status: 'Canceled',
+                            note: ''
+                        }
+                    )
+                    .then((result) => {
+                        if (result.data) {
+                            if (result.data.code == 0) {
+                                Withdraws.deleteOne({ _id: id })
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `Delete Withdraw of user with id = ${id} successfully`
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
+                            } else {
+                                errCode2(res, result.data.message);
+                            }
+                        } else {
+                            errCode2(res, result);
+                        }
+                    })
+                    .catch((err) => {
+                        errCode1(res, err);
+                    });
+            } else {
+                throw {
+                    code: 1,
+                    message: `Withdraw is not valid with id = ${id}`
+                };
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
     // [PUT] /admin/updateDeposit/:id
     updateDeposit(req, res) {
         const id = req.params.id;
@@ -1013,6 +1209,53 @@ class AdminController {
                 errCode2(res, `Deposit is not valid with id = ${id}`);
             }
         });
+    }
+
+    async delete_deposit_v1(req, res) {
+        const { id } = req.params;
+        try {
+            const deposit = await Deposits.findById(id);
+            if (deposit) {
+                axios
+                    .put(
+                        `${process.env.URL_API}/admin/supportHandleDeposit/${id}`,
+                        {
+                            status: 'Canceled',
+                            note: ''
+                        }
+                    )
+                    .then((result) => {
+                        if (result.data) {
+                            if (result.data.code == 0) {
+                                Deposits.deleteOne({ _id: id })
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `Delete deposit of user with id = ${id} successfully`
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
+                            } else {
+                                errCode2(res, result.data.message);
+                            }
+                        } else {
+                            errCode2(res, result);
+                        }
+                    })
+                    .catch((err) => {
+                        errCode1(res, err);
+                    });
+            } else {
+                throw {
+                    code: 1,
+                    message: `Deposit is not valid with id = ${id}`
+                };
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
     }
 
     // [POST] /admin/withdraw
@@ -1185,18 +1428,22 @@ class AdminController {
                                 }
                             }
                         ]
-                    })
-                        .sort({ createdAt: 'desc' })
-                        .skip(step)
-                        .limit(typeShow);
+                    }).sort({ createdAt: 'desc' });
+                    // .skip(step)
+                    // .limit(typeShow);
 
-                    const total = searchSell.length;
+                    // const total = searchSell.length;
+                    let sells = searchSell.slice(
+                        step,
+                        step + parseInt(typeShow)
+                    );
+                    let total = searchSell.length;
                     return res.json({
                         code: 0,
-                        data: searchSell,
+                        data: sells,
                         page: pages,
                         typeShow: typeShow,
-                        total: total
+                        totalSearch: total
                     });
                 } else {
                     const total = Bills.countDocuments(query);
@@ -1241,7 +1488,7 @@ class AdminController {
                         data: searchSell,
                         page: pages,
                         typeShow: typeShow,
-                        total: total
+                        totalSearch: total
                     });
                 } else {
                     const total = Bills.countDocuments(query);
@@ -1293,18 +1540,19 @@ class AdminController {
                                 }
                             }
                         ]
-                    })
-                        .sort({ createdAt: 'desc' })
-                        .skip(step)
-                        .limit(typeShow);
+                    }).sort({ createdAt: 'desc' });
+                    // .skip(step)
+                    // .limit(typeShow);
 
-                    const total = searchBuy.length;
+                    // const total = searchBuy.length;
+                    let buys = searchBuy.slice(step, step + parseInt(typeShow));
+                    let total = searchBuy.length;
                     return res.json({
                         code: 0,
-                        data: searchBuy,
+                        data: buys,
                         page: pages,
                         typeShow: typeShow,
-                        total: total
+                        totalSearch: total
                     });
                 } else {
                     const total = Bills.countDocuments(query);
@@ -1329,15 +1577,14 @@ class AdminController {
                     const searchBuy = await Bills.find({
                         type: 'BuyCoin',
                         $or: [
-                            { status: { $regex: search, $options: 'xi' } },
+                            { status: { $regex: '.*' + search + '.*' } },
                             { symbol: { $regex: search, $options: 'xi' } },
                             {
                                 createBy: { $regex: search, $options: 'xi' }
                             },
                             {
                                 'buyer.gmailUSer': {
-                                    $regex: search,
-                                    $options: 'xi'
+                                    $regex: '.*' + search + '.*'
                                 }
                             }
                         ]
@@ -1349,7 +1596,7 @@ class AdminController {
                         data: searchBuy,
                         page: pages,
                         typeShow: typeShow,
-                        total: total
+                        totalSearch: total
                     });
                 } else {
                     const total = Bills.countDocuments(query);
@@ -1407,366 +1654,6 @@ class AdminController {
             }
         });
     }
-
-    // [PUT] /admin/handleBuyCoin/:id
-    // handleBuyCoin(req, res) {
-    //     const { id } = req.params;
-    //     const { status } = req.body;
-
-    //     if (status === 'Confirmed') {
-    //         const query = {
-    //             _id: id,
-    //             status: 'On hold',
-    //             type: 'BuyCoin',
-    //         };
-
-    //         Bills.findOne(query, (err, bill) => {
-    //             if (err) errCode1(res, err);
-
-    //             if (bill) {
-    //                 let emailUser = bill.buyer.gmailUSer;
-    //                 User.findOne(
-    //                     { 'payment.email': emailUser },
-    //                     (err, user) => {
-    //                         if (err)
-    //                             return res
-    //                                 .status(404)
-    //                                 .json({ code: 1, message: err.message });
-
-    //                         if (user) {
-    //                             let prepare = {
-    //                                 id: bill._id,
-    //                                 amount: bill.amount,
-    //                                 symbol: bill.symbol,
-    //                                 fee: bill.fee,
-    //                                 price: bill.price,
-    //                             };
-    //                             let result = handleAddCoinAuto(
-    //                                 prepare.symbol,
-    //                                 prepare.amount,
-    //                                 user
-    //                             );
-    //                             result
-    //                                 .then((val) => {
-    //                                     user.Wallet.balance =
-    //                                         methods.precisionRound(
-    //                                             parseFloat(
-    //                                                 user.Wallet.balance
-    //                                             ) -
-    //                                                 methods.precisionRound(
-    //                                                     parseFloat(
-    //                                                         prepare.amount
-    //                                                     ) *
-    //                                                         parseFloat(
-    //                                                             prepare.price
-    //                                                         ) *
-    //                                                         (1 +
-    //                                                             parseFloat(
-    //                                                                 prepare.fee
-    //                                                             ))
-    //                                                 )
-    //                                         );
-    //                                     user.save()
-    //                                         .then((u) => {
-    //                                             if (u) {
-    //                                                 bill.status = status;
-    //                                                 bill.save()
-    //                                                     .then(async (b) => {
-    //                                                         if (b) {
-    //                                                             const commision =
-    //                                                                 Commission.findById(
-    //                                                                     process
-    //                                                                         .env
-    //                                                                         .ID_COMMISSION
-    //                                                                 );
-    //                                                             const [comm] =
-    //                                                                 await Promise.all(
-    //                                                                     [
-    //                                                                         commision,
-    //                                                                     ]
-    //                                                                 );
-    //                                                             if (comm) {
-    //                                                                 const commissionRes =
-    //                                                                     comm;
-    //                                                                 commissionRes.commission =
-    //                                                                     methods.precisionRound(
-    //                                                                         parseFloat(
-    //                                                                             commissionRes.commission
-    //                                                                         ) +
-    //                                                                             parseFloat(
-    //                                                                                 prepare.amount
-    //                                                                             ) *
-    //                                                                                 parseFloat(
-    //                                                                                     prepare.price
-    //                                                                                 ) *
-    //                                                                                 parseFloat(
-    //                                                                                     prepare.fee
-    //                                                                                 )
-    //                                                                     );
-    //                                                                 commissionRes
-    //                                                                     .save()
-    //                                                                     .then(
-    //                                                                         (
-    //                                                                             result
-    //                                                                         ) => {
-    //                                                                             successCode(
-    //                                                                                 res,
-    //                                                                                 `Confirmed the bill with type buyCoin successfully with id = ${prepare.id}`
-    //                                                                             );
-    //                                                                         }
-    //                                                                     )
-    //                                                                     .catch(
-    //                                                                         (
-    //                                                                             err
-    //                                                                         ) => {
-    //                                                                             errCode1(
-    //                                                                                 res,
-    //                                                                                 err
-    //                                                                             );
-    //                                                                         }
-    //                                                                     );
-    //                                                             } else {
-    //                                                                 console.log(
-    //                                                                     comm
-    //                                                                 );
-    //                                                                 errCode2(
-    //                                                                     res,
-    //                                                                     `Can not find commision`
-    //                                                                 );
-    //                                                             }
-    //                                                         } else {
-    //                                                             errCode2(
-    //                                                                 res,
-    //                                                                 `Bill status is not save with id = ${prepare.id}`
-    //                                                             );
-    //                                                         }
-    //                                                     })
-    //                                                     .catch((err) => {
-    //                                                         errCode1(res, err);
-    //                                                     });
-    //                                             } else {
-    //                                                 errCode2(
-    //                                                     res,
-    //                                                     `Can not save sub the balance of user with id = ${user._id}`
-    //                                                 );
-    //                                             }
-    //                                         })
-    //                                         .catch((err) => {
-    //                                             errCode1(res, err);
-    //                                         });
-    //                                 })
-    //                                 .catch((err) => {
-    //                                     errCode1(res, err);
-    //                                 });
-    //                         } else {
-    //                             errCode2(
-    //                                 res,
-    //                                 `User is not valid with id = ${user._id}`
-    //                             );
-    //                         }
-    //                     }
-    //                 );
-    //             } else {
-    //                 errCode2(
-    //                     res,
-    //                     `Bill of buy coin is not exist with id = ${id}`
-    //                 );
-    //             }
-    //         });
-    //     } else if (status === 'Canceled') {
-    //         const query = {
-    //             _id: id,
-    //             status: 'Confirmed',
-    //             type: 'BuyCoin',
-    //         };
-
-    //         Bills.findOne(query, (err, bill) => {
-    //             if (err) errCode1(res, err);
-
-    //             if (bill) {
-    //                 let emailUser = bill.buyer.gmailUSer;
-    //                 User.findOne(
-    //                     { 'payment.email': emailUser },
-    //                     (err, user) => {
-    //                         if (err)
-    //                             return res
-    //                                 .status(404)
-    //                                 .json({ code: 1, message: err.message });
-
-    //                         if (user) {
-    //                             let prepare = {
-    //                                 id: bill._id,
-    //                                 amount: bill.amount,
-    //                                 symbol: bill.symbol,
-    //                                 fee: bill.fee,
-    //                                 price: bill.price,
-    //                             };
-
-    //                             let resultCanCel = handleSubCoinAuto(
-    //                                 prepare.symbol,
-    //                                 prepare.amount,
-    //                                 user
-    //                             );
-    //                             resultCanCel
-    //                                 .then((ress) => {
-    //                                     user.Wallet.balance =
-    //                                         methods.precisionRound(
-    //                                             parseFloat(
-    //                                                 user.Wallet.balance
-    //                                             ) +
-    //                                                 methods.precisionRound(
-    //                                                     parseFloat(
-    //                                                         prepare.amount
-    //                                                     ) *
-    //                                                         parseFloat(
-    //                                                             prepare.price
-    //                                                         )
-    //                                                 )
-    //                                         );
-    //                                     user.save()
-    //                                         .then((u) => {
-    //                                             if (u) {
-    //                                                 bill.status = status;
-    //                                                 bill.save()
-    //                                                     .then(async (b) => {
-    //                                                         const commission =
-    //                                                             Commission.findById(
-    //                                                                 process.env
-    //                                                                     .ID_COMMISSION
-    //                                                             );
-    //                                                         const [comm] =
-    //                                                             await Promise.all(
-    //                                                                 [commission]
-    //                                                             );
-
-    //                                                         if (comm) {
-    //                                                             const commissionRes =
-    //                                                                 comm;
-    //                                                             commissionRes.commission =
-    //                                                                 methods.precisionRound(
-    //                                                                     parseFloat(
-    //                                                                         commissionRes.commission
-    //                                                                     ) -
-    //                                                                         parseFloat(
-    //                                                                             prepare.amount
-    //                                                                         ) *
-    //                                                                             parseFloat(
-    //                                                                                 prepare.price
-    //                                                                             ) *
-    //                                                                             parseFloat(
-    //                                                                                 prepare.fee
-    //                                                                             )
-    //                                                                 );
-    //                                                             // console.log(
-    //                                                             //     methods.precisionRound(
-    //                                                             //         parseFloat(
-    //                                                             //             commissionRes.commission
-    //                                                             //         ) -
-    //                                                             //             parseFloat(
-    //                                                             //                 prepare.amount
-    //                                                             //             ) *
-    //                                                             //                 parseFloat(
-    //                                                             //                     prepare.price
-    //                                                             //                 ) *
-    //                                                             //                 parseFloat(
-    //                                                             //                     prepare.fee
-    //                                                             //                 )
-    //                                                             //     )
-    //                                                             // );
-    //                                                             commissionRes
-    //                                                                 .save()
-    //                                                                 .then(
-    //                                                                     (
-    //                                                                         result
-    //                                                                     ) => {
-    //                                                                         successCode(
-    //                                                                             res,
-    //                                                                             `Successfully cancel buy coin with id = ${id}`
-    //                                                                         );
-    //                                                                     }
-    //                                                                 )
-    //                                                                 .catch(
-    //                                                                     (
-    //                                                                         err
-    //                                                                     ) => {
-    //                                                                         errCode1(
-    //                                                                             res,
-    //                                                                             err
-    //                                                                         );
-    //                                                                     }
-    //                                                                 );
-    //                                                         } else {
-    //                                                             errCode2(
-    //                                                                 res,
-    //                                                                 `Can not find commission`
-    //                                                             );
-    //                                                         }
-    //                                                     })
-    //                                                     .catch((err) => {
-    //                                                         errCode1(req, err);
-    //                                                     });
-    //                                             } else {
-    //                                                 errCode2(
-    //                                                     res,
-    //                                                     `Can not save user with email ${emailUser}`
-    //                                                 );
-    //                                             }
-    //                                         })
-    //                                         .catch((err) => {
-    //                                             errCode1(res, err);
-    //                                         });
-    //                                 })
-    //                                 .catch((err) => {
-    //                                     errCode1(res, err);
-    //                                 });
-    //                         } else {
-    //                             errCode2(
-    //                                 res,
-    //                                 `User is not valid with email = ${emailUser}`
-    //                             );
-    //                         }
-    //                     }
-    //                 );
-    //             } else {
-    //                 errCode2(
-    //                     res,
-    //                     `Bill with type buy is not valid with id = ${id}`
-    //                 );
-    //             }
-    //         });
-    //     } else {
-    //         const query = {
-    //             _id: id,
-    //             type: 'BuyCoin',
-    //         };
-    //         Bills.findOne(query, (err, bill) => {
-    //             if (err) errCode1(res, err);
-
-    //             if (bill) {
-    //                 bill.status = status;
-    //                 bill.save()
-    //                     .then((b) => {
-    //                         if (b) {
-    //                             successCode(
-    //                                 res,
-    //                                 `Change status of bill type buyCoin with id = ${id}`
-    //                             );
-    //                         } else {
-    //                             errCode2(
-    //                                 res,
-    //                                 `Can not save status bill with id = ${id}`
-    //                             );
-    //                         }
-    //                     })
-    //                     .catch((err) => {
-    //                         errCode1(res, err);
-    //                     });
-    //             } else {
-    //                 errCode2(res, `Bill is not valid with id = ${id}`);
-    //             }
-    //         });
-    //     }
-    // }
 
     // [PUT] /admin/handleBuyCoin/:id
     async handleBuyCoin(req, res) {
@@ -1985,6 +1872,228 @@ class AdminController {
                                                     .catch((err) =>
                                                         errCode1(res, err)
                                                     );
+                                            })
+                                            .catch((err) => {
+                                                errCode1(res, err);
+                                            });
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
+                            } else if (orderBuy.status == 'Pending') {
+                                orderBuy.status = status;
+                                orderBuy
+                                    .save()
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `${status} successfully for order buy coin`
+                                        );
+                                    })
+                                    .catch((err) => errCode1(res, err));
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Can not execute this command because it is not enough condition for ${status}. Please Completed first.`
+                                );
+                            }
+                        } else if (status == 'Pending') {
+                            if (orderBuy.status == 'Canceled') {
+                                orderBuy.status = status;
+                                orderBuy
+                                    .save()
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `${status} successfully for order buy with id = ${id}`
+                                        );
+                                    })
+                                    .catch((err) => errCode1(res, err));
+                            } else {
+                                errCode2(
+                                    res,
+                                    `${status} failed for order buy with id = ${id}. Please canceled first.`
+                                );
+                            }
+                        } else {
+                            errCode2(
+                                res,
+                                `${status} is not support for order buy coin`
+                            );
+                        }
+                    }
+                } else {
+                    errCode2(
+                        res,
+                        `Order buy coin is not valid with id = ${id}`
+                    );
+                }
+            }
+            // dataCode(res, orderBuy);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [PUT] /admin/handleBuyCoin/:id
+    async handle_buy_coin_v1(req, res) {
+        const { id } = req.params;
+        const { status } = req.body;
+        try {
+            const orderBuy = await Bills.findById(id);
+            if (!orderBuy) {
+                errCode2(res, `Order buy is not valid with id = ${id}`);
+            } else {
+                if (orderBuy.type == 'BuyCoin') {
+                    const user = await User.findOne({
+                        'payment.email': orderBuy.buyer.gmailUSer
+                    });
+                    if (!user) {
+                        errCode2(
+                            res,
+                            `User is not valid with email:  ${orderBuy.buyer.gmailUSer}`
+                        );
+                    } else {
+                        if (status == 'Completed') {
+                            if (orderBuy.status == 'Pending') {
+                                let prepare = {
+                                    id: orderBuy._id,
+                                    amount: orderBuy.amount,
+                                    symbol: orderBuy.symbol,
+                                    fee: orderBuy.fee,
+                                    price: orderBuy.price
+                                };
+                                let result = handleAddCoinAuto(
+                                    prepare.symbol,
+                                    prepare.amount,
+                                    user
+                                );
+
+                                result
+                                    .then(() => {
+                                        let balanceAfter = precisionRound(
+                                            parseFloat(user.Wallet.balance) -
+                                                precisionRound(
+                                                    parseFloat(prepare.amount) *
+                                                        parseFloat(
+                                                            prepare.price
+                                                        ) *
+                                                        (1 +
+                                                            parseFloat(
+                                                                prepare.fee
+                                                            ))
+                                                )
+                                        );
+                                        user.Wallet.balance = balanceAfter;
+                                        user.save()
+                                            .then(async () => {
+                                                const commisionAfter =
+                                                    precisionRound(
+                                                        parseFloat(
+                                                            prepare.amount
+                                                        ) *
+                                                            parseFloat(
+                                                                prepare.price
+                                                            ) *
+                                                            parseFloat(
+                                                                prepare.fee
+                                                            )
+                                                    );
+                                                orderBuy.status = status;
+                                                orderBuy.commission =
+                                                    commisionAfter;
+                                                orderBuy
+                                                    .save()
+                                                    .then(() => {
+                                                        // mail(
+                                                        //     user.payment
+                                                        //         .email,
+                                                        //     transSuccess(
+                                                        //         user
+                                                        //             .payment
+                                                        //             .username,
+                                                        //         orderBuy
+                                                        //     ),
+                                                        //     'Buy Coins successfully'
+                                                        // ).then()
+                                                        //     .catch(
+                                                        //         (
+                                                        //             err
+                                                        //         ) => {
+                                                        //             errCode1(
+                                                        //                 res,
+                                                        //                 err
+                                                        //             );
+                                                        //         }
+                                                        //     );
+                                                        successCode(
+                                                            res,
+                                                            `${status} the order buy with email = ${user.payment.email} with quantity = ${prepare.amount}`
+                                                        );
+                                                    })
+                                                    .catch((err) => {
+                                                        errCode1(res, err);
+                                                    });
+                                            })
+                                            .catch((err) => {
+                                                errCode1(res, err);
+                                            });
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
+                            } else {
+                                errCode2(
+                                    res,
+                                    `Can not execute this command because it is not enough condition for ${status}. Please pending first.`
+                                );
+                            }
+                        } else if (status === 'Canceled') {
+                            if (orderBuy.status == 'Completed') {
+                                let prepare = {
+                                    id: orderBuy._id,
+                                    amount: orderBuy.amount,
+                                    symbol: orderBuy.symbol,
+                                    fee: orderBuy.fee,
+                                    price: orderBuy.price
+                                };
+
+                                let resultCanCel = handleSubCoinAuto(
+                                    prepare.symbol,
+                                    prepare.amount,
+                                    user
+                                );
+                                resultCanCel
+                                    .then(() => {
+                                        let balanceAfter = precisionRound(
+                                            parseFloat(user.Wallet.balance) +
+                                                precisionRound(
+                                                    parseFloat(prepare.amount) *
+                                                        parseFloat(
+                                                            prepare.price
+                                                        ) *
+                                                        (1 +
+                                                            parseFloat(
+                                                                prepare.fee
+                                                            ))
+                                                )
+                                        );
+                                        user.Wallet.balance = balanceAfter;
+                                        user.save()
+                                            .then(async () => {
+                                                orderBuy.status = status;
+                                                orderBuy.commission = 0;
+                                                orderBuy
+                                                    .save()
+                                                    .then(() => {
+                                                        successCode(
+                                                            res,
+                                                            `Canceled successfully order buy and paid money to customer with id order = ${id}`
+                                                        );
+                                                    })
+                                                    .catch((err) => {
+                                                        errCode1(res, err);
+                                                    });
                                             })
                                             .catch((err) => {
                                                 errCode1(res, err);
@@ -2571,6 +2680,242 @@ class AdminController {
         }
     }
 
+    async handle_sell_coin_v3(req, res, next) {
+        const { id } = req.params;
+        const { status } = req.body;
+        try {
+            if (status == undefined) {
+                throw {
+                    code: 1,
+                    message: 'No status for this event handle sell coin'
+                };
+            } else {
+                const orderSell = await Bills.findById(id);
+                if (!orderSell) {
+                    errCode2(res, `Oder sell is not valid with id = ${id}`);
+                } else {
+                    if (orderSell.type == 'SellCoin') {
+                        const user = await User.findOne({
+                            'payment.email': orderSell.buyer.gmailUSer
+                        });
+                        if (!user) {
+                            errCode2(
+                                res,
+                                `User is not valid with email: ${orderSell.buyer.gmailUSer}`
+                            );
+                        } else {
+                            let balance_user = parseFloat(user.Wallet.balance);
+                            if (status == 'Completed') {
+                                if (orderSell.status == 'Pending') {
+                                    let prepare = {
+                                        id: orderSell._id,
+                                        amount: orderSell.amount,
+                                        symbol: orderSell.symbol,
+                                        fee: orderSell.fee,
+                                        price: orderSell.price
+                                    };
+                                    let resultSubCoin = handleSubCoinAuto(
+                                        prepare.symbol,
+                                        prepare.amount,
+                                        user
+                                    );
+                                    resultSubCoin
+                                        .then(() => {
+                                            let balance_after_sell =
+                                                precisionRound(
+                                                    balance_user +
+                                                        precisionRound(
+                                                            parseFloat(
+                                                                prepare.amount
+                                                            ) *
+                                                                parseFloat(
+                                                                    prepare.price
+                                                                ) *
+                                                                (1 -
+                                                                    parseFloat(
+                                                                        prepare.fee
+                                                                    ))
+                                                        )
+                                                );
+                                            user.Wallet.balance =
+                                                balance_after_sell;
+                                            user.save()
+                                                .then(async () => {
+                                                    const commisionAfter =
+                                                        precisionRound(
+                                                            parseFloat(
+                                                                prepare.amount
+                                                            ) *
+                                                                parseFloat(
+                                                                    prepare.price
+                                                                ) *
+                                                                parseFloat(
+                                                                    prepare.fee
+                                                                )
+                                                        );
+                                                    orderSell.status = status;
+                                                    orderSell.commission =
+                                                        commisionAfter;
+                                                    orderSell
+                                                        .save()
+                                                        .then(() => {
+                                                            // mail(
+                                                            //     user
+                                                            //         .payment
+                                                            //         .email,
+                                                            //     sellSuccess(
+                                                            //         user
+                                                            //             .payment
+                                                            //             .username,
+                                                            //         orderSell
+                                                            //     ),
+                                                            //     'Sell Coins Successfully'
+                                                            // )
+                                                            //     .then(
+                                                            //         () => {
+
+                                                            //         }
+                                                            //     )
+                                                            //     .catch(
+                                                            //         (
+                                                            //             err
+                                                            //         ) => {
+                                                            //             errCode1(
+                                                            //                 res,
+                                                            //                 err
+                                                            //             );
+                                                            //         }
+                                                            //     );
+                                                            successCode(
+                                                                res,
+                                                                `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer} with quantity = ${prepare.amount}`
+                                                            );
+                                                        })
+                                                        .catch((err) =>
+                                                            errCode1(res, err)
+                                                        );
+                                                })
+                                                .catch((err) =>
+                                                    errCode1(res, err)
+                                                );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                } else {
+                                    errCode2(
+                                        res,
+                                        `Can not execute this command because it is not enough condition for ${status}. Please pending first.`
+                                    );
+                                }
+                            } else if (status == 'Canceled') {
+                                if (orderSell.status == 'Completed') {
+                                    let prepare = {
+                                        id: orderSell._id,
+                                        amount: orderSell.amount,
+                                        symbol: orderSell.symbol,
+                                        fee: orderSell.fee,
+                                        price: orderSell.price
+                                    };
+                                    let resultAddCoin = handleAddCoinAuto(
+                                        prepare.symbol,
+                                        prepare.amount,
+                                        user
+                                    );
+                                    resultAddCoin
+                                        .then(() => {
+                                            let balance_after_cancel_sell =
+                                                precisionRound(
+                                                    balance_user -
+                                                        precisionRound(
+                                                            parseFloat(
+                                                                prepare.amount
+                                                            ) *
+                                                                parseFloat(
+                                                                    prepare.price
+                                                                ) *
+                                                                (1 -
+                                                                    parseFloat(
+                                                                        prepare.fee
+                                                                    ))
+                                                        )
+                                                );
+                                            user.Wallet.balance =
+                                                balance_after_cancel_sell;
+                                            user.save()
+                                                .then(async () => {
+                                                    orderSell.status = status;
+                                                    orderSell.commission = 0;
+                                                    orderSell
+                                                        .save()
+                                                        .then(() => {
+                                                            successCode(
+                                                                res,
+                                                                `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer}`
+                                                            );
+                                                        })
+                                                        .catch((err) =>
+                                                            errCode1(res, err)
+                                                        );
+                                                })
+                                                .catch((err) =>
+                                                    errCode1(res, err)
+                                                );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                } else if (orderSell.status == 'Pending') {
+                                    orderSell.status = status;
+                                    orderSell
+                                        .save()
+                                        .then(() => {
+                                            successCode(
+                                                res,
+                                                `${status} successfully for order sell coin`
+                                            );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                } else {
+                                    errCode2(
+                                        res,
+                                        `Can not execute this command because it is not enough condition for ${status}. Please Completed first.`
+                                    );
+                                }
+                            } else if (status == 'Pending') {
+                                if (orderSell.status == 'Canceled') {
+                                    orderSell.status = status;
+                                    orderSell
+                                        .save()
+                                        .then(() => {
+                                            successCode(
+                                                res,
+                                                `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer}`
+                                            );
+                                        })
+                                        .catch((err) => errCode1(res, err));
+                                } else {
+                                    errCode2(
+                                        res,
+                                        `${status} failed order sell coin of user with email: ${orderSell.buyer.gmailUSer}. Please canceled first`
+                                    );
+                                }
+                            } else {
+                                errCode2(
+                                    res,
+                                    `${status} is not supported for sell coin`
+                                );
+                            }
+                        }
+                    } else {
+                        errCode2(
+                            res,
+                            `Order sell coin is not valid with id = ${id}`
+                        );
+                    }
+                }
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
     // [DELETE] /admin/deleteBuy/:id
     deleteBuy(req, res) {
         const { id } = req.params;
@@ -2598,6 +2943,55 @@ class AdminController {
             }
         });
     }
+
+    // [GET] /admin/testDeleteBuy/:id
+    async delete_buy_v1(req, res) {
+        const { id } = req.params;
+        const query = {
+            _id: id,
+            type: 'BuyCoin'
+        };
+        let url = `http://localhost:4000/admin`;
+        try {
+            const orderBuy = await Bills.findOne(query);
+            if (orderBuy) {
+                axios
+                    .put(`${url}/testHandleBuy/${orderBuy._id}`, {
+                        status: 'Canceled'
+                    })
+                    .then((result) => {
+                        if (result.data) {
+                            if (result.data.code == 0) {
+                                // dataCode(res, result.data);
+                                Bills.deleteOne({ _id: orderBuy._id })
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `Successfully! delete buy bill with id = ${id}`
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
+                            } else {
+                                throw result.data;
+                            }
+                        }
+                    })
+                    .catch((err) => {
+                        errCode1(res, err);
+                    });
+            } else {
+                throw {
+                    code: 1,
+                    message: `Order buy is not valid with id = ${id}`
+                };
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
     // [DELETE] /admin/deleteSell/:id
     deleteSell(req, res) {
         const { id } = req.params;
@@ -2624,6 +3018,54 @@ class AdminController {
                 errCode2(res, `Bill is not valid with id = ${id}`);
             }
         });
+    }
+
+    // [GET] /admin/testDeleteSell/:id
+    async delete_sell_v1(req, res) {
+        const { id } = req.params;
+        const query = {
+            _id: id,
+            type: 'SellCoin'
+        };
+        let url = `http://localhost:4000/admin`;
+        try {
+            const orderSell = await Bills.findOne(query);
+            if (orderSell) {
+                axios
+                    .put(`${url}/testHandleSell/${orderSell._id}`, {
+                        status: 'Canceled'
+                    })
+                    .then((result) => {
+                        if (result.data) {
+                            if (result.data.code == 0) {
+                                // dataCode(res, result.data);
+                                Bills.deleteOne({ _id: orderSell._id })
+                                    .then(() => {
+                                        successCode(
+                                            res,
+                                            `Successfully! delete buy bill with id = ${id}`
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
+                            } else {
+                                throw result.data;
+                            }
+                        }
+                    })
+                    .catch((err) => {
+                        errCode1(res, err);
+                    });
+            } else {
+                throw {
+                    code: 1,
+                    message: `Order buy is not valid with id = ${id}`
+                };
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
     }
 
     // ---------------------------------------------services-------------------------------------------------
@@ -3172,9 +3614,11 @@ class AdminController {
             const rateWithdrawDeposit = await RateWithdrawDeposit.findOne({});
             if (user) {
                 if (parseInt(time) == 0) {
-                    let date = new Date(Date.now()).toLocaleString('env-US', {
-                        timeZone: 'Asia/Ho_Chi_Minh'
-                    });
+                    let date = new Date(Date.now())
+                        .toUTCString()
+                        .toLocaleString('env-US', {
+                            timeZone: 'Asia/Ho_Chi_Minh'
+                        });
                     const balance_user = parseFloat(user.Wallet.balance);
                     if (coin === 'USDT') {
                         if (quantity > 0) {
@@ -3428,18 +3872,16 @@ class AdminController {
                                     quantity * rateWithdrawDeposit.rateDeposit
                             });
                             const date = new Date(time);
-                            newDeposit.createdAt = date.toLocaleString(
-                                'env-US',
-                                {
+                            newDeposit.createdAt = date
+                                .toUTCString()
+                                .toLocaleString('env-US', {
                                     timeZone: 'Asia/Ho_Chi_Minh'
-                                }
-                            );
-                            newDeposit.updatedAt = date.toLocaleString(
-                                'env-US',
-                                {
+                                });
+                            newDeposit.updatedAt = date
+                                .toUTCString()
+                                .toLocaleString('env-US', {
                                     timeZone: 'Asia/Ho_Chi_Minh'
-                                }
-                            );
+                                });
                             newDeposit
                                 .save()
                                 .then((deposit) => {
@@ -3512,18 +3954,16 @@ class AdminController {
                                     user: user.payment.email
                                 });
                                 const date = new Date(time);
-                                newWithdraw.createdAt = date.toLocaleString(
-                                    'env-US',
-                                    {
+                                newWithdraw.createdAt = date
+                                    .toUTCString()
+                                    .toLocaleString('env-US', {
                                         timeZone: 'Asia/Ho_Chi_Minh'
-                                    }
-                                );
-                                newWithdraw.updatedAt = date.toLocaleString(
-                                    'env-US',
-                                    {
+                                    });
+                                newWithdraw.updatedAt = date
+                                    .toUTCString()
+                                    .toLocaleString('env-US', {
                                         timeZone: 'Asia/Ho_Chi_Minh'
-                                    }
-                                );
+                                    });
                                 newWithdraw
                                     .save()
                                     .then((withdraw) => {
@@ -3568,9 +4008,11 @@ class AdminController {
                         }
                     } else {
                         const coinFind = await Coins.findOne({ symbol: coin });
-                        const date = new Date(time).toLocaleString('env-US', {
-                            timeZone: 'Asia/Ho_Chi_Minh'
-                        });
+                        const date = new Date(time)
+                            .toUTCString()
+                            .toLocaleString('env-US', {
+                                timeZone: 'Asia/Ho_Chi_Minh'
+                            });
                         // console.log(date);
                         if (coinFind) {
                             if (quantity > 0) {
@@ -3897,7 +4339,7 @@ class AdminController {
         });
     }
 
-    // [PUT] /admin/handleDeposit/:idchna
+    // [PUT] /admin/handleDeposit/:id
     async handle_deposit_v2(req, res, next) {
         const { id } = req.params;
         const { status, note } = req.body;
@@ -3929,13 +4371,8 @@ class AdminController {
                                 let balance_after_deposit = precisionRound(
                                     balance_user + parseFloat(deposit.amountUsd)
                                 );
-                                let deposit_after = precisionRound(
-                                    parseFloat(user.Wallet.deposit) +
-                                        parseFloat(deposit.amountUsd)
-                                );
 
                                 user.Wallet.balance = balance_after_deposit;
-                                user.Wallet.deposit = deposit_after;
 
                                 user.save()
                                     .then(() => {
@@ -3978,11 +4415,6 @@ class AdminController {
                                     balance_user - parseFloat(deposit.amountUsd)
                                 );
 
-                                let deposit_after = precisionRound(
-                                    parseFloat(user.Wallet.deposit) -
-                                        parseFloat(deposit.amountUsd)
-                                );
-
                                 if (balance_after_deposit < 0) {
                                     errCode2(
                                         res,
@@ -3990,7 +4422,6 @@ class AdminController {
                                     );
                                 } else {
                                     user.Wallet.balance = balance_after_deposit;
-                                    user.Wallet.deposit = deposit_after;
                                     user.save()
                                         .then(() => {
                                             deposit.status = status;
@@ -4280,10 +4711,10 @@ class AdminController {
                                     balance_user -
                                         parseFloat(withdraw.amountUsd)
                                 );
-                                let withdraw_after = precisionRound(
-                                    parseFloat(user.Wallet.withdraw) +
-                                        parseFloat(withdraw.amountUsd)
-                                );
+                                // let withdraw_after = precisionRound(
+                                //     parseFloat(user.Wallet.withdraw) +
+                                //         parseFloat(withdraw.amountUsd)
+                                // );
 
                                 if (balance_after_withdraw < 0) {
                                     errCode2(
@@ -4293,7 +4724,7 @@ class AdminController {
                                 } else {
                                     user.Wallet.balance =
                                         balance_after_withdraw;
-                                    user.Wallet.withdraw = withdraw_after;
+                                    // user.Wallet.withdraw = withdraw_after;
 
                                     user.save()
                                         .then(() => {
@@ -4325,13 +4756,13 @@ class AdminController {
                                         parseFloat(withdraw.amountUsd)
                                 );
 
-                                let withdraw_after = precisionRound(
-                                    parseFloat(user.Wallet.withdraw) -
-                                        parseFloat(withdraw.amountUsd)
-                                );
+                                // let withdraw_after = precisionRound(
+                                //     parseFloat(user.Wallet.withdraw) -
+                                //         parseFloat(withdraw.amountUsd)
+                                // );
 
                                 user.Wallet.balance = balance_after_withdraw;
-                                user.Wallet.withdraw = withdraw_after;
+                                // user.Wallet.withdraw = withdraw_after;
                                 user.save()
                                     .then(() => {
                                         withdraw.status = status;
@@ -4352,13 +4783,13 @@ class AdminController {
                                         parseFloat(withdraw.amountUsd)
                                 );
 
-                                let withdraw_after = precisionRound(
-                                    parseFloat(user.Wallet.withdraw) -
-                                        parseFloat(withdraw.amountUsd)
-                                );
+                                // let withdraw_after = precisionRound(
+                                //     parseFloat(user.Wallet.withdraw) -
+                                //         parseFloat(withdraw.amountUsd)
+                                // );
 
                                 user.Wallet.balance = balance_after_withdraw;
-                                user.Wallet.withdraw = withdraw_after;
+                                // user.Wallet.withdraw = withdraw_after;
                                 user.save()
                                     .then(() => {
                                         withdraw.status = status;
@@ -4575,15 +5006,25 @@ class AdminController {
                     if (users.length == 0) {
                         errCode2(res, `No Balance of user !!`);
                     } else {
+                        const totalBalanceAllUser = await User.find({});
                         let total = 0;
-                        for (let i = 0; i < users.length; i++) {
-                            total = methods.precisionRound(
-                                parseFloat(total) +
-                                    parseFloat(users[i].Wallet.balance)
-                            );
+                        for (let i = 0; i < totalBalanceAllUser.length; i++) {
+                            if (totalBalanceAllUser[i].rank != 'DEMO') {
+                                // console.log(totalBalanceAllUser[i].rank);
+                                total = methods.precisionRound(
+                                    parseFloat(total) +
+                                        parseFloat(
+                                            totalBalanceAllUser[i].Wallet
+                                                .balance
+                                        )
+                                );
+                            }
                         }
                         const userHaveBalance = users.filter((user) => {
-                            if (parseFloat(user.Wallet.balance) > 0) {
+                            if (
+                                parseFloat(user.Wallet.balance) > 0 &&
+                                user.rank != 'DEMO'
+                            ) {
                                 return user;
                             }
                         });
@@ -4604,15 +5045,25 @@ class AdminController {
                     if (users.length == 0) {
                         errCode2(res, `No Balance of user !!`);
                     } else {
+                        const totalBalanceAllUser = await User.find({});
                         let total = 0;
-                        for (let i = 0; i < users.length; i++) {
-                            total = methods.precisionRound(
-                                parseFloat(total) +
-                                    parseFloat(users[i].Wallet.balance)
-                            );
+                        for (let i = 0; i < totalBalanceAllUser.length; i++) {
+                            if (totalBalanceAllUser[i].rank != 'DEMO') {
+                                // console.log(totalBalanceAllUser[i].rank);
+                                total = methods.precisionRound(
+                                    parseFloat(total) +
+                                        parseFloat(
+                                            totalBalanceAllUser[i].Wallet
+                                                .balance
+                                        )
+                                );
+                            }
                         }
                         const userHaveBalance = users.filter((user) => {
-                            if (parseFloat(user.Wallet.balance) > 0) {
+                            if (
+                                parseFloat(user.Wallet.balance) > 0 &&
+                                user.rank != 'DEMO'
+                            ) {
                                 return user;
                             }
                         });
@@ -4671,15 +5122,25 @@ class AdminController {
                     if (users.length == 0) {
                         errCode2(res, `No Balance of user !!`);
                     } else {
+                        const totalBalanceAllUser = await User.find({});
                         let total = 0;
-                        for (let i = 0; i < users.length; i++) {
-                            total = methods.precisionRound(
-                                parseFloat(total) +
-                                    parseFloat(users[i].Wallet.balance)
-                            );
+                        for (let i = 0; i < totalBalanceAllUser.length; i++) {
+                            if (totalBalanceAllUser[i].rank != 'DEMO') {
+                                // console.log(totalBalanceAllUser[i].rank);
+                                total = methods.precisionRound(
+                                    parseFloat(total) +
+                                        parseFloat(
+                                            totalBalanceAllUser[i].Wallet
+                                                .balance
+                                        )
+                                );
+                            }
                         }
                         const userHaveBalance = users.filter((user) => {
-                            if (parseFloat(user.Wallet.balance) > 0) {
+                            if (
+                                parseFloat(user.Wallet.balance) > 0 &&
+                                user.rank != 'DEMO'
+                            ) {
                                 return user;
                             }
                         });
@@ -4696,16 +5157,26 @@ class AdminController {
                     if (users.length == 0) {
                         errCode2(res, `No Balance of user !!`);
                     } else {
+                        const totalBalanceAllUser = await User.find({});
                         let total = 0;
-                        for (let i = 0; i < users.length; i++) {
-                            total = methods.precisionRound(
-                                parseFloat(total) +
-                                    parseFloat(users[i].Wallet.balance)
-                            );
+                        for (let i = 0; i < totalBalanceAllUser.length; i++) {
+                            if (totalBalanceAllUser[i].rank != 'DEMO') {
+                                // console.log(totalBalanceAllUser[i].rank);
+                                total = methods.precisionRound(
+                                    parseFloat(total) +
+                                        parseFloat(
+                                            totalBalanceAllUser[i].Wallet
+                                                .balance
+                                        )
+                                );
+                            }
                         }
                         const userHaveBalance = users
                             .filter((user) => {
-                                if (parseFloat(user.Wallet.balance) > 0) {
+                                if (
+                                    parseFloat(user.Wallet.balance) > 0 &&
+                                    user.rank != 'DEMO'
+                                ) {
                                     return user;
                                 }
                             })
@@ -4855,6 +5326,41 @@ class AdminController {
             } else {
                 throw {
                     message: `User is not valid with id = ${id}`
+                };
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /admin/getTotalCommission
+    async totalCommission(req, res) {
+        try {
+            const allBills = await Bills.find({});
+            if (allBills) {
+                if (allBills.length > 0) {
+                    let totalCommission = 0;
+                    allBills.forEach((bill) => {
+                        if (
+                            bill.buyer.rank != 'DEMO' &&
+                            bill.status == 'Completed'
+                        ) {
+                            totalCommission = precisionRound(
+                                parseFloat(totalCommission) +
+                                    parseFloat(bill.commission)
+                            );
+                        }
+                    });
+                    dataCode(res, {
+                        commission: totalCommission
+                    });
+                } else {
+                    dataCode(res, allBills);
+                }
+            } else {
+                throw {
+                    code: 1,
+                    message: 'Can not find Bill'
                 };
             }
         } catch (error) {

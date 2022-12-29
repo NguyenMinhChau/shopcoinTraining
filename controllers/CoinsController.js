@@ -14,6 +14,18 @@ const {
 const { default: axios } = require('axios');
 const User = require('../models/User');
 
+const getCoinByIdSupport = async (id, amount, callback) => {
+    const coin = Coins.findById(id);
+    const [c] = await Promise.all([coin]);
+    let r = {
+        total: amount,
+        symbol: c.symbol,
+        name: c.name,
+        fullName: c.fullName
+    };
+    setTimeout(() => callback(r), 500);
+};
+
 class CoinsController {
     // [POST] /coins/add
     addCoin(req, res) {
@@ -217,7 +229,7 @@ class CoinsController {
 
                     dataCode(res, {
                         coins: searchCoin,
-                        total: searchCoin.length,
+                        totalSearch: searchCoin.length,
                         page: pages,
                         show: typeShow
                     });
@@ -256,7 +268,7 @@ class CoinsController {
 
                     dataCode(res, {
                         coins: searchCoin,
-                        total: searchCoin.length,
+                        totalSearch: searchCoin.length,
                         page: pages,
                         show: typeShow
                     });
@@ -443,6 +455,133 @@ class CoinsController {
             }
         } catch (err) {
             errCode1(res, err);
+        }
+    }
+
+    // [GET] /coins/getTotalCoin
+    async getTotalCoin(req, res) {
+        const pages = req.query.page;
+        const typeShow = req.query.show || 10;
+        const step = parseInt(pages - 1) * parseInt(typeShow);
+        const { search } = req.query;
+        try {
+            const allUserBefore = await User.find({});
+            const allUser = allUserBefore.filter((u) => {
+                if (u.rank != 'DEMO') {
+                    return u;
+                }
+            });
+            const totalCoinOfKeyValue = [];
+            allUser.forEach((user) => {
+                if (
+                    typeof user.coins !== 'undefined' &&
+                    user.coins.length > 0
+                ) {
+                    user.coins.forEach((c) => {
+                        totalCoinOfKeyValue.push(c);
+                    });
+                }
+            });
+            const [resultGetCoin] = await Promise.all([totalCoinOfKeyValue]);
+            // console.log(resultGetCoin);
+            let holder = {};
+
+            resultGetCoin.forEach(function (d) {
+                if (holder.hasOwnProperty(d._id)) {
+                    holder[d._id] = holder[d._id] + d.amount;
+                } else {
+                    holder[d._id] = d.amount;
+                }
+            });
+
+            let obj2 = [];
+
+            for (let prop in holder) {
+                obj2.push({ _id: prop, amount: holder[prop] });
+            }
+
+            const finalListOfCoins = [];
+            obj2.forEach((coin) => {
+                finalListOfCoins.push(
+                    new Promise((resolve) => {
+                        getCoinByIdSupport(coin._id, coin.amount, (result) => {
+                            resolve(result);
+                        });
+                    })
+                );
+            });
+            Promise.all(finalListOfCoins).then(async (coins) => {
+                const resultCoins = await coins;
+                if (pages) {
+                    if (search) {
+                        const result1 = resultCoins.filter((c) => {
+                            const symbol = c.symbol.toLowerCase();
+                            const name = c.name.toLowerCase();
+                            const fullName = c.fullName.toLowerCase();
+                            if (
+                                symbol.includes(search) ||
+                                name.includes(search) ||
+                                fullName.includes(search)
+                            ) {
+                                return c;
+                            }
+                        });
+                        let coinsShow = result1.slice(
+                            step,
+                            step + parseInt(typeShow)
+                        );
+                        let total = coinsShow.length;
+                        dataCode(res, {
+                            coins: coinsShow,
+                            totalSearch: total,
+                            page: pages,
+                            show: typeShow
+                        });
+                        // successCode(res, 'OKK');
+                    } else {
+                        let coinsShow = resultCoins.slice(
+                            step,
+                            step + parseInt(typeShow)
+                        );
+                        let total = coinsShow.length;
+                        dataCode(res, {
+                            coins: coinsShow,
+                            total: total,
+                            page: pages,
+                            show: typeShow
+                        });
+                    }
+                } else {
+                    if (search) {
+                        const result1 = resultCoins.filter((c) => {
+                            const symbol = c.symbol.toLowerCase();
+                            const name = c.name.toLowerCase();
+                            const fullName = c.fullName.toLowerCase();
+                            if (
+                                symbol.includes(search) ||
+                                name.includes(search) ||
+                                fullName.includes(search)
+                            ) {
+                                return c;
+                            }
+                        });
+                        let total = result1.length;
+                        dataCode(res, {
+                            coins: result1,
+                            totalSearch: total,
+                            page: pages,
+                            show: typeShow
+                        });
+                    } else {
+                        dataCode(res, {
+                            coins: resultCoins,
+                            total: resultCoins.length
+                        });
+                    }
+                }
+            });
+        } catch (error) {
+            errCode1(res, error);
         }
     }
 }

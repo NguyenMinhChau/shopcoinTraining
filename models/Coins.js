@@ -17,8 +17,7 @@ const coin = new mongoose.Schema(
         private: { type: Boolean, default: false },
         unshow: { type: [String], default: [] },
         low: { type: Number, default: 0 },
-        high: { type: Number, default: 0 },
-        total: {type: Number, default: 0}
+        high: { type: Number, default: 0 }
     },
     { timestamps: true }
 );

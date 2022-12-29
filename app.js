@@ -59,7 +59,7 @@ app.set('conn', io);
 app.use(helmet());
 app.use(morgan('combined', { stream: accessLogStream }));
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 app.use(cors(corOptions));
 app.use(express.static(path.resolve('./uploads')));
@@ -123,25 +123,17 @@ rateWithdrawDeposit.find({}, (err, rate) => {
         newRate.save();
     }
 });
+
 require('./services/socket.prices')(io);
 require('./bot/bot');
+require('./services/auto.binance')(app);
 
-// setInterval(() => {
-//     fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=MINAUSDT`)
-//         .then((res) => res.json())
-//         .then((coin) => console.log(coin))
-//         .catch((err) => console.log(err));
-// }, 1000);
-// can use for price socket
-// const binance = require('./function').getBinance();
-// binance.futuresMarkPriceStream('BTCUSDT', async (coin) => {
-//     const data = {
-//         symbol: coin.symbol,
-//         price: coin.markPrice,
-//         indexPrice: coin.indexPrice
-//     };
-//     console.log(data);
-// });
+setInterval(() => {
+    // axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`).catch(err => {});
+    axios
+        .get(`${process.env.URL_API}/coins/updateHighLowAllCoin`)
+        .catch((err) => {});
+}, 60 * 60 * 1000);
 
 setInterval(() => {
     // axios.get(`${process.env.URL_API}/coins/updatePriceAllCoin`).catch(err => {});
@@ -155,9 +147,20 @@ setInterval(() => {
     //     .get('http://localhost:4000/coins/updatePriceAllCoin')
     //     .catch((err) => {});
     axios
-        .get(`${process.env.URL_API}/coins/updatePriceAllCoin`)
+        .get(
+            `${process.env.URL_API}/services/autoUpdateDepositWithdrawCommission`
+        )
         .catch((err) => {});
-}, 5 * 60 * 1000);
+}, 10000);
+
+setInterval(() => {
+    // axios
+    //     .get('http://localhost:4000/coins/updatePriceAllCoin')
+    //     .catch((err) => {});
+    axios
+        .get(`${process.env.URL_API}/services/autoAddCommission`)
+        .catch((err) => {});
+}, 60 * 1000);
 
 let port = process.env.PORT || 3000;
 httpServer.listen(port, () => console.log('Running at port ' + port));

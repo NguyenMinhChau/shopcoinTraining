@@ -2,12 +2,15 @@ const nodemailer = require('nodemailer');
 const Binance = require('node-binance-api');
 const { APIKEYSOCKET, APISECRETSOCKET } = process.env;
 const rateLimit = require('express-rate-limit');
+const winston = require('winston');
+require('winston-daily-rotate-file');
 
 const TelegramBot = require('node-telegram-bot-api');
 
 const { BOT_TELEGRAM_TOKEN } = process.env;
 
 const bot = new TelegramBot(BOT_TELEGRAM_TOKEN, { polling: true });
+// const bot = new TelegramBot(BOT_TELEGRAM_TOKEN);
 
 let transporter = nodemailer.createTransport({
     service: process.env.SERVICE_MAIL,
@@ -29,6 +32,66 @@ const appLimit = rateLimit({
             message: 'Too many requests!'
         });
     }
+});
+
+const transportBuyCoinBinance = new winston.transports.DailyRotateFile({
+    filename: './logs/logsBuyCoin/%DATE%.log',
+    datePattern: 'YYYY-MM-DD-HH',
+    zippedArchive: true,
+    maxSize: '5mb',
+    maxFiles: '30d'
+});
+
+const loggerBuyCoin = winston.createLogger({
+    format: winston.format.combine(
+        winston.format.label({ label: 'Logger Buy Coin' }),
+        winston.format.timestamp(),
+        winston.format.prettyPrint(),
+        winston.format.printf((info) => {
+            return `[Something error] ${info.timestamp}:${info.label}:${info.message}`;
+        })
+    ),
+    transports: [transportBuyCoinBinance]
+});
+
+const transportSellCoinBinance = new winston.transports.DailyRotateFile({
+    filename: './logs/logsSellCoin/%DATE%.log',
+    datePattern: 'YYYY-MM-DD-HH',
+    zippedArchive: true,
+    maxSize: '5mb',
+    maxFiles: '30d'
+});
+
+const loggerSellCoin = winston.createLogger({
+    format: winston.format.combine(
+        winston.format.label({ label: 'Logger Buy Coin' }),
+        winston.format.timestamp(),
+        winston.format.prettyPrint(),
+        winston.format.printf((info) => {
+            return `[Something error] ${info.timestamp}:${info.label}:${info.message}`;
+        })
+    ),
+    transports: [transportSellCoinBinance]
+});
+
+const transport = new winston.transports.DailyRotateFile({
+    filename: './logs/%DATE%.log',
+    datePattern: 'YYYY-MM-DD-HH',
+    zippedArchive: true,
+    maxSize: '5mb',
+    maxFiles: '30d'
+});
+
+const logger = winston.createLogger({
+    format: winston.format.combine(
+        winston.format.label({ label: 'Logger Buy Coin' }),
+        winston.format.timestamp(),
+        winston.format.prettyPrint(),
+        winston.format.printf((info) => {
+            return `[Something error] ${info.timestamp}:${info.label}:${info.message}`;
+        })
+    ),
+    transports: [transport]
 });
 
 module.exports = {
@@ -74,7 +137,11 @@ module.exports = {
     getBinance: function () {
         const binance = new Binance().options({
             APIKEY: APIKEYSOCKET,
-            APISECRET: APISECRETSOCKET
+            APISECRET: APISECRETSOCKET,
+            useServerTime: true,
+            recvWindow: 60000, // Set a higher recvWindow to increase response timeout
+            // verbose: true,
+            family: 4
         });
         return binance;
     },
@@ -108,5 +175,11 @@ module.exports = {
             style: 'currency',
             currency: 'VND'
         }).format(number);
-    }
+    },
+
+    logger,
+
+    loggerBuyCoin,
+
+    loggerSellCoin
 };

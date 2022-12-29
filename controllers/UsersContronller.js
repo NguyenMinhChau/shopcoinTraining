@@ -235,9 +235,11 @@ const createNewBillFutures = async (
                 type: type,
                 createBy: createBy
             });
-            const date = new Date(Date.now()).toLocaleString('env-US', {
-                timeZone: 'Asia/Ho_Chi_Minh'
-            });
+            const date = new Date(Date.now())
+                .toUTCString()
+                .toLocaleString('env-US', {
+                    timeZone: 'Asia/Ho_Chi_Minh'
+                });
             newBill.createdAt = date;
             newBill.updatedAt = date;
             newBill
@@ -268,9 +270,11 @@ const createNewBillFutures = async (
                 type: type,
                 createBy: createBy
             });
-            const date = new Date(fromDate).toLocaleString('env-US', {
-                timeZone: 'Asia/Ho_Chi_Minh'
-            });
+            const date = new Date(fromDate)
+                .toUTCString()
+                .toLocaleString('env-US', {
+                    timeZone: 'Asia/Ho_Chi_Minh'
+                });
             newBill.createdAt = date;
             newBill.updatedAt = date;
             newBill
@@ -833,14 +837,17 @@ class UsersController {
                                     createBy: { $regex: search, $options: 'xi' }
                                 }
                             ]
-                        })
-                            .sort({ createdAt: 'desc' })
-                            .skip(step)
-                            .limit(typeShow);
-
+                        }).sort({ createdAt: 'desc' });
+                        // .skip(step)
+                        // .limit(typeShow);
+                        let buys = searchBuy.slice(
+                            step,
+                            step + parseInt(typeShow)
+                        );
+                        let total = searchBuy.length;
                         dataCode(res, {
-                            buys: searchBuy,
-                            total: searchBuy.length,
+                            buys: buys,
+                            totalSearch: total,
                             page: pages,
                             show: typeShow
                         });
@@ -1143,14 +1150,17 @@ class UsersController {
                                 { note: { $regex: search, $options: 'xi' } },
                                 { code: { $regex: search, $options: 'xi' } }
                             ]
-                        })
-                            .sort({ createdAt: 'desc' })
-                            .skip(step)
-                            .limit(typeShow);
-
+                        }).sort({ createdAt: 'desc' });
+                        // .skip(step)
+                        // .limit(typeShow);
+                        let deposits = searchDeposit.slice(
+                            step,
+                            step + parseInt(typeShow)
+                        );
+                        let total = searchDeposit.length;
                         dataCode(res, {
-                            deposits: searchDeposit,
-                            total: searchDeposit.length,
+                            deposits: deposits,
+                            totalSearch: total,
                             page: pages,
                             show: typeShow
                         });
@@ -1263,14 +1273,18 @@ class UsersController {
                                 { note: { $regex: search, $options: 'xi' } },
                                 { code: { $regex: search, $options: 'xi' } }
                             ]
-                        })
-                            .sort({ createdAt: 'desc' })
-                            .skip(step)
-                            .limit(typeShow);
+                        }).sort({ createdAt: 'desc' });
+                        // .skip(step)
+                        // .limit(typeShow);
 
+                        let withdraws = searchWithdraw.slice(
+                            step,
+                            step + parseInt(typeShow)
+                        );
+                        let total = searchWithdraw.length;
                         dataCode(res, {
-                            withdraws: searchWithdraw,
-                            total: searchWithdraw.length,
+                            withdraws: withdraws,
+                            totalSearch: total,
                             page: pages,
                             show: typeShow
                         });
@@ -1411,14 +1425,19 @@ class UsersController {
                                     createBy: { $regex: search, $options: 'xi' }
                                 }
                             ]
-                        })
-                            .sort({ createdAt: 'desc' })
-                            .skip(step)
-                            .limit(typeShow);
+                        }).sort({ createdAt: 'desc' });
+                        // .skip(step)
+                        // .limit(typeShow);
+
+                        let sells = searchSell.slice(
+                            step,
+                            step + parseInt(typeShow)
+                        );
+                        let total = searchSell.length;
 
                         dataCode(res, {
-                            sell: searchSell,
-                            total: searchSell.length,
+                            sell: sells,
+                            totalSearch: total,
                             page: pages,
                             show: typeShow
                         });
@@ -2304,6 +2323,7 @@ class UsersController {
                     };
                 } else {
                     if (time == '0') {
+                        console.log('gooo');
                         bcrypt
                             .hash(password, 10)
                             .then((hashed) => {
@@ -2312,17 +2332,17 @@ class UsersController {
                                     'payment.password': hashed,
                                     'payment.username': username
                                 });
-                                let date = new Date(Date.now()).toLocaleString(
-                                    'env-US',
-                                    {
+                                let date = new Date(Date.now())
+                                    .toUTCString()
+                                    .toLocaleString('env-US', {
                                         timeZone: 'Asia/Ho_Chi_Minh'
-                                    }
-                                );
+                                    });
                                 newUser.createdAt = date;
                                 newUser.updatedAt = date;
+                                console.log(date);
                                 newUser
                                     .save()
-                                    .then(() => {
+                                    .then((u) => {
                                         successCode(
                                             res,
                                             `Create user successfully`
@@ -2348,12 +2368,11 @@ class UsersController {
                                     'payment.password': hashed,
                                     'payment.username': username
                                 });
-                                let date = new Date(time).toLocaleString(
-                                    'env-US',
-                                    {
+                                let date = new Date(time)
+                                    .toUTCString()
+                                    .toLocaleString('env-US', {
                                         timeZone: 'Asia/Ho_Chi_Minh'
-                                    }
-                                );
+                                    });
                                 // console.log(date);
                                 newUser.createdAt = date;
                                 newUser.updatedAt = date;

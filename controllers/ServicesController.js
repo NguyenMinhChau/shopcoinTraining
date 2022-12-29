@@ -1,8 +1,15 @@
-const { errCode1, errCode2, dataCode, successCode } = require('../function');
+const {
+    errCode1,
+    errCode2,
+    dataCode,
+    successCode,
+    precisionRound
+} = require('../function');
 const Bill = require('../models/Bills');
 const Deposit = require('../models/Deposits');
 const Ranks = require('../models/Ranks');
 const Users = require('../models/User');
+const Withdraw = require('../models/Withdraws');
 
 class ServicesController {
     async changeFeeUsers(req, res) {
@@ -74,6 +81,158 @@ class ServicesController {
             //         message: 'No users'
             //     };
             // }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /services/autoAddCommission
+    async autoAddCommission(req, res) {
+        try {
+            const bills = await Bill.find({});
+            bills.forEach((bill) => {
+                let commission = precisionRound(
+                    parseFloat(bill.amount) *
+                        parseFloat(bill.price) *
+                        parseFloat(bill.fee)
+                );
+                bill.commission = commission;
+                bill.save()
+                    .then(() => {})
+                    .catch((err) => {
+                        throw {
+                            code: 1,
+                            message: err.message
+                        };
+                    });
+            });
+            dataCode(res, bills);
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /services/resetUser/:email
+    async resetUser(req, res) {
+        const { email } = req.params;
+        try {
+            const user = await Users.findOne({
+                'payment.email': email
+            });
+            if (user) {
+                const deleteBillsUser = await Bill.deleteMany({
+                    'buyer.gmailUSer': email
+                });
+                const deleteDeposit = await Deposit.deleteMany({ user: email });
+                const deleteWithdraw = await Withdraw.deleteMany({
+                    user: email
+                });
+
+                if (deleteBillsUser && deleteDeposit && deleteWithdraw) {
+                    user.Wallet.balance = 0;
+                    user.coins = [];
+                    user.Wallet.deposit = 0;
+                    user.Wallet.withdraw = 0;
+                    user.save()
+                        .then(() => {
+                            successCode(
+                                res,
+                                `Reset user successfully with email = ${email}`
+                            );
+                        })
+                        .catch((err) => {
+                            console.log(err);
+                        });
+                } else {
+                    throw {
+                        code: 2,
+                        message: 'Something is error reset user'
+                    };
+                }
+            } else {
+                throw {
+                    code: 1,
+                    message: `User is not valid with id = ${id}`
+                };
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /services/autoUpdateDepositWithdrawCommission
+    async auto_update_deposit_withdraw_commission_user(req, res) {
+        try {
+            const users = await Users.find({});
+            if (users) {
+                if (users.length > 0) {
+                    // dataCode(res, users);
+                    users.forEach(async (user) => {
+                        let sumDeposit = 0;
+                        let sumWithdraw = 0;
+                        let sumCommission = 0;
+
+                        let deposits = await Deposit.find({
+                            user: user.payment.email,
+                            status: 'Completed'
+                        });
+                        let withdraws = await Withdraw.find({
+                            user: user.payment.email,
+                            status: 'Completed'
+                        });
+
+                        let bills = await Bill.find({
+                            'buyer.gmailUSer': user.payment.email,
+                            status: 'Completed'
+                        });
+                        if (deposits.length > 0) {
+                            deposits.forEach((deposit) => {
+                                sumDeposit = precisionRound(
+                                    parseFloat(deposit.amountUsd) +
+                                        parseFloat(sumDeposit)
+                                );
+                            });
+                        }
+
+                        if (withdraws.length > 0) {
+                            withdraws.forEach((withdraw) => {
+                                sumWithdraw = precisionRound(
+                                    parseFloat(withdraw.amountUsd) +
+                                        parseFloat(sumWithdraw)
+                                );
+                            });
+                        }
+
+                        if (bills.length > 0) {
+                            bills.forEach((b) => {
+                                sumCommission = precisionRound(
+                                    parseFloat(sumCommission) +
+                                        parseFloat(b.commission)
+                                );
+                            });
+                        }
+                        user.Wallet.deposit = sumDeposit;
+                        user.Wallet.withdraw = sumWithdraw;
+                        user.Wallet.commission = sumCommission;
+                        user.save()
+                            .then(() => {})
+                            .catch((err) => {
+                                errCode1(res, err);
+                            });
+                    });
+                    successCode(res, 'Update Deposit Withdraw successfully');
+                } else {
+                    throw {
+                        code: 1,
+                        message: 'No users'
+                    };
+                }
+            } else {
+                throw {
+                    code: 1,
+                    message: 'Can not find users. Something is error.'
+                };
+            }
         } catch (error) {
             errCode1(res, error);
         }

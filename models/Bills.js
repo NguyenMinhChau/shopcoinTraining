@@ -21,7 +21,9 @@ const bill = new mongoose.Schema(
         symbol: { type: String, default: '' },
         price: { type: Number, default: 0 },
         type: { type: String, default: '' },
-        createBy: { type: String, default: '' }
+        note: { type: String, default: '' },
+        createBy: { type: String, default: '' },
+        commission: { type: Number, default: 0 }
     },
     { timestamps: true }
 );
