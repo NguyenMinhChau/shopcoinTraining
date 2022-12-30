@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const binanceOrder = new mongoose.Schema(
     {
+        type: { type: String, default: '' },
         status: {
             type: String,
             enum: ['Pending', 'Canceled', 'Completed'],
@@ -10,7 +11,7 @@ const binanceOrder = new mongoose.Schema(
         idOrderBinance: { type: String, default: '' },
         idOrder: { type: mongoose.Types.ObjectId, ref: 'Bill' },
         priceBinance: { type: Number, default: 0 },
-        detailBinanceOrder: { type: Array, default: [] }
+        detailBinanceOrder: { type: String, default: '' }
     },
     { timestamps: true, collection: 'binance-orders-completed' }
 );

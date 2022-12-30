@@ -16,6 +16,7 @@ const Withdraws = require('../models/Withdraws');
 const Payments = require('../models/Payments');
 const Otps = require('../models/OTP');
 const rateWithdrawDeposit = require('../models/RateWithdrawDeposit');
+const CoinNA = require('../models/CoinNotActive');
 
 const { validationResult } = require('express-validator');
 const {
@@ -799,18 +800,29 @@ class UsersController {
                     message: 'Người dùng không tồn tại'
                 });
             }
-
-            buyCoin(
-                req,
-                res,
-                user,
-                amount,
-                amountUsd,
-                symbol,
-                price,
-                type,
-                createBy
-            );
+            const CoinNotActiveFind = await CoinNA.find({ symbol: symbol });
+            if (CoinNotActiveFind) {
+                if (CoinNotActiveFind.length > 0) {
+                    errCode2(res, 'This coin not active now');
+                } else {
+                    buyCoin(
+                        req,
+                        res,
+                        user,
+                        amount,
+                        amountUsd,
+                        symbol,
+                        price,
+                        type,
+                        createBy
+                    );
+                }
+            } else {
+                errCode2(
+                    res,
+                    `Something error when find coin not active in buy coin user`
+                );
+            }
             // return res.json({ code: 1, message: 'OK', data: user });
         });
     }
@@ -1126,6 +1138,115 @@ class UsersController {
         // });
     }
 
+    // [GET] /users/getAllCoin/:email
+    async getAllCoin(req, res) {
+        const pages = req.query.page;
+        const typeShow = req.query.show || 10;
+        const step = typeShow * pages - typeShow;
+        const { search } = req.query;
+        const { email } = req.params;
+        try {
+            if (search) {
+                if (pages) {
+                    const coins = await Coins.find({});
+                    const coinsCheckNotHide = coins.filter((coin) => {
+                        let notShow = coin.unshow[0];
+                        if (!notShow.includes(email)) {
+                            return coin;
+                        }
+                    });
+                    let coinSearch = coinsCheckNotHide.filter((obj) => {
+                        let coin = obj;
+                        let name = coin.name.toLowerCase();
+                        let fullName = coin.fullName.toLowerCase();
+                        let symbol = coin.symbol.toLowerCase();
+                        if (
+                            name.includes(search.toLowerCase()) ||
+                            fullName.includes(search.toLowerCase()) ||
+                            symbol.includes(search.toLowerCase())
+                        ) {
+                            return obj;
+                        }
+                    });
+                    let coinsShow = coinSearch.slice(step, step + typeShow);
+                    let total = coinsShow.length;
+                    dataCode(res, {
+                        coins: coinsShow,
+                        total: total,
+                        page: pages,
+                        show: typeShow
+                    });
+                } else {
+                    const coins = await Coins.find({});
+                    const coinsCheckNotHide = coins.filter((coin) => {
+                        let notShow = coin.unshow[0];
+                        if (!notShow.includes(email)) {
+                            return coin;
+                        }
+                    });
+                    let coinSearch = coinsCheckNotHide.filter((obj) => {
+                        let coin = obj;
+                        let name = coin.name.toLowerCase();
+                        let fullName = coin.fullName.toLowerCase();
+                        let symbol = coin.symbol.toLowerCase();
+                        if (
+                            name.includes(search.toLowerCase()) ||
+                            fullName.includes(search.toLowerCase()) ||
+                            symbol.includes(search.toLowerCase())
+                        ) {
+                            return obj;
+                        }
+                    });
+                    let total = coinSearch.length;
+                    dataCode(res, {
+                        coins: coinSearch,
+                        total: total,
+                        page: pages,
+                        show: typeShow
+                    });
+                }
+            } else {
+                if (pages) {
+                    const coins = await Coins.find({});
+                    const coinsCheckNotHide = coins.filter((coin) => {
+                        let notShow = coin.unshow[0];
+                        if (!notShow.includes(email)) {
+                            return coin;
+                        }
+                    });
+                    let coinsShow = coinsCheckNotHide.slice(
+                        step,
+                        step + typeShow
+                    );
+                    let total = coinsCheckNotHide.length;
+                    dataCode(res, {
+                        coins: coinsShow,
+                        total: total,
+                        page: pages,
+                        show: typeShow
+                    });
+                } else {
+                    const coins = await Coins.find({});
+                    const coinsCheckNotHide = coins.filter((coin) => {
+                        let notShow = coin.unshow[0];
+                        if (!notShow.includes(email)) {
+                            return coin;
+                        }
+                    });
+                    let total = coinsCheckNotHide.length;
+                    dataCode(res, {
+                        coins: coinsCheckNotHide,
+                        total: total,
+                        page: pages,
+                        show: typeShow
+                    });
+                }
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
     // [GET] /users/getAllDeposits/:email
     async getAllDeposits(req, res) {
         const { email } = req.params;
@@ -1386,17 +1507,29 @@ class UsersController {
                     message: `User is not valid with email: ${gmailUser}`
                 };
             } else {
-                sellCoin(
-                    req,
-                    res,
-                    userFind,
-                    amount,
-                    amountUsd,
-                    symbol,
-                    price,
-                    type,
-                    createBy
-                );
+                const coinNotActiveFind = await CoinNA.find({ symbol: symbol });
+                if (coinNotActiveFind) {
+                    if (coinNotActiveFind.length > 0) {
+                        errCode2(res, 'This coin not active now');
+                    } else {
+                        sellCoin(
+                            req,
+                            res,
+                            userFind,
+                            amount,
+                            amountUsd,
+                            symbol,
+                            price,
+                            type,
+                            createBy
+                        );
+                    }
+                } else {
+                    errCode2(
+                        res,
+                        'Something error can not find coin not active in sell coin user'
+                    );
+                }
             }
         } catch (error) {
             errCode1(res, error);

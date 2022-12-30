@@ -5,7 +5,8 @@ const {
     logger,
     loggerBuyCoin,
     loggerSellCoin,
-    formatUSD
+    formatUSD,
+    precisionRound
 } = require('../function');
 
 // import Models
@@ -16,7 +17,12 @@ const binance = getBinance();
 
 const autoCreateBillHandleBuySellBinance = async () => {
     const orderPending = await BillModels.find({
-        status: 'Pending'
+        status: 'Pending',
+        $or: [
+            { 'buyer.rank': 'STANDARD' },
+            { 'buyer.rank': 'VIP' },
+            { 'buyer.rank': 'PRO' }
+        ]
     })
         .sort({ createdAt: 'desc' })
         .limit(10);
@@ -36,9 +42,15 @@ const autoCreateBillHandleBuySellBinance = async () => {
                     newOrderBinance
                         .save()
                         .then(async (bill) => {
-                            return await bill.populate(
-                                'idOrder',
-                                '-_id -__v -buyer._id'
+                            // return await bill.populate(
+                            //     'idOrder',
+                            //     '-_id -__v -buyer._id'
+                            // );
+                            console.log(
+                                await bill.populate(
+                                    'idOrder',
+                                    '-_id -__v -buyer._id'
+                                )
                             );
                         })
                         .then((overView) => {
@@ -75,11 +87,37 @@ const completedBuy = async (id) => {
             })
             .then((result) => {
                 if (result.data) {
-                    resolve(cBuy.data);
+                    resolve(result.data);
                 } else {
                     reject({
                         code: 1,
                         message: 'Something error on completedBuy'
+                    });
+                }
+            })
+            .catch((err) => {
+                reject({
+                    code: 1,
+                    message: err.message
+                });
+            });
+    });
+    return p;
+};
+
+const completedSell = async (id) => {
+    let p = new Promise(async (resolve, reject) => {
+        const cBuy = axios
+            .put(`http://localhost:4000/admin/handleSellCoinBot/${id}`, {
+                status: 'Completed'
+            })
+            .then((result) => {
+                if (result.data) {
+                    resolve(result.data);
+                } else {
+                    reject({
+                        code: 1,
+                        message: 'Something error on completed sell'
                     });
                 }
             })
@@ -233,7 +271,7 @@ const buy_from_market_v1 = async (symbol, amount) => {
     return p;
 };
 
-const get_detail_order_by_orderId = async (orderId) => {
+const get_detail_order_by_orderId = async (symbol, orderId) => {
     let p = new Promise((resolve, reject) => {
         binance
             .futuresOrderStatus(symbol, { orderId: orderId })
@@ -266,7 +304,7 @@ const auto_handle_buy_coin = async (symbol, amount, bill_populated) => {
                 let billBuyFromBinance = data.data;
                 let orderId = billBuyFromBinance.orderId;
 
-                get_detail_order_by_orderId(orderId)
+                get_detail_order_by_orderId(symbol, orderId)
                     .then(async (bill_detail) => {
                         console.log(bill_detail);
                         let bill_detail_after_get = bill_detail.data;
@@ -279,7 +317,9 @@ const auto_handle_buy_coin = async (symbol, amount, bill_populated) => {
                         bill_populated.idOrderBinance =
                             bill_detail_after_get.orderId;
                         bill_populated.priceBinance = binancePrice;
-
+                        bill_populated.detailBinanceOrder = JSON.stringify(
+                            bill_detail_after_get
+                        );
                         bill_populated
                             .save()
                             .then(async (bill) => {
@@ -289,6 +329,13 @@ const auto_handle_buy_coin = async (symbol, amount, bill_populated) => {
                                 if (billFind) {
                                     if (binancePrice > oldPrice) {
                                         billFind.price = binancePrice;
+                                        billFind.amountUsd = precisionRound(
+                                            parseFloat(
+                                                binancePrice *
+                                                    amount *
+                                                    (billFind.fee + 1)
+                                            )
+                                        );
                                         billFind.note = `Because the price of coin with symbol = ${symbol} is changed to ${binancePrice}.`;
                                         billFind
                                             .save()
@@ -370,30 +417,150 @@ const auto_handle_buy_coin = async (symbol, amount, bill_populated) => {
     return p;
 };
 
-const sellFromMarket = async (symbol, amount) => {
-    try {
-        // binance
-        //     .futuresMarketSell(symbol, amount)
-        //     .then((result) => {
-        //         console.log(result);
-        //     })
-        //     .catch((err) => {
-        //         console.log(err);
-        //     });
-        let result = {
-            Hello: 'Hello'
-        };
-        return {
-            code: 0,
-            message: 'Sell Coin to Binanace successfully',
-            data: result
-        };
-    } catch (err) {
-        return {
-            code: 1,
-            message: err.message
-        };
-    }
+const sell_from_market_v1 = async (symbol, amount) => {
+    let p = new Promise((resolve, reject) => {
+        binance
+            .futuresMarketSell(symbol, amount)
+            .then(async (billSellFromBinance) => {
+                let billAfterFormat = JSON.parse(
+                    JSON.stringify(billSellFromBinance)
+                );
+                resolve({
+                    code: 0,
+                    message: `Sell Coin ${symbol} from Binance successfully !!`,
+                    data: billAfterFormat
+                });
+            })
+            .catch((err) => {
+                reject({
+                    code: 1,
+                    message: err.message
+                });
+            });
+    });
+    return p;
+};
+
+const auto_handle_sell_coin = async (symbol, amount, bill_populated) => {
+    let p = new Promise((resolve, reject) => {
+        sell_from_market_v1(symbol, amount)
+            .then(async (data) => {
+                console.log(data);
+
+                let billSellFromBinance = data.data;
+                let orderId = billSellFromBinance.orderId;
+
+                get_detail_order_by_orderId(symbol, orderId)
+                    .then(async (bill_detail) => {
+                        console.log(bill_detail);
+                        let bill_detail_after_get = bill_detail.data;
+
+                        let binancePrice = parseFloat(
+                            bill_detail_after_get.avgPrice
+                        ); // price after sell
+                        let oldPrice = parseFloat(bill_populated.idOrder.price); // price of original order
+
+                        bill_populated.idOrderBinance =
+                            bill_detail_after_get.orderId;
+                        bill_populated.priceBinance = binancePrice;
+                        bill_populated.detailBinanceOrder = JSON.stringify(
+                            bill_detail_after_get
+                        );
+                        bill_populated
+                            .save()
+                            .then(async (bill) => {
+                                const billFind = await BillModels.findById(
+                                    bill_populated.idOrder._id
+                                );
+                                if (billFind) {
+                                    if (binancePrice < oldPrice) {
+                                        billFind.price = binancePrice;
+                                        billFind.amountUsd = precisionRound(
+                                            parseFloat(
+                                                binancePrice *
+                                                    amount *
+                                                    (1 - billFind.fee)
+                                            )
+                                        );
+                                        billFind.note = `Because the price of coin with symbol = ${symbol} is changed to ${binancePrice}.`;
+                                        billFind
+                                            .save()
+                                            .then((b) => {
+                                                completedSell(b._id)
+                                                    .then((z) => {
+                                                        resolve({
+                                                            code: 0,
+                                                            data: z
+                                                        });
+                                                    })
+                                                    .catch((err) => {
+                                                        reject({
+                                                            code: 1,
+                                                            message: err.message
+                                                        });
+                                                    });
+                                            })
+                                            .catch((err) => {
+                                                reject({
+                                                    code: 1,
+                                                    message: `Something error when save the bill after buying coin from binance at case binance price > order price. ${err.message}`
+                                                });
+                                            });
+                                    } else {
+                                        billFind.note = ``;
+                                        billFind
+                                            .save()
+                                            .then((b) => {
+                                                completedSell(b._id)
+                                                    .then((z) => {
+                                                        resolve({
+                                                            code: 0,
+                                                            data: z
+                                                        });
+                                                    })
+                                                    .catch((err) => {
+                                                        reject({
+                                                            code: 1,
+                                                            message: err.message
+                                                        });
+                                                    });
+                                            })
+                                            .catch((err) => {
+                                                reject({
+                                                    code: 1,
+                                                    message: `Something error when save the bill after buying coin from binance at case binance price > order price. ${err.message}`
+                                                });
+                                            });
+                                    }
+                                } else {
+                                    reject({
+                                        code: 1,
+                                        message: `Can not find order buy with id = ${bill.idOrder._id} for handle completed buy coin in auto handle buy coin from binance`
+                                    });
+                                }
+                            })
+                            .catch((err) => {
+                                reject({
+                                    code: 1,
+                                    message: err.message
+                                });
+                            });
+                    })
+                    .catch((err) => {
+                        reject({
+                            code: 1,
+                            message: err.message
+                        });
+                    });
+            })
+            .catch((err) => {
+                reject({
+                    code: 1,
+                    message: err.message
+                });
+            });
+    });
+    return p;
 };
 
 const handleBinance = async () => {
@@ -446,8 +613,32 @@ const handle_binance_buy_sell_coin = async () => {
                     const all_view_bill = await order.populate('idOrder');
 
                     if (all_view_bill.idOrder.type == 'SellCoin') {
-                        console.log('Sell Coin Bill Binance');
-                        console.log(all_view_bill);
+                        let amount = all_view_bill.idOrder.amount;
+                        let symbol = all_view_bill.idOrder.symbol;
+
+                        auto_handle_sell_coin(symbol, amount, all_view_bill)
+                            .then((result) => {
+                                if (result.code == 0) {
+                                    console.log(result);
+
+                                    all_view_bill.status = 'Completed';
+                                    all_view_bill.type = 'SellCoin';
+                                    all_view_bill
+                                        .save()
+                                        .then((billView) => {
+                                            console.log(billView);
+                                            loggerBuyCoin.info(billView);
+                                        })
+                                        .catch((err) => {
+                                            // throw err;
+                                            console.log(err);
+                                        });
+                                }
+                            })
+                            .catch((err) => {
+                                // logger.warn(error);
+                                console.log(err);
+                            });
                     } else if (all_view_bill.idOrder.type == 'BuyCoin') {
                         let amount = all_view_bill.idOrder.amount;
                         let symbol = all_view_bill.idOrder.symbol;
@@ -458,6 +649,7 @@ const handle_binance_buy_sell_coin = async () => {
                                     console.log(result);
 
                                     all_view_bill.status = 'Completed';
+                                    all_view_bill.type = 'BuyCoin';
                                     all_view_bill
                                         .save()
                                         .then((billView) => {
@@ -465,12 +657,14 @@ const handle_binance_buy_sell_coin = async () => {
                                             loggerBuyCoin.info(billView);
                                         })
                                         .catch((err) => {
-                                            throw err;
+                                            // throw err;
+                                            console.log(err);
                                         });
                                 }
                             })
                             .catch((err) => {
-                                throw err;
+                                // logger.warn(error);
+                                console.log(err);
                             });
                     } else {
                         console.log('Not true format');
@@ -489,51 +683,14 @@ const handle_binance_buy_sell_coin = async () => {
 
 // BUY
 
-binance.futuresBalance().then((value) => {
-    console.log(value);
-});
-
-// binance
-//     .futuresMarketBuy('OCEANUSDT', 500)
-//     .then((result) => {
-//         console.log(result);
-//     })
-//     .catch((err) => {
-//         console.log(err);
-//     });
-
-// binance
-//     .futuresOrderStatus('OCEANUSDT', { orderId: '4169340583' })
-//     .then((result) => {
-//         console.log(result);
-//     })
-//     .catch((err) => {
-//         console.log(err);
-//     });
-
-// SELL
-// binance
-//     .futuresMarketSell('OCEANUSDT', 500)
-//     .then((result) => {
-//         console.log(result);
-//     })
-//     .catch((err) => {
-//         console.log(err);
-//     });
-
-// binance
-//     .futuresOrderStatus('OCEANUSDT', { orderId: '4169344091' })
-//     .then((result) => {
-//         console.log(result);
-//     })
-//     .catch((err) => {
-//         console.log(err);
-//     });
+// binance.futuresBalance().then((value) => {
+//     console.log(value);
+// });
 
 module.exports = async (app) => {
     setInterval(() => {
         autoCreateBillHandleBuySellBinance();
         // handleBinance();
-        // handle_binance_buy_sell_coin();
-    }, 3000);
+        handle_binance_buy_sell_coin();
+    }, 30000);
 };

@@ -1,11 +1,14 @@
 require('dotenv').config();
 const express = require('express');
+
 const Admin = require('./routes/Admin');
 const Coins = require('./routes/Coins');
 const Authen = require('./routes/Authen');
 const Users = require('./routes/Users');
 const Ranks = require('./routes/Ranks');
 const Services = require('./routes/services');
+const CoinNa = require('./routes/CoinNA');
+
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
@@ -89,6 +92,7 @@ app.use('/authen', Authen);
 app.use('/ranks', Ranks);
 app.use('/rates', Rates);
 app.use('/services', Services);
+app.use('/CoinNA', CoinNa);
 
 const DIR_UPLOADS = `./uploads`;
 const images = `${DIR_UPLOADS}/images`;

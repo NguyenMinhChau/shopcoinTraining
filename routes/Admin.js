@@ -247,10 +247,10 @@ router.put('/handleWithdrawBot/:id', AdminController.handleWithdraw_v2);
 router.put('/supportHandleWithdraw/:id', AdminController.handleWithdraw_v2);
 
 // [POST] /admin/totalDeposit
-router.post('/totalDeposit', AdminController.totalDeposit);
+router.post('/totalDeposit', AdminController.total_deposit_v1);
 
 // [POST] /admin/totalWithdraw
-router.post('/totalWithdraw', AdminController.totalWithdraw);
+router.post('/totalWithdraw', AdminController.total_withdraw_v1);
 
 // [POST] /admin/totalBalance
 router.post('/totalBalance', AdminController.totalBalance);
@@ -306,5 +306,11 @@ router.get('/testDeleteBuy/:id', AdminController.delete_buy_v1);
 
 // [GET] /admin/testDeleteSell/:id
 router.get('/testDeleteSell/:id', AdminController.delete_sell_v1);
+
+// [GET] /admin/testTotalDeposit
+router.post('/testTotalDeposit', AdminController.total_deposit_v1);
+
+// [GET] /admin/testTotalWithdraw
+router.post('/testTotalWithdraw', AdminController.total_withdraw_v1);
 
 module.exports = router;

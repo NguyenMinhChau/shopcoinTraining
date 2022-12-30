@@ -147,4 +147,7 @@ router.get('/getBalance/:id', UsersContronller.getBalance);
 // [POST] /users/getCoinBySymbol/:id
 router.post('/getCoinBySymbol/:id', UsersContronller.getCoinBySymbol);
 
+// [GET] /users/getAllCoin/:email
+router.get('/getAllCoin/:email', UsersContronller.getAllCoin);
+
 module.exports = router;

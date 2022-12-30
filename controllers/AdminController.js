@@ -4909,6 +4909,74 @@ class AdminController {
         }
     }
 
+    async total_deposit_v1(req, res) {
+        try {
+            const { from, to } = req.body;
+            if (!from || !to) {
+                const depositsFind = await Deposits.find({});
+                const filterDeposit = depositsFind.filter(async (deposit) => {
+                    const email = deposit.user;
+                    const userFind = await User.findOne({
+                        'payment.email': email
+                    });
+                    if (userFind) {
+                        if (userFind.rank !== 'DEMO') {
+                            // console.log(userFind.rank);
+                            return deposit;
+                        }
+                    }
+                });
+                if (filterDeposit.length == 0) {
+                    errCode2(res, `No deposit !!`);
+                } else {
+                    let total = 0;
+                    for (let i = 0; i < filterDeposit.length; i++) {
+                        total = methods.precisionRound(
+                            parseFloat(total) +
+                                parseFloat(filterDeposit[i].amountUsd)
+                        );
+                    }
+                    dataCode(res, total);
+                }
+            } else {
+                let fromDate = new Date(from);
+                let toDate = new Date(to);
+                const depositsFind = await Deposits.find({
+                    createdAt: {
+                        $gte: fromDate,
+                        $lt: toDate
+                    }
+                });
+                const filterDeposit = depositsFind.filter(async (deposit) => {
+                    const email = deposit.user;
+                    const userFind = await User.findOne({
+                        'payment.email': email
+                    });
+                    if (userFind) {
+                        if (userFind.rank !== 'DEMO') {
+                            // console.log(userFind.rank);
+                            return deposit;
+                        }
+                    }
+                });
+                if (filterDeposit.length == 0) {
+                    errCode2(res, `No deposit !!`);
+                } else {
+                    let total = 0;
+                    for (let i = 0; i < filterDeposit.length; i++) {
+                        total = methods.precisionRound(
+                            parseFloat(total) +
+                                parseFloat(filterDeposit[i].amountUsd)
+                        );
+                    }
+                    dataCode(res, total);
+                }
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
     // [POST] /admin/totalWithdraw
     async totalWithdraw(req, res) {
         try {
@@ -4953,6 +5021,78 @@ class AdminController {
             }
         } catch (err) {
             errCode1(res, err);
+        }
+    }
+
+    async total_withdraw_v1(req, res) {
+        try {
+            const { from, to } = req.body;
+            if (!from || !to) {
+                const withdrawsFind = await Withdraws.find({});
+                const filterWithdraw = withdrawsFind.filter(
+                    async (withdraw) => {
+                        const email = withdraw.user;
+                        const userFind = await User.findOne({
+                            'payment.email': email
+                        });
+                        if (userFind) {
+                            if (userFind.rank !== 'DEMO') {
+                                // console.log(userFind.rank);
+                                return withdraw;
+                            }
+                        }
+                    }
+                );
+                if (filterWithdraw.length == 0) {
+                    errCode2(res, `No withdraw !!`);
+                } else {
+                    let total = 0;
+                    for (let i = 0; i < filterWithdraw.length; i++) {
+                        total = methods.precisionRound(
+                            parseFloat(total) +
+                                parseFloat(filterWithdraw[i].amountUsd)
+                        );
+                    }
+                    dataCode(res, total);
+                }
+            } else {
+                let fromDate = new Date(from);
+                let toDate = new Date(to);
+                const withdrawsFind = await Withdraws.find({
+                    createdAt: {
+                        $gte: fromDate,
+                        $lt: toDate
+                    }
+                });
+                const filterWithdraw = withdrawsFind.filter(
+                    async (withdraw) => {
+                        const email = withdraw.user;
+                        const userFind = await User.findOne({
+                            'payment.email': email
+                        });
+                        if (userFind) {
+                            if (userFind.rank !== 'DEMO') {
+                                // console.log(userFind.rank);
+                                return withdraw;
+                            }
+                        }
+                    }
+                );
+                if (filterWithdraw.length == 0) {
+                    errCode2(res, `No withdraw !!`);
+                } else {
+                    let total = 0;
+                    for (let i = 0; i < filterWithdraw.length; i++) {
+                        total = methods.precisionRound(
+                            parseFloat(total) +
+                                parseFloat(filterWithdraw[i].amountUsd)
+                        );
+                    }
+                    dataCode(res, total);
+                }
+            }
+        } catch (error) {
+            errCode1(res, error);
         }
     }
 
