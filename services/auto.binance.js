@@ -36,39 +36,41 @@ const autoCreateBillHandleBuySellBinance = async () => {
                     idOrder: order._id
                 });
                 if (!checkOrder) {
-                    const newOrderBinance = new BinanceModel({
-                        idOrder: order._id
-                    });
-                    newOrderBinance
-                        .save()
-                        .then(async (bill) => {
-                            // return await bill.populate(
-                            //     'idOrder',
-                            //     '-_id -__v -buyer._id'
-                            // );
-                            console.log(
-                                await bill.populate(
-                                    'idOrder',
-                                    '-_id -__v -buyer._id'
-                                )
-                            );
-                        })
-                        .then((overView) => {
-                            // logger.info(overView);
-                            if (overView.idOrder.type == 'SellCoin') {
-                                loggerSellCoin.info(overView);
-                            } else if (overView.idOrder.type == 'BuyCoin') {
-                                loggerBuyCoin.info(overView);
-                            } else {
-                                logger.info(
-                                    'Type of bill is not true : ' +
-                                        JSON.stringify(overView)
-                                );
-                            }
-                        })
-                        .catch((err) => {
-                            logger.error(err);
+                    if (!order.createBy.includes('telegram')) {
+                        const newOrderBinance = new BinanceModel({
+                            idOrder: order._id
                         });
+                        newOrderBinance
+                            .save()
+                            .then(async (bill) => {
+                                // return await bill.populate(
+                                //     'idOrder',
+                                //     '-_id -__v -buyer._id'
+                                // );
+                                console.log(
+                                    await bill.populate(
+                                        'idOrder',
+                                        '-_id -__v -buyer._id'
+                                    )
+                                );
+                            })
+                            .then((overView) => {
+                                // logger.info(overView);
+                                if (overView.idOrder.type == 'SellCoin') {
+                                    loggerSellCoin.info(overView);
+                                } else if (overView.idOrder.type == 'BuyCoin') {
+                                    loggerBuyCoin.info(overView);
+                                } else {
+                                    logger.info(
+                                        'Type of bill is not true : ' +
+                                            JSON.stringify(overView)
+                                    );
+                                }
+                            })
+                            .catch((err) => {
+                                logger.error(err);
+                            });
+                    }
                 } else {
                     logger.warn(`Order is already`);
                 }
@@ -683,14 +685,14 @@ const handle_binance_buy_sell_coin = async () => {
 
 // BUY
 
-// binance.futuresBalance().then((value) => {
-//     console.log(value);
-// });
+binance.futuresBalance().then((value) => {
+    console.log(value);
+});
 
 module.exports = async (app) => {
     setInterval(() => {
-        autoCreateBillHandleBuySellBinance();
+        // autoCreateBillHandleBuySellBinance();
         // handleBinance();
-        handle_binance_buy_sell_coin();
+        // handle_binance_buy_sell_coin();
     }, 30000);
 };
