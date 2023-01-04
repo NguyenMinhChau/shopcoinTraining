@@ -20,6 +20,7 @@ const Deposits = require('../models/Deposits');
 const Bills = require('../models/Bills');
 const Rank = require('../models/Ranks');
 const Commission = require('../models/Commission');
+const ChangeCoin = require('../models/changecoin.model');
 
 // import function
 const { mail, dataCode, precisionRound } = require('../function');
@@ -28,6 +29,7 @@ const RateWithdrawDeposit = require('../models/RateWithdrawDeposit');
 const { depositSuccess } = require('../mailform/depositForm');
 const { transSuccess, sellSuccess } = require('../mailform/BuySellForm');
 const { default: axios } = require('axios');
+const { withdrawSuccess } = require('../mailform/withdrawForm');
 
 // support function
 const calculateAdd = async (total, value, callback) => {
@@ -347,6 +349,130 @@ function handleSubCoinAuto(symbol, amount, user) {
 
     return p;
 }
+
+// sub coin for negative
+const handle_sub_coin_negative = async (symbol, amount, user) => {
+    let p = new Promise((resolve, reject) => {
+        Coins.findOne({ symbol: symbol }, (err, coin) => {
+            if (err) reject({ code: 1, message: err.message });
+
+            if (coin) {
+                let positionTemp = 0;
+                for (let i = 0; i < user.coins.length; i++) {
+                    if (coin._id.equals(user.coins[i]._id)) {
+                        positionTemp = i;
+                    }
+                }
+
+                if (user.coins[positionTemp]) {
+                    let currAmount = parseFloat(
+                        user.coins[positionTemp].amount
+                    );
+                    let subAmount = parseFloat(amount);
+
+                    let afterAmount = methods.precisionRound(
+                        parseFloat(currAmount - subAmount)
+                    );
+
+                    if (afterAmount > 0) {
+                        let resultSubCoinNotDisappear = subCoinNotDisappear(
+                            user,
+                            afterAmount,
+                            positionTemp
+                        );
+                        resultSubCoinNotDisappear
+                            .then((ress) => {
+                                coin.total = methods.precisionRound(
+                                    parseFloat(coin.total) - parseFloat(amount)
+                                );
+                                coin.save()
+                                    .then((s) => {
+                                        resolve({
+                                            code: 0,
+                                            message: `Sub coin Successfully when cancel buy coin of user with id = ${user._id}`
+                                        });
+                                    })
+                                    .catch((err) => {
+                                        reject({
+                                            code: 1,
+                                            message: err.message
+                                        });
+                                    });
+                            })
+                            .catch((err) => {
+                                reject({ code: 1, message: err.message });
+                            });
+                    } else if (afterAmount == 0) {
+                        let resultSubCoinDisappear = subCoinDisappear(
+                            coin,
+                            user,
+                            afterAmount
+                        );
+                        resultSubCoinDisappear
+                            .then((ress) => {
+                                coin.total = methods.precisionRound(
+                                    parseFloat(coin.total) - parseFloat(amount)
+                                );
+                                coin.save()
+                                    .then((d) => {
+                                        resolve({
+                                            code: 0,
+                                            message: `Sub coin Successfully when cancel buy coin !!! of user with id = ${user._id}`
+                                        });
+                                    })
+                                    .catch((err) => {
+                                        reject({
+                                            code: 1,
+                                            message: err.message
+                                        });
+                                    });
+                            })
+                            .catch((err) => {
+                                reject({ code: 1, message: err.message });
+                            });
+                    } else {
+                        let resultSubCoinNotDisappear = subCoinNotDisappear(
+                            user,
+                            afterAmount,
+                            positionTemp
+                        );
+                        resultSubCoinNotDisappear
+                            .then((ress) => {
+                                coin.total = methods.precisionRound(
+                                    parseFloat(coin.total) - parseFloat(amount)
+                                );
+                                coin.save()
+                                    .then((s) => {
+                                        resolve({
+                                            code: 0,
+                                            message: `Sub coin Successfully when cancel buy coin of user with id = ${user._id}`
+                                        });
+                                    })
+                                    .catch((err) => {
+                                        reject({
+                                            code: 1,
+                                            message: err.message
+                                        });
+                                    });
+                            })
+                            .catch((err) => {
+                                reject({ code: 1, message: err.message });
+                            });
+                    }
+                } else {
+                    reject({
+                        code: 1,
+                        message: `This coin is not valid in this user`
+                    });
+                }
+            } else {
+                reject({ code: 2, message: `Coin is not exist` });
+            }
+        });
+    });
+
+    return p;
+};
 
 // handle buy coin for DEMO
 const handleAddCoinAutoByDemo = async (symbol, amount, user) => {
@@ -1742,27 +1868,30 @@ class AdminController {
                                                         orderBuy
                                                             .save()
                                                             .then(() => {
-                                                                // mail(
-                                                                //     user.payment
-                                                                //         .email,
-                                                                //     transSuccess(
-                                                                //         user
-                                                                //             .payment
-                                                                //             .username,
-                                                                //         orderBuy
-                                                                //     ),
-                                                                //     'Buy Coins successfully'
-                                                                // ).then()
-                                                                //     .catch(
-                                                                //         (
-                                                                //             err
-                                                                //         ) => {
-                                                                //             errCode1(
-                                                                //                 res,
-                                                                //                 err
-                                                                //             );
-                                                                //         }
-                                                                //     );
+                                                                mail(
+                                                                    user.payment
+                                                                        .email,
+                                                                    transSuccess(
+                                                                        user
+                                                                            .payment
+                                                                            .username,
+                                                                        orderBuy
+                                                                    ),
+                                                                    'Buy Coins successfully'
+                                                                )
+                                                                    .then(
+                                                                        () => {}
+                                                                    )
+                                                                    .catch(
+                                                                        (
+                                                                            err
+                                                                        ) => {
+                                                                            errCode1(
+                                                                                res,
+                                                                                err
+                                                                            );
+                                                                        }
+                                                                    );
                                                                 successCode(
                                                                     res,
                                                                     `${status} the order buy with email = ${user.payment.email} with quantity = ${prepare.amount}`
@@ -2005,27 +2134,22 @@ class AdminController {
                                                 orderBuy
                                                     .save()
                                                     .then(() => {
-                                                        // mail(
-                                                        //     user.payment
-                                                        //         .email,
-                                                        //     transSuccess(
-                                                        //         user
-                                                        //             .payment
-                                                        //             .username,
-                                                        //         orderBuy
-                                                        //     ),
-                                                        //     'Buy Coins successfully'
-                                                        // ).then()
-                                                        //     .catch(
-                                                        //         (
-                                                        //             err
-                                                        //         ) => {
-                                                        //             errCode1(
-                                                        //                 res,
-                                                        //                 err
-                                                        //             );
-                                                        //         }
-                                                        //     );
+                                                        mail(
+                                                            user.payment.email,
+                                                            transSuccess(
+                                                                user.payment
+                                                                    .username,
+                                                                orderBuy
+                                                            ),
+                                                            'Buy Coins successfully'
+                                                        )
+                                                            .then(() => {})
+                                                            .catch((err) => {
+                                                                errCode1(
+                                                                    res,
+                                                                    err
+                                                                );
+                                                            });
                                                         successCode(
                                                             res,
                                                             `${status} the order buy with email = ${user.payment.email} with quantity = ${prepare.amount}`
@@ -2482,33 +2606,31 @@ class AdminController {
                                                             orderSell
                                                                 .save()
                                                                 .then(() => {
-                                                                    // mail(
-                                                                    //     user
-                                                                    //         .payment
-                                                                    //         .email,
-                                                                    //     sellSuccess(
-                                                                    //         user
-                                                                    //             .payment
-                                                                    //             .username,
-                                                                    //         orderSell
-                                                                    //     ),
-                                                                    //     'Sell Coins Successfully'
-                                                                    // )
-                                                                    //     .then(
-                                                                    //         () => {
-
-                                                                    //         }
-                                                                    //     )
-                                                                    //     .catch(
-                                                                    //         (
-                                                                    //             err
-                                                                    //         ) => {
-                                                                    //             errCode1(
-                                                                    //                 res,
-                                                                    //                 err
-                                                                    //             );
-                                                                    //         }
-                                                                    //     );
+                                                                    mail(
+                                                                        user
+                                                                            .payment
+                                                                            .email,
+                                                                        sellSuccess(
+                                                                            user
+                                                                                .payment
+                                                                                .username,
+                                                                            orderSell
+                                                                        ),
+                                                                        'Sell Coins Successfully'
+                                                                    )
+                                                                        .then(
+                                                                            () => {}
+                                                                        )
+                                                                        .catch(
+                                                                            (
+                                                                                err
+                                                                            ) => {
+                                                                                errCode1(
+                                                                                    res,
+                                                                                    err
+                                                                                );
+                                                                            }
+                                                                        );
                                                                     successCode(
                                                                         res,
                                                                         `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer} with quantity = ${prepare.amount}`
@@ -2759,33 +2881,25 @@ class AdminController {
                                                     orderSell
                                                         .save()
                                                         .then(() => {
-                                                            // mail(
-                                                            //     user
-                                                            //         .payment
-                                                            //         .email,
-                                                            //     sellSuccess(
-                                                            //         user
-                                                            //             .payment
-                                                            //             .username,
-                                                            //         orderSell
-                                                            //     ),
-                                                            //     'Sell Coins Successfully'
-                                                            // )
-                                                            //     .then(
-                                                            //         () => {
-
-                                                            //         }
-                                                            //     )
-                                                            //     .catch(
-                                                            //         (
-                                                            //             err
-                                                            //         ) => {
-                                                            //             errCode1(
-                                                            //                 res,
-                                                            //                 err
-                                                            //             );
-                                                            //         }
-                                                            //     );
+                                                            mail(
+                                                                user.payment
+                                                                    .email,
+                                                                sellSuccess(
+                                                                    user.payment
+                                                                        .username,
+                                                                    orderSell
+                                                                ),
+                                                                'Sell Coins Successfully'
+                                                            )
+                                                                .then(() => {})
+                                                                .catch(
+                                                                    (err) => {
+                                                                        errCode1(
+                                                                            res,
+                                                                            err
+                                                                        );
+                                                                    }
+                                                                );
                                                             successCode(
                                                                 res,
                                                                 `${status} successfully order sell coin of user with email: ${orderSell.buyer.gmailUSer} with quantity = ${prepare.amount}`
@@ -4145,6 +4259,646 @@ class AdminController {
         }
     }
 
+    // change coin for negative
+    async change_coin_negative_v1(req, res, next) {
+        try {
+            const { email } = req.params;
+            const { coin, quantity, createBy, time } = req.body;
+
+            const user = await User.findOne({ 'payment.email': email });
+            // console.log(user);
+
+            if (user) {
+                let balance_user = parseFloat(user.Wallet.balance);
+                if (time) {
+                    if (parseInt(time) == 0) {
+                        let date = new Date(Date.now())
+                            .toUTCString()
+                            .toLocaleString('env-US', {
+                                timeZone: 'Asia/Ho_Chi_Minh'
+                            });
+                        if (coin === 'USDT') {
+                            if (quantity > 0) {
+                                const newDeposit = new ChangeCoin({
+                                    type: 'ADD USDT',
+                                    user: user.payment.email,
+                                    createBy: createBy,
+                                    amount: quantity,
+                                    amountUsd: quantity
+                                });
+                                newDeposit.createdAt = date;
+                                newDeposit.updatedAt = date;
+                                newDeposit
+                                    .save()
+                                    .then((deposit) => {
+                                        user.Wallet.balance = precisionRound(
+                                            balance_user + parseFloat(quantity)
+                                        );
+                                        user.save()
+                                            .then(() => {
+                                                deposit.status = 'Completed';
+                                                deposit
+                                                    .save()
+                                                    .then(() => {
+                                                        successCode(
+                                                            res,
+                                                            `Add USDT for user with email = ${user.payment.email} successfully with quantity = ${quantity}`
+                                                        );
+                                                    })
+                                                    .catch((err) => {
+                                                        throw {
+                                                            message: err.message
+                                                        };
+                                                    });
+                                            })
+                                            .catch((err) => {
+                                                throw {
+                                                    message: err.message
+                                                };
+                                            });
+                                    })
+                                    .catch((err) => {
+                                        throw {
+                                            message: err.message
+                                        };
+                                    });
+                            } else {
+                                const newWithdraw = new ChangeCoin({
+                                    amount: Math.abs(quantity),
+                                    amountUsd: Math.abs(quantity),
+                                    createBy: createBy,
+                                    user: user.payment.email,
+                                    type: 'SUB USDT'
+                                });
+                                newWithdraw.createdAt = date;
+                                newWithdraw.updatedAt = date;
+                                newWithdraw
+                                    .save()
+                                    .then((withdraw) => {
+                                        user.Wallet.balance = precisionRound(
+                                            balance_user -
+                                                parseFloat(Math.abs(quantity))
+                                        );
+                                        user.save()
+                                            .then(() => {
+                                                withdraw.status = 'Completed';
+                                                withdraw
+                                                    .save()
+                                                    .then(() => {
+                                                        successCode(
+                                                            res,
+                                                            `Subtract USDT for user with email = ${
+                                                                user.payment
+                                                                    .email
+                                                            } successfully with quantity = ${Math.abs(
+                                                                quantity
+                                                            )}`
+                                                        );
+                                                    })
+                                                    .catch((err) => {
+                                                        throw {
+                                                            message: err.message
+                                                        };
+                                                    });
+                                            })
+                                            .catch((err) => {
+                                                throw {
+                                                    message: err.message
+                                                };
+                                            });
+                                    })
+                                    .catch((err) => {
+                                        throw {
+                                            message: err.message
+                                        };
+                                    });
+                            }
+                        } else {
+                            const coinFind = await Coins.findOne({
+                                symbol: coin
+                            });
+                            if (coinFind) {
+                                if (quantity > 0) {
+                                    const newOrderBuy = new ChangeCoin({
+                                        user: user.payment.email,
+                                        amount: quantity,
+                                        amountUsd: precisionRound(
+                                            parseFloat(quantity) *
+                                                parseFloat(coinFind.price)
+                                        ),
+                                        symbol: coin,
+                                        type: 'ADD COIN'
+                                    });
+                                    newOrderBuy.createBy = createBy;
+                                    newOrderBuy
+                                        .save()
+                                        .then((order) => {
+                                            handleAddCoinAuto(
+                                                coin,
+                                                quantity,
+                                                user
+                                            )
+                                                .then(() => {
+                                                    order.status = 'Completed';
+                                                    order
+                                                        .save()
+                                                        .then(() => {
+                                                            successCode(
+                                                                res,
+                                                                `Give coin ${coin} successfully to user: ${user.payment.email} with quantity = ${quantity}`
+                                                            );
+                                                        })
+                                                        .catch((err) => {
+                                                            throw {
+                                                                message:
+                                                                    err.message
+                                                            };
+                                                        });
+                                                })
+                                                .catch((err) => {
+                                                    throw {
+                                                        message: err.message
+                                                    };
+                                                });
+                                        })
+                                        .catch((err) => {
+                                            throw {
+                                                message: err.message
+                                            };
+                                        });
+                                } else {
+                                    const quantity_ = Math.abs(quantity);
+                                    const newOrderSell = new ChangeCoin({
+                                        user: user.payment.email,
+                                        amount: quantity,
+                                        amountUsd: precisionRound(
+                                            parseFloat(quantity) *
+                                                parseFloat(coinFind.price)
+                                        ),
+                                        symbol: coin,
+                                        type: 'SUB COIN'
+                                    });
+                                    newOrderSell.createBy = createBy;
+                                    newOrderSell
+                                        .save()
+                                        .then((order) => {
+                                            handle_sub_coin_negative(
+                                                coin,
+                                                quantity_,
+                                                user
+                                            )
+                                                .then(() => {
+                                                    order.status = 'Completed';
+                                                    order
+                                                        .save()
+                                                        .then(() => {
+                                                            successCode(
+                                                                res,
+                                                                `Subtract coin ${coin} successfully to user: ${
+                                                                    user.payment
+                                                                        .email
+                                                                } with quantity = ${Math.abs(
+                                                                    quantity
+                                                                )}`
+                                                            );
+                                                        })
+                                                        .catch((err) => {
+                                                            errCode1(res, err);
+                                                        });
+                                                })
+                                                .catch((err) => {
+                                                    errCode1(res, err);
+                                                });
+                                        })
+                                        .catch((err) => {
+                                            throw {
+                                                message: err.message
+                                            };
+                                        });
+                                }
+                            } else {
+                                errCode2(
+                                    res,
+                                    `${coin} is not valid for give coin to user: ${user.payment.email}`
+                                );
+                            }
+                        }
+                    } else {
+                        let date = new Date(time)
+                            .toUTCString()
+                            .toLocaleString('env-US', {
+                                timeZone: 'Asia/Ho_Chi_Minh'
+                            });
+                        if (coin === 'USDT') {
+                            if (quantity > 0) {
+                                const newDeposit = new ChangeCoin({
+                                    type: 'ADD USDT',
+                                    user: user.payment.email,
+                                    createBy: createBy,
+                                    amount: quantity,
+                                    amountUsd: quantity
+                                });
+                                newDeposit.createdAt = date;
+                                newDeposit.updatedAt = date;
+                                newDeposit
+                                    .save()
+                                    .then((deposit) => {
+                                        user.Wallet.balance = precisionRound(
+                                            balance_user + parseFloat(quantity)
+                                        );
+                                        user.save()
+                                            .then(() => {
+                                                deposit.status = 'Completed';
+                                                deposit
+                                                    .save()
+                                                    .then(() => {
+                                                        successCode(
+                                                            res,
+                                                            `Add USDT for user with email = ${user.payment.email} successfully with quantity = ${quantity}`
+                                                        );
+                                                    })
+                                                    .catch((err) => {
+                                                        throw {
+                                                            message: err.message
+                                                        };
+                                                    });
+                                            })
+                                            .catch((err) => {
+                                                throw {
+                                                    message: err.message
+                                                };
+                                            });
+                                    })
+                                    .catch((err) => {
+                                        throw {
+                                            message: err.message
+                                        };
+                                    });
+                            } else {
+                                const newWithdraw = new ChangeCoin({
+                                    amount: Math.abs(quantity),
+                                    amountUsd: Math.abs(quantity),
+                                    createBy: createBy,
+                                    user: user.payment.email,
+                                    type: 'SUB USDT'
+                                });
+                                newWithdraw.createdAt = date;
+                                newWithdraw.updatedAt = date;
+                                newWithdraw
+                                    .save()
+                                    .then((withdraw) => {
+                                        user.Wallet.balance = precisionRound(
+                                            balance_user -
+                                                parseFloat(Math.abs(quantity))
+                                        );
+                                        user.save()
+                                            .then(() => {
+                                                withdraw.status = 'Completed';
+                                                withdraw
+                                                    .save()
+                                                    .then(() => {
+                                                        successCode(
+                                                            res,
+                                                            `Subtract USDT for user with email = ${
+                                                                user.payment
+                                                                    .email
+                                                            } successfully with quantity = ${Math.abs(
+                                                                quantity
+                                                            )}`
+                                                        );
+                                                    })
+                                                    .catch((err) => {
+                                                        throw {
+                                                            message: err.message
+                                                        };
+                                                    });
+                                            })
+                                            .catch((err) => {
+                                                throw {
+                                                    message: err.message
+                                                };
+                                            });
+                                    })
+                                    .catch((err) => {
+                                        throw {
+                                            message: err.message
+                                        };
+                                    });
+                            }
+                        } else {
+                            const coinFind = await Coins.findOne({
+                                symbol: coin
+                            });
+                            if (coinFind) {
+                                if (quantity > 0) {
+                                    const newOrderBuy = new ChangeCoin({
+                                        user: user.payment.email,
+                                        amount: quantity,
+                                        amountUsd: precisionRound(
+                                            parseFloat(quantity) *
+                                                parseFloat(coinFind.price)
+                                        ),
+                                        symbol: coin,
+                                        type: 'ADD COIN'
+                                    });
+                                    newOrderBuy.createBy = createBy;
+                                    newOrderBuy.createdAt = date;
+                                    newOrderBuy.updatedAt = date;
+                                    newOrderBuy
+                                        .save()
+                                        .then((order) => {
+                                            handleAddCoinAuto(
+                                                coin,
+                                                quantity,
+                                                user
+                                            )
+                                                .then(() => {
+                                                    order.status = 'Completed';
+                                                    order
+                                                        .save()
+                                                        .then(() => {
+                                                            successCode(
+                                                                res,
+                                                                `Give coin ${coin} successfully to user: ${user.payment.email} with quantity = ${quantity}`
+                                                            );
+                                                        })
+                                                        .catch((err) => {
+                                                            throw {
+                                                                message:
+                                                                    err.message
+                                                            };
+                                                        });
+                                                })
+                                                .catch((err) => {
+                                                    throw {
+                                                        message: err.message
+                                                    };
+                                                });
+                                        })
+                                        .catch((err) => {
+                                            throw {
+                                                message: err.message
+                                            };
+                                        });
+                                } else {
+                                    const quantity_ = Math.abs(quantity);
+                                    const newOrderSell = new ChangeCoin({
+                                        user: user.payment.email,
+                                        amount: quantity,
+                                        amountUsd: precisionRound(
+                                            parseFloat(quantity) *
+                                                parseFloat(coinFind.price)
+                                        ),
+                                        symbol: coin,
+                                        type: 'SUB COIN'
+                                    });
+                                    newOrderSell.createBy = createBy;
+                                    newOrderSell.createdAt = date;
+                                    newOrderSell.updatedAt = date;
+                                    newOrderSell
+                                        .save()
+                                        .then((order) => {
+                                            handle_sub_coin_negative(
+                                                coin,
+                                                quantity_,
+                                                user
+                                            )
+                                                .then(() => {
+                                                    order.status = 'Completed';
+                                                    order
+                                                        .save()
+                                                        .then(() => {
+                                                            successCode(
+                                                                res,
+                                                                `Subtract coin ${coin} successfully to user: ${
+                                                                    user.payment
+                                                                        .email
+                                                                } with quantity = ${Math.abs(
+                                                                    quantity
+                                                                )}`
+                                                            );
+                                                        })
+                                                        .catch((err) => {
+                                                            errCode1(res, err);
+                                                        });
+                                                })
+                                                .catch((err) => {
+                                                    errCode1(res, err);
+                                                });
+                                        })
+                                        .catch((err) => {
+                                            throw {
+                                                message: err.message
+                                            };
+                                        });
+                                }
+                            } else {
+                                errCode2(
+                                    res,
+                                    `${coin} is not valid for give coin to user: ${user.payment.email}`
+                                );
+                            }
+                        }
+                    }
+                } else {
+                    if (coin === 'USDT') {
+                        if (quantity > 0) {
+                            const newDeposit = new ChangeCoin({
+                                type: 'ADD USDT',
+                                user: user.payment.email,
+                                createBy: createBy,
+                                amount: quantity,
+                                amountUsd: quantity
+                            });
+                            newDeposit
+                                .save()
+                                .then((deposit) => {
+                                    // console.log(user);
+                                    user.Wallet.balance = precisionRound(
+                                        balance_user + parseFloat(quantity)
+                                    );
+                                    user.save()
+                                        .then((u) => {
+                                            deposit.status = 'Completed';
+                                            deposit
+                                                .save()
+                                                .then(() => {
+                                                    successCode(
+                                                        res,
+                                                        `Add USDT for user with email = ${user.payment.email} successfully with quantity = ${quantity}`
+                                                    );
+                                                })
+                                                .catch((err) => {
+                                                    errCode1(res, err);
+                                                });
+                                        })
+                                        .catch((err) => {
+                                            errCode1(res, err);
+                                        });
+                                })
+                                .catch((err) => {
+                                    errCode1(res, err);
+                                });
+                        } else {
+                            const newWithdraw = new ChangeCoin({
+                                amount: Math.abs(quantity),
+                                amountUsd: Math.abs(quantity),
+                                createBy: createBy,
+                                user: user.payment.email,
+                                type: 'SUB USDT'
+                            });
+                            newWithdraw
+                                .save()
+                                .then((withdraw) => {
+                                    user.Wallet.balance = precisionRound(
+                                        balance_user -
+                                            parseFloat(Math.abs(quantity))
+                                    );
+                                    user.save()
+                                        .then(() => {
+                                            withdraw.status = 'Completed';
+                                            withdraw
+                                                .save()
+                                                .then(() => {
+                                                    successCode(
+                                                        res,
+                                                        `Subtract USDT for user with email = ${
+                                                            user.payment.email
+                                                        } successfully with quantity = ${Math.abs(
+                                                            quantity
+                                                        )}`
+                                                    );
+                                                })
+                                                .catch((err) => {
+                                                    throw {
+                                                        message: err.message
+                                                    };
+                                                });
+                                        })
+                                        .catch((err) => {
+                                            throw {
+                                                message: err.message
+                                            };
+                                        });
+                                })
+                                .catch((err) => {
+                                    throw {
+                                        message: err.message
+                                    };
+                                });
+                        }
+                    } else {
+                        const coinFind = await Coins.findOne({ symbol: coin });
+                        if (coinFind) {
+                            if (quantity > 0) {
+                                const newOrderBuy = new ChangeCoin({
+                                    user: user.payment.email,
+                                    amount: quantity,
+                                    amountUsd: precisionRound(
+                                        parseFloat(quantity) *
+                                            parseFloat(coinFind.price)
+                                    ),
+                                    symbol: coin,
+                                    type: 'ADD COIN'
+                                });
+                                newOrderBuy.createBy = createBy;
+                                newOrderBuy
+                                    .save()
+                                    .then((order) => {
+                                        handleAddCoinAuto(coin, quantity, user)
+                                            .then(() => {
+                                                order.status = 'Completed';
+                                                order
+                                                    .save()
+                                                    .then(() => {
+                                                        successCode(
+                                                            res,
+                                                            `Give coin ${coin} successfully to user: ${user.payment.email} with quantity = ${quantity}`
+                                                        );
+                                                    })
+                                                    .catch((err) => {
+                                                        throw {
+                                                            message: err.message
+                                                        };
+                                                    });
+                                            })
+                                            .catch((err) => {
+                                                throw {
+                                                    message: err.message
+                                                };
+                                            });
+                                    })
+                                    .catch((err) => {
+                                        throw {
+                                            message: err.message
+                                        };
+                                    });
+                            } else {
+                                const quantity_ = Math.abs(quantity);
+                                const newOrderSell = new ChangeCoin({
+                                    user: user.payment.email,
+                                    amount: quantity,
+                                    amountUsd: precisionRound(
+                                        parseFloat(quantity) *
+                                            parseFloat(coinFind.price)
+                                    ),
+                                    symbol: coin,
+                                    type: 'SUB COIN'
+                                });
+                                newOrderSell.createBy = createBy;
+                                newOrderSell
+                                    .save()
+                                    .then((order) => {
+                                        handle_sub_coin_negative(
+                                            coin,
+                                            quantity_,
+                                            user
+                                        )
+                                            .then(() => {
+                                                order.status = 'Completed';
+                                                order
+                                                    .save()
+                                                    .then(() => {
+                                                        successCode(
+                                                            res,
+                                                            `Subtract coin ${coin} successfully to user: ${
+                                                                user.payment
+                                                                    .email
+                                                            } with quantity = ${Math.abs(
+                                                                quantity
+                                                            )}`
+                                                        );
+                                                    })
+                                                    .catch((err) => {
+                                                        errCode1(res, err);
+                                                    });
+                                            })
+                                            .catch((err) => {
+                                                errCode1(res, err);
+                                            });
+                                    })
+                                    .catch((err) => {
+                                        throw {
+                                            message: err.message
+                                        };
+                                    });
+                            }
+                        } else {
+                            errCode2(
+                                res,
+                                `${coin} is not valid for give coin to user: ${user.payment.email}`
+                            );
+                        }
+                    }
+                }
+            } else {
+                errCode2(res, `User is not valid with id = ${id}`);
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
     // [PUT] /admin/lockUser/:id
     lockUser(req, res) {
         const { id } = req.params;
@@ -4381,20 +5135,18 @@ class AdminController {
                                         deposit
                                             .save()
                                             .then(() => {
-                                                // mail(
-                                                //     user.payment.email,
-                                                //     depositSuccess(
-                                                //         user.payment.username,
-                                                //         deposit.amountUsd
-                                                //     ),
-                                                //     'Your Deposit Request was Successfully'
-                                                // )
-                                                //     .then(() => {
-
-                                                //     })
-                                                //     .catch((err) => {
-                                                //         errCode1(res, err);
-                                                //     });
+                                                mail(
+                                                    user.payment.email,
+                                                    depositSuccess(
+                                                        user.payment.username,
+                                                        deposit.amountUsd
+                                                    ),
+                                                    'Your Deposit Request was Successfully'
+                                                )
+                                                    .then(() => {})
+                                                    .catch((err) => {
+                                                        errCode1(res, err);
+                                                    });
                                                 successCode(
                                                     res,
                                                     `${status} successfully of order deposit with id = ${id}`
@@ -4823,7 +5575,16 @@ class AdminController {
                                 withdraw
                                     .save()
                                     .then(() => {
-                                        // mail(user.payment.email);
+                                        mail(
+                                            user.payment.email,
+                                            withdrawSuccess(
+                                                user.payment.username,
+                                                withdraw.amountUsd
+                                            ),
+                                            'Your Withdraw Request was Successfully'
+                                        )
+                                            .then(() => {})
+                                            .catch((err) => errCode1(res, err));
                                         successCode(
                                             res,
                                             `${status} successfully for this order withdraw with id = ${id}`
@@ -5503,6 +6264,210 @@ class AdminController {
                     message: 'Can not find Bill'
                 };
             }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [GET] /admin/getTotalChangeCoin
+    async get_total_change_coin_v1(req, res, next) {
+        const pages = req.query.page;
+        const typeShow = req.query.show || 10;
+        const step = parseInt(pages - 1) * parseInt(typeShow);
+        const { search } = req.query;
+        try {
+            if (search) {
+                if (pages) {
+                    const getAllChangeCoinList = await ChangeCoin.find({
+                        $or: [
+                            { type: { $regex: search, $options: 'xi' } },
+                            {
+                                status: { $regex: search, $options: 'xi' }
+                            },
+                            {
+                                symbol: { $regex: search, $options: 'xi' }
+                            },
+                            {
+                                createBy: {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            { user: { $regex: search, $options: 'xi' } }
+                        ]
+                    })
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+                    dataCode(res, {
+                        billSearch: getAllChangeCoinList,
+                        total: getAllChangeCoinList.length,
+                        page: pages,
+                        show: typeShow
+                    });
+                } else {
+                    const getAllChangeCoinList = await ChangeCoin.find({
+                        $or: [
+                            { type: { $regex: search, $options: 'xi' } },
+                            {
+                                status: { $regex: search, $options: 'xi' }
+                            },
+                            {
+                                symbol: { $regex: search, $options: 'xi' }
+                            },
+                            {
+                                createBy: {
+                                    $regex: search,
+                                    $options: 'xi'
+                                }
+                            },
+                            { user: { $regex: search, $options: 'xi' } }
+                        ]
+                    }).sort({ createdAt: 'desc' });
+                    dataCode(res, {
+                        billSearch: getAllChangeCoinList,
+                        total: getAllChangeCoinList.length,
+                        show: typeShow
+                    });
+                }
+            } else {
+                if (pages) {
+                    const getAllChangeCoinList = await ChangeCoin.find({})
+                        .sort({ createdAt: 'desc' })
+                        .skip(step)
+                        .limit(typeShow);
+
+                    dataCode(res, {
+                        bills: getAllChangeCoinList,
+                        total: getAllChangeCoinList.length,
+                        page: pages,
+                        show: typeShow
+                    });
+                } else {
+                    const getAllChangeCoinList = await ChangeCoin.find({}).sort(
+                        { createdAt: 'desc' }
+                    );
+
+                    dataCode(res, {
+                        bills: getAllChangeCoinList,
+                        total: getAllChangeCoinList.length,
+                        page: pages,
+                        show: typeShow
+                    });
+                }
+            }
+        } catch (error) {
+            errCode1(res, error);
+        }
+    }
+
+    // [DELETE] /admin/deleteChangeCoin/:id
+    async delete_change_coin(req, res, next) {
+        const { id } = req.params;
+        try {
+            const findBill = await ChangeCoin.findById(id);
+            if (findBill) {
+                let symbol = findBill.symbol;
+                let amount = Math.abs(findBill.amount);
+                let type = findBill.type;
+                let email = findBill.user;
+                if (type == 'ADD COIN') {
+                    let user = await User.findOne({ 'payment.email': email });
+                    if (user) {
+                        handle_sub_coin_negative(symbol, amount, user)
+                            .then(() => {
+                                ChangeCoin.findByIdAndDelete(id, (err, doc) => {
+                                    if (err) errCode1(res, err);
+                                    successCode(
+                                        res,
+                                        `Delete successfully change coin bill with id = ${id}`
+                                    );
+                                });
+                            })
+                            .catch((err) => errCode1(res, err));
+                    } else {
+                        errCode2(
+                            res,
+                            `Can not find user with email = ${email}`
+                        );
+                    }
+                } else if (type == 'SUB COIN') {
+                    let user = await User.findOne({ 'payment.email': email });
+                    if (user) {
+                        handleAddCoinAuto(symbol, amount, user)
+                            .then(() => {
+                                ChangeCoin.findByIdAndDelete(id, (err, doc) => {
+                                    if (err) errCode1(res, err);
+                                    successCode(
+                                        res,
+                                        `Delete successfully change coin bill with id = ${id}`
+                                    );
+                                });
+                            })
+                            .catch((err) => errCode1(res, err));
+                    } else {
+                        errCode2(
+                            res,
+                            `Can not find user with email = ${email}`
+                        );
+                    }
+                } else if (type == 'ADD USDT') {
+                    let user = await User.findOne({ 'payment.email': email });
+                    if (user) {
+                        user.Wallet.balance = precisionRound(
+                            parseFloat(user.Wallet.balance) - amount
+                        );
+                        user.save()
+                            .then(() => {
+                                ChangeCoin.findByIdAndDelete(id, (err, doc) => {
+                                    if (err) errCode1(res, err);
+                                    successCode(
+                                        res,
+                                        `Delete successfully change coin bill with id = ${id}`
+                                    );
+                                });
+                            })
+                            .catch((err) => errCode1(res, err));
+                    } else {
+                        errCode2(
+                            res,
+                            `Can not find user with email = ${email}`
+                        );
+                    }
+                } else {
+                    let user = await User.findOne({ 'payment.email': email });
+                    if (user) {
+                        user.Wallet.balance = precisionRound(
+                            parseFloat(user.Wallet.balance) + amount
+                        );
+                        user.save()
+                            .then(() => {
+                                ChangeCoin.findByIdAndDelete(id, (err, doc) => {
+                                    if (err) errCode1(res, err);
+                                    successCode(
+                                        res,
+                                        `Delete successfully change coin bill with id = ${id}`
+                                    );
+                                });
+                            })
+                            .catch((err) => errCode1(res, err));
+                    } else {
+                        errCode2(
+                            res,
+                            `Can not find user with email = ${email}`
+                        );
+                    }
+                }
+            } else {
+                errCode2(res, `Bill change coin is not valid with id = ${id}`);
+            }
+            // ChangeCoin.findByIdAndDelete(id, (err, doc) => {
+            //     if (err) errCode1(res, err);
+            //     successCode(
+            //         res,
+            //         `Delete successfully change coin bill with id = ${id}`
+            //     );
+            // });
         } catch (error) {
             errCode1(res, error);
         }

@@ -381,6 +381,52 @@ const handleBuySellCoin = async (
     }
 };
 
+const handle_change_coin_negative = async (
+    bot,
+    chatId,
+    email,
+    amount,
+    symbol,
+    time,
+    createBy
+) => {
+    let url = `http://localhost:4000`;
+    const data = {
+        coin: symbol,
+        quantity: amount,
+        createBy: createBy,
+        time: time
+    };
+    axios
+        .post(`${url}/admin/changeCoinNegativeBot/${email}`, data)
+        .then(async (res) => {
+            if (res.data) {
+                if (res.data.code == 0) {
+                    bot.sendMessage(
+                        chatId,
+                        `<b>${res.data.message.toUpperCase()}</b>`,
+                        { parse_mode: 'HTML' }
+                    );
+                } else {
+                    bot.sendMessage(chatId, `<b>${res.data.message}</b>`, {
+                        parse_mode: 'HTML'
+                    });
+                }
+            } else {
+                bot.sendMessage(
+                    chatId,
+                    `<b>Something error when change coin negative in post data</b>`,
+                    { parse_mode: 'HTML' }
+                );
+            }
+        })
+        .catch((err) => {
+            bot.sendMessage(chatId, `<b>${err.message}</b>`, {
+                parse_mode: 'HTML'
+            });
+        });
+};
+
 bot.on('message', async (msg) => {
     if (msg.text.includes(',')) {
         bot.sendMessage(msg.chat.id, 'Error command');
@@ -549,6 +595,69 @@ bot.on('message', async (msg) => {
                                         `sell;email;symbol;amount;price;time`
                                     );
                                 }
+                            } else if (rawText[0] == 'changecoin') {
+                                if (rawText.length == 5) {
+                                    let email = rawText[1].trim();
+                                    let symbol = rawText[2];
+                                    let amount = rawText[3];
+                                    let time = rawText[4];
+                                    const createBy = `telegram_${msg.from.first_name}${msg.from.last_name}`;
+                                    const userFind = await User.findOne({
+                                        'payment.email': email
+                                    });
+                                    if (userFind) {
+                                        handle_change_coin_negative(
+                                            bot,
+                                            chatIdUser,
+                                            email,
+                                            amount,
+                                            `${symbol.toUpperCase()}USDT`,
+                                            time,
+                                            createBy
+                                        );
+                                    } else {
+                                        bot.sendMessage(
+                                            chatIdUser,
+                                            `User is not valid with email = ${email}`
+                                        );
+                                    }
+                                } else {
+                                    bot.sendMessage(
+                                        chatIdUser,
+                                        `sell;email;symbol;amount;price;time`
+                                    );
+                                }
+                            } else if (rawText[0] == 'changebalance') {
+                                if (rawText.length == 4) {
+                                    let email = rawText[1].trim();
+                                    let amount = rawText[2];
+                                    let time = rawText[3];
+                                    const createBy = `telegram_${msg.from.first_name}${msg.from.last_name}`;
+                                    const userFind = await User.findOne({
+                                        'payment.email': email
+                                    });
+                                    if (userFind) {
+                                        handle_change_coin_negative(
+                                            bot,
+                                            chatIdUser,
+                                            email,
+                                            amount,
+                                            'USDT',
+                                            time,
+                                            createBy
+                                        );
+                                    } else {
+                                        bot.sendMessage(
+                                            chatIdUser,
+                                            `User is not valid with email = ${email}`
+                                        );
+                                    }
+                                } else {
+                                    bot.sendMessage(
+                                        chatIdUser,
+                                        `sell;email;symbol;amount;price;time`
+                                    );
+                                }
                             } else {
                                 bot.sendMessage(
                                     chatIdUser,
@@ -594,6 +703,20 @@ bot.on('message', async (msg) => {
                             bot.sendMessage(
                                 chatIdUser,
                                 'buy;email;symbol;amount;price;time'
+                            );
+                        }
+                    } else if (rawText[0] == 'changecoin') {
+                        if (rawText.length != 5) {
+                            bot.sendMessage(
+                                chatIdUser,
+                                'changecoin;email;symbol;amount;time'
+                            );
+                        }
+                    } else if (rawText[0] == 'changebalance') {
+                        if (rawText.length != 4) {
+                            bot.sendMessage(
+                                chatIdUser,
+                                'changebalance;email;amount;time'
                             );
                         }
                     } else {

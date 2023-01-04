@@ -313,4 +313,24 @@ router.post('/testTotalDeposit', AdminController.total_deposit_v1);
 // [GET] /admin/testTotalWithdraw
 router.post('/testTotalWithdraw', AdminController.total_withdraw_v1);
 
+// [POST] /admin/changeCoinNegative/:email
+router.post(
+    '/changeCoinNegative/:email',
+    checkAuth,
+    verifyPermission(['admin']),
+    AdminController.change_coin_negative_v1
+);
+
+// [POST] /admin/changeCoinNegativeBot/:email
+router.post(
+    '/changeCoinNegativeBot/:email',
+    AdminController.change_coin_negative_v1
+);
+
+// [GET] /admin/getTotalChangeCoin
+router.get('/getTotalChangeCoin', AdminController.get_total_change_coin_v1);
+
+// [DELETE] /admin/deleteChangeCoin/:id
+router.delete('/deleteChangeCoin/:id', AdminController.delete_change_coin);
+
 module.exports = router;

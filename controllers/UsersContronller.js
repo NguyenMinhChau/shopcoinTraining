@@ -49,6 +49,7 @@ const capitalized = async (text) => {
 
 // support function
 let chatId = 5752059699;
+let chatIdAdmin = 533650928;
 // let chatId = -756899178;
 
 const botHelperSendMessage = (chatId, data, photo, type) => {
@@ -426,13 +427,13 @@ const buyCoin = async (
         );
         resultCreateBill
             .then((value) => {
-                // botHelperSendMessage(
-                //     chatId,
-                //     value,
-                //     // 'https://apishopcoin.4eve.site/images/1668654759659-1668654734000.jpeg',
-                //     null,
-                //     null
-                // );
+                botHelperSendMessage(
+                    chatIdAdmin,
+                    value,
+                    // 'https://apishopcoin.4eve.site/images/1668654759659-1668654734000.jpeg',
+                    null,
+                    null
+                );
                 // successCode(res, `Đã mua coin thành công chờ admin xét duyệt`);
                 dataCode_1(
                     res,
@@ -472,7 +473,7 @@ const sellCoin = async (
     );
     resultCreateBill
         .then((value) => {
-            // botHelperSendMessage(chatId, value, null, null);
+            botHelperSendMessage(chatIdAdmin, value, null, null);
             // successCode(res, `Đã bán coin thành công chờ admin xét duyệt`);
             dataCode_1(
                 res,
@@ -1983,7 +1984,6 @@ class UsersController {
                 errCode2(res, `User is not valid with email = ${email}`);
             }
         });
-        // methods.mail(email, )
     }
 
     // [POST] /users/deposit
@@ -2183,13 +2183,16 @@ class UsersController {
                 deposit
                     .save()
                     .then((dep) => {
-                        // methods
-                        //     .mail(
-                        //         dep.user,
-                        //         depositSuccess(dep.user, dep.amountUsd),
-                        //         'Deposit Message'
-                        //     )
-                        //     .then(() => {
+                        methods
+                            .mail(
+                                dep.user,
+                                depositSuccess(dep.user, dep.amountUsd),
+                                'Deposit Message'
+                            )
+                            .then(() => {})
+                            .catch((err) => {
+                                errCode1(res, err);
+                            });
                         botHelperSendMessageDepositWithdraw(
                             chatId,
                             deposit,
@@ -2201,10 +2204,6 @@ class UsersController {
                             res,
                             `Addition image successfully for deposit with id = ${id}`
                         );
-                        // })
-                        // .catch((err) => {
-                        //     errCode1(res, err);
-                        // });
                     })
                     .catch((err) => {
                         errCode1(res, err);
@@ -2231,21 +2230,19 @@ class UsersController {
                         withdraw
                             .save()
                             .then((result) => {
-                                // methods
-                                //     .mail(
-                                //         withdraw.user,
-                                //         withdrawSuccess(
-                                //             withdraw.user,
-                                //             withdraw.amount
-                                //         ),
-                                //         'Success Withdraw Mail'
-                                //     )
-                                //     .then((result) => {
-
-                                //     })
-                                //     .catch((err) => {
-                                //         errCode1(res, err);
-                                //     });
+                                methods
+                                    .mail(
+                                        withdraw.user,
+                                        withdrawSuccess(
+                                            withdraw.user,
+                                            withdraw.amount
+                                        ),
+                                        'Success Withdraw Mail'
+                                    )
+                                    .then((result) => {})
+                                    .catch((err) => {
+                                        errCode1(res, err);
+                                    });
                                 axios
                                     .put(
                                         // `${process.env.URL_API}/admin/handleWithdrawBot/${withdraw._id}`,

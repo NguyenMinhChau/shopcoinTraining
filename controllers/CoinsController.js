@@ -291,8 +291,8 @@ class CoinsController {
                     });
                 }
             }
-        } catch {
-            methods.errCode2(res, 'Can not get all coin !!!');
+        } catch (error) {
+            methods.errCode2(res, error);
         }
     }
 
@@ -303,7 +303,7 @@ class CoinsController {
             const coinFound = await Coins.findById(id);
             dataCode(res, coinFound);
         } catch (error) {
-            errCode1(res, err);
+            errCode1(res, error);
         }
     }
 
@@ -414,8 +414,9 @@ class CoinsController {
                             return coin;
                         }
                     });
-                    let coinsShow = coinsFound.slice(step, step + typeShow);
+                    console.log(coinsFound.length);
                     const lenCoins = coinsFound.length;
+                    let coinsShow = coinsFound.slice(step, step + typeShow);
                     dataCode(res, {
                         coins: coinsShow,
                         total: lenCoins
@@ -475,7 +476,8 @@ class CoinsController {
             allUser.forEach((user) => {
                 if (
                     typeof user.coins !== 'undefined' &&
-                    user.coins.length > 0
+                    user.coins.length > 0 &&
+                    user.rank != 'DEMO'
                 ) {
                     user.coins.forEach((c) => {
                         totalCoinOfKeyValue.push(c);
@@ -543,7 +545,7 @@ class CoinsController {
                             step,
                             step + parseInt(typeShow)
                         );
-                        let total = coinsShow.length;
+                        let total = resultCoins.length;
                         dataCode(res, {
                             coins: coinsShow,
                             total: total,

@@ -685,9 +685,9 @@ const handle_binance_buy_sell_coin = async () => {
 
 // BUY
 
-binance.futuresBalance().then((value) => {
-    console.log(value);
-});
+// binance.futuresBalance().then((value) => {
+//     console.log(value);
+// });
 
 module.exports = async (app) => {
     setInterval(() => {
