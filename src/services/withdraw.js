@@ -75,6 +75,7 @@ export const SVcreateWithdraw = async (props = {}) => {
 export const SVcheckCode = async (props = {}) => {
   const resGet = await userGet(`/enterOTPWithdraw/${props?.code}`, {
     code: props?.code,
+    token: props?.token,
     headers: {
       token: props?.token,
     },
@@ -153,6 +154,10 @@ export const SVdeleteWithdraw = async (props = {}) => {
 export const SVresendCode = async (props = {}) => {
   const resPost = await userPost(`/resendOTPWithdraw/${props?.id}`, {
     email: props?.email,
+    token: props?.token,
+    headers: {
+      token: props?.token,
+    },
   });
   switch (resPost.code) {
     case 0:

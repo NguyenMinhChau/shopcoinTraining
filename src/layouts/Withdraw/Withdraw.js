@@ -62,8 +62,21 @@ const Withdraw = ({navigation}) => {
     wait(2000).then(() => setRefreshing(false));
   }, []);
   const renderItem = ({item}) => {
+    console.log('item', item);
     return (
-      <DataTable.Row>
+      <DataTable.Row
+        onPress={
+          item?.status === 'On hold'
+            ? () => {
+                navigation.navigate({
+                  name: routersMain.SingleWithdraw,
+                  params: {
+                    data: item,
+                  },
+                });
+              }
+            : () => {}
+        }>
         <DataTable.Cell numeric style={[styles.title_table]}>
           <Text style={[stylesGeneral.text_black]}>
             {formatUSDT(item?.amountUsd)}

@@ -141,7 +141,6 @@ export default function BuyCoin({navigation, route}) {
         </View>
       </View>
       <View style={[styles.exchange]}>
-        {amountCoin ? (
           <Text
             style={[
               stylesStatus.complete,
@@ -150,9 +149,6 @@ export default function BuyCoin({navigation, route}) {
             ]}>
             = {priceCoinSocket?.price}
           </Text>
-        ) : (
-          <Skeleton />
-        )}
       </View>
       <Text
         style={[
