@@ -77,7 +77,7 @@ export default function MyCoinUser() {
                                     .replace('USD', '')}
                             </td>
                             <td className='item-w100'>
-                                {moment(item?.createdAt).format(
+                                {moment(item?.coin?.createdAt).format(
                                     'DD/MM/YYYY HH:mm:ss'
                                 )}
                             </td>

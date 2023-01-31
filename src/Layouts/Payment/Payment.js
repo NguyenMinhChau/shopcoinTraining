@@ -392,7 +392,7 @@ function Payment() {
                 <Modal
                     titleHeader='Delete Payment'
                     actionButtonText='Delete'
-                    openModal={modalDeleteFalse}
+                    openModal={modalDeleteTrue}
                     closeModal={modalDeleteFalse}
                     classNameButton='cancelbgc'
                     onClick={() => deletePayment(edit.id)}
