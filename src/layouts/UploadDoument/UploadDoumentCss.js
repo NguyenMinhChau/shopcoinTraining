@@ -21,10 +21,12 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column',
     flexWrap: 'wrap',
+    // width: '100%',
   },
   image_container_item: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    // width: '100%',
   },
   btn: {
     marginTop: 24,

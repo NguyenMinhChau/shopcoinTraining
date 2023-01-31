@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 // import {launchImageLibrary} from 'react-native-image-picker';
@@ -21,6 +22,7 @@ import styles from './UploadDoumentCss';
 import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
 import {SVgetUserById, SVuploadDocument} from '../../services/user';
+import {routersMain} from '../../routers/Main';
 
 export default function UploadDoument({navigation}) {
   const {state, dispatch} = useAppContext();
@@ -55,82 +57,87 @@ export default function UploadDoument({navigation}) {
     });
   }, []);
   const handleDocumentSelectionFrontCCCD = async () => {
-    await ImagePicker.openPicker({
+    await ImagePicker.openCamera({
       width: 300,
       height: 400,
-      // cropping: true,
+      cropping: true,
       compressImageQuality: 0.7,
       includeBase64: true,
     }).then(image => {
       const object = {
-        image: image.data,
+        image: image?.data || image?.image,
         fileName: image.modificationDate
           ? image.modificationDate + '.' + image.mime.split('/')[1]
-          : image.filename,
+          : image.filename || image.fileName,
       };
-      // const formData = new FormData();
-      // formData.append('cccdFont', object);
-      setFileResponseFrontCCCD(`data:${image.mime};base64,${image.data}`);
+      setFileResponseFrontCCCD(
+        `data:${image?.mime};base64,${image?.data || image?.image}`,
+      );
       setDataImageForm([...dataImageForm, object]);
     });
   };
   const handleDocumentSelectionBackCCCD = async () => {
-    await ImagePicker.openPicker({
+    await ImagePicker.openCamera({
       width: 300,
       height: 400,
-      // cropping: true,
+      cropping: true,
       compressImageQuality: 0.7,
       includeBase64: true,
     }).then(image => {
       const object = {
-        image: image.data,
+        image: image?.data || image?.image,
         fileName: image.modificationDate
           ? image.modificationDate + '.' + image.mime.split('/')[1]
-          : image.filename,
+          : image.filename || image.fileName,
       };
       // const formData = new FormData();
       // formData.append('cccdBeside', object);
-      setFileResponseBackCCCD(`data:${image.mime};base64,${image.data}`);
+      setFileResponseBackCCCD(
+        `data:${image?.mime};base64,${image?.data || image?.image}`,
+      );
       setDataImageForm([...dataImageForm, object]);
     });
   };
   const handleDocumentSelectionFrontLicense = async () => {
-    await ImagePicker.openPicker({
+    await ImagePicker.openCamera({
       width: 300,
       height: 400,
-      // cropping: true,
+      cropping: true,
       compressImageQuality: 0.7,
       includeBase64: true,
     }).then(image => {
       const object = {
-        image: image.data,
+        image: image?.data || image?.image,
         fileName: image.modificationDate
           ? image.modificationDate + '.' + image.mime.split('/')[1]
-          : image.filename,
+          : image.filename || image.fileName,
       };
+      // console.log('object', object);
       // const formData = new FormData();
       // formData.append('licenseFont', object);
-      setFileResponseFrontLicense(`data:${image.mime};base64,${image.data}`);
+      setFileResponseFrontLicense(
+        `data:${image?.mime};base64,${image?.data || image?.image}`,
+      );
       setDataImageForm([...dataImageForm, object]);
     });
   };
   const handleDocumentSelectionBackLicense = async () => {
-    await ImagePicker.openPicker({
+    await ImagePicker.openCamera({
       width: 300,
       height: 400,
-      // cropping: true,
+      cropping: true,
       compressImageQuality: 0.7,
       includeBase64: true,
     }).then(image => {
       const object = {
-        image: image.data,
+        image: image?.data || image?.image,
         fileName: image.modificationDate
           ? image.modificationDate + '.' + image.mime.split('/')[1]
-          : image.filename,
+          : image.filename || image.fileName,
       };
-      // const formData = new FormData();
-      // formData.append('licenseBeside', object);
-      setFileResponseBackLicense(`data:${image.mime};base64,${image.data}`);
+      setFileResponseBackLicense(
+        `data:${image?.mime};base64,${image?.data || image?.image}`,
+      );
       setDataImageForm([...dataImageForm, object]);
     });
   };
@@ -151,7 +158,7 @@ export default function UploadDoument({navigation}) {
     try {
       await 1;
       setIsProcess(true);
-      requestRefreshToken(
+      await requestRefreshToken(
         currentUser,
         uploadImageAPI,
         state,
@@ -160,6 +167,21 @@ export default function UploadDoument({navigation}) {
         setMessage,
         id,
       );
+      if (isProcess) {
+        setLoading(false);
+        setIsProcess(false);
+        setIsStatus(false);
+        Alert.alert('Error', 'Time out, please try again', [
+          {
+            text: 'OK',
+            onPress: () => {
+              navigation.navigate(routersMain.UploadDoument);
+            },
+          },
+        ]);
+      }
+      // setTimeout(() => {
+      // }, 8000);
     } catch (err) {
       console.log(err);
     }

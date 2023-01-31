@@ -132,6 +132,7 @@ export const SVuploadDocument = async (props = {}) => {
       },
     },
   );
+  // console.log(resPut);
   switch (resPut.code) {
     case 0:
       props.setLoading(true);
@@ -148,6 +149,8 @@ export const SVuploadDocument = async (props = {}) => {
       break;
     case 1:
     case 2:
+    case 3:
+    case 4:
       props.setLoading(true);
       props.setIsProcess(false);
       setTimeout(() => {
