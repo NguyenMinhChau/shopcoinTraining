@@ -19,13 +19,13 @@ const Home = ({navigation}) => {
     search,
     data: {dataCoins},
   } = state;
-  // console.log(URL_SERVER);
+  console.log(currentUser);
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [page, setPage] = useState(1);
   const [show, setShow] = useState(dataCoins?.data?.total || 10);
   useEffect(() => {
-    getAsyncStore(dispatch);
+    // getAsyncStore(dispatch);
     dispatch(setSearchValue(''));
   }, []);
   useEffect(() => {

@@ -24,7 +24,7 @@ import {setMessage} from '../../app/payloads/message';
 import {getAllDeposits} from '../../app/payloads/getAll';
 import {setAmountCoin} from '../../app/payloads/form';
 import {removeUSDT} from '../../utils/format/removeUSDT';
-import {FormInput, ImageCp, ModalLoading, Skeleton} from '../../components';
+import {FormInput, ImageCp, ModalLoading} from '../../components';
 import stylesGeneral from '../../styles/General';
 import styles from './BuyCoinCss';
 import stylesStatus from '../../styles/Status';
@@ -82,9 +82,9 @@ export default function BuyCoin({navigation, route}) {
     SVbuyCoin({
       gmailUser: currentUser?.email,
       amount: parseFloat(amountCoin),
-      amountUsd: parseFloat(amountCoin) * parseFloat(dataById?.price),
+      amountUsd: parseFloat(amountCoin) * parseFloat(priceCoinSocket?.price),
       symbol: dataById?.symbol,
-      price: parseFloat(dataById?.price),
+      price: parseFloat(priceCoinSocket?.price),
       token: data?.token,
       setLoading,
       navigation,
@@ -115,7 +115,7 @@ export default function BuyCoin({navigation, route}) {
     parseFloat(currentUser?.balance / priceCoinSocket?.price),
   );
   const amountUsd = formatUSDT(
-    precisionRound(amountCoin * dataById?.price),
+    precisionRound(amountCoin * priceCoinSocket?.price),
   ).replace('USD', '');
   return (
     <ScrollView
@@ -141,14 +141,14 @@ export default function BuyCoin({navigation, route}) {
         </View>
       </View>
       <View style={[styles.exchange]}>
-          <Text
-            style={[
-              stylesStatus.complete,
-              stylesGeneral.fz16,
-              stylesGeneral.fw500,
-            ]}>
-            = {priceCoinSocket?.price}
-          </Text>
+        <Text
+          style={[
+            stylesStatus.complete,
+            stylesGeneral.fz16,
+            stylesGeneral.fw500,
+          ]}>
+          = {priceCoinSocket?.price}
+        </Text>
       </View>
       <Text
         style={[

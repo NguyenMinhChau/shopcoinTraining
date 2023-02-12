@@ -15,12 +15,6 @@ const headerStyle = {
     shadowRadius: 1, //IOS
     elevation: 2, // Android
     backgroundColor: '#fff',
-    // shadowOffset: {
-    //   width: 1,
-    //   height: 1,
-    // },
-    // shadowOpacity: 0.2,
-    // shadowRadius: 1,
   },
 };
 
