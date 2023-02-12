@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import className from 'classnames/bind';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from './SellCoinUser.module.css';
+import socketIO from 'socket.io-client';
 import { Button, FormInput, Icons, Image } from '../../components';
 import {
     axiosUtils,
@@ -26,6 +27,7 @@ export default function SellCoinUser() {
     const [coin, setCoin] = useState([]);
     const [coinById, setCoinById] = useState(null);
     const [amountSell, setAmountSell] = useState();
+    const [priceSocket, setPriceSocket] = useState(0);
     const getCoinBySymbol = async () => {
         const resGet = await axiosUtils.coinGet(`/getCoinSymbol/${idCoin}`);
         setCoin(resGet.data);
@@ -41,6 +43,18 @@ export default function SellCoinUser() {
     useEffect(() => {
         getCoinBySymbol();
     }, []);
+    useEffect(() => {
+        const socket = socketIO(`${URL_SERVER}`, {
+            jsonp: false,
+        });
+        socket.on(`send-data-${coin?.symbol}`, (data) => {
+            setPriceSocket(data);
+        });
+        return () => {
+            socket.disconnect();
+            socket.close();
+        };
+    }, [coin?.symbol]);
     const handleChange = useCallback((e) => {
         setAmountSell(e.target.value);
     }, []);
@@ -49,9 +63,10 @@ export default function SellCoinUser() {
             gmailUser: currentUser?.email,
             amount: amountSell ? amountSell : coinById?.amount,
             amountUsd:
-                coin?.price * (amountSell ? amountSell : coinById?.amount),
+                priceSocket?.price *
+                (amountSell ? amountSell : coinById?.amount),
             symbol: coin?.symbol,
-            price: coin?.price,
+            price: priceSocket?.price,
             token: data?.token,
             dispatch,
             actions,
@@ -138,7 +153,10 @@ export default function SellCoinUser() {
                             <div className={`${cx('item-desc')} complete`}>
                                 {'~ ' +
                                     numberUtils
-                                        .coinUSD(coinById?.amount * coin?.price)
+                                        .coinUSD(
+                                            coinById?.amount *
+                                                priceSocket?.price
+                                        )
                                         .replace('USD', '') || '---'}
                             </div>
                         </div>
@@ -147,7 +165,7 @@ export default function SellCoinUser() {
                                 Coin price
                             </div>
                             <div className={`${cx('item-desc')} vip`}>
-                                {coin?.price}
+                                {priceSocket?.price}
                             </div>
                         </div>
                         <div
@@ -176,7 +194,7 @@ export default function SellCoinUser() {
                                     >
                                         Receive:{' '}
                                         {numberUtils.coinUSD(
-                                            amountSell * coin?.price
+                                            amountSell * priceSocket?.price
                                         )}
                                     </div>{' '}
                                 </>
