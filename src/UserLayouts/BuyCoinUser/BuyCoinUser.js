@@ -95,7 +95,7 @@ export default function BuyCoinUser() {
     );
     const isDisabled = amountBuy < suggestMin || amountBuy > suggestMax;
     const amountUsd = numberUtils
-        .coinUSD(numberUtils.precisionRound(amountBuy * coin?.price))
+        .coinUSD(numberUtils.precisionRound(amountBuy * priceSocket?.price))
         .replace('USD', '');
     return (
         <>
