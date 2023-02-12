@@ -11,6 +11,7 @@ import {
 import React, {useEffect, useState} from 'react';
 // import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import {useAppContext} from '../../utils';
+import {URL_SERVER} from '@env';
 import {formatUSDT, precisionRound} from '../../utils/format/Money';
 import {getBySymbol, getById} from '../../app/payloads/getById';
 import {setAmountSell} from '../../app/payloads/form';
@@ -61,7 +62,19 @@ export default function SellCoin({navigation, route}) {
       getById,
     });
     dispatch(setAmountSell(''));
-    const socket = socketIO('https://apishopcoin.4eve.site/', {
+    // const socket = socketIO(`${URL_SERVER}`, {
+    //   jsonp: false,
+    // });
+    // socket.on(`send-data-${dataById?.symbol}`, data => {
+    //   dispatch(setPriceCoinSocket(data));
+    // });
+    // return () => {
+    //   socket.disconnect();
+    //   socket.close();
+    // };
+  }, []);
+  useEffect(() => {
+    const socket = socketIO(`${URL_SERVER}`, {
       jsonp: false,
     });
     socket.on(`send-data-${dataById?.symbol}`, data => {
@@ -71,14 +84,16 @@ export default function SellCoin({navigation, route}) {
       socket.disconnect();
       socket.close();
     };
-  }, []);
+  }, [dataById?.symbol]);
   const sellCoinAPI = data => {
     SVsellCoin({
       gmailUser: currentUser?.email,
       amount: amountSell ? amountSell : item?.amount,
-      amountUsd: item?.coin?.price * (amountSell ? amountSell : item?.amount),
+      // amountUsd: item?.coin?.price * (amountSell ? amountSell : item?.amount),
+      amountUsd:
+        priceCoinSocket?.price * (amountSell ? amountSell : item?.amount),
       symbol: item?.coin?.symbol,
-      price: item?.coin?.price,
+      price: priceCoinSocket?.price,
       token: data?.token,
       setLoading,
       navigation,
@@ -140,13 +155,13 @@ export default function SellCoin({navigation, route}) {
         <RowDetail title="Quantity" text={item?.amount} />
         <RowDetail
           title="USD"
-          text={`~ ${formatUSDT(item?.amount * item?.coin?.price)}`}
+          text={`~ ${formatUSDT(item?.amount * priceCoinSocket?.price)}`}
         />
         <RowDetail
           title="Average buy price"
           text={priceCoinSocket?.weightedAvgPrice || 'unknown'}
         />
-        <RowDetail title="Coin price" text={item?.coin?.price} />
+        <RowDetail title="Coin price" text={priceCoinSocket?.price} />
         <View style={[styles.row_single]}>
           <FormInput
             label="Amount Sell"
@@ -166,17 +181,19 @@ export default function SellCoin({navigation, route}) {
               <Text style={[stylesStatus.cancel]}>Max: {suggestMax}</Text>
             </View>
           )}
-          {parseFloat(amountSell * item?.coin?.price) >= 0 && amountSell && (
-            <Text
-              style={[
-                stylesGeneral.mb10,
-                stylesGeneral.fz16,
-                stylesGeneral.fwbold,
-                stylesStatus.complete,
-              ]}>
-              Receive: {formatUSDT(parseFloat(amountSell * item?.coin?.price))}
-            </Text>
-          )}
+          {parseFloat(amountSell * priceCoinSocket?.price) >= 0 &&
+            amountSell && (
+              <Text
+                style={[
+                  stylesGeneral.mb10,
+                  stylesGeneral.fz16,
+                  stylesGeneral.fwbold,
+                  stylesStatus.complete,
+                ]}>
+                Receive:{' '}
+                {formatUSDT(parseFloat(amountSell * priceCoinSocket?.price))}
+              </Text>
+            )}
         </View>
       </View>
       <View style={[styles.btn_container]}>
