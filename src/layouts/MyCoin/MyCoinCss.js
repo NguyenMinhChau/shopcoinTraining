@@ -9,7 +9,7 @@ const styles = StyleSheet.create({
   },
   listCoin: {
     // flex: 1,
-    marginBottom: 80,
+    marginBottom: 130,
   },
   coinItem: {
     alignItems: 'center',
@@ -43,6 +43,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     fontWeight: 'bold',
     fontSize: 18,
+  },
+  text_desc: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    letterSpacing: 0.5,
+    lineHeight: 24,
   },
 });
 

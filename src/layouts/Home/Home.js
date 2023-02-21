@@ -2,30 +2,30 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useState} from 'react';
-import {View, RefreshControl, FlatList, Platform} from 'react-native';
+import {View, RefreshControl, FlatList, Platform, Text} from 'react-native';
 import {useAppContext} from '../../utils';
 import {getAllCoins} from '../../app/payloads/getAll';
 import {setSearchValue} from '../../app/payloads/search';
 import {Search, Header, CoinDetail, NodataText} from '../../components';
 import {SVgetAllCoins} from '../../services/coin';
 import styles from './HomeCss';
-import {getAsyncStore} from '../../utils/localStore/localStore';
-// import {URL_SERVER} from '@env';
+import DeviceInfo from 'react-native-device-info';
 
 const Home = ({navigation}) => {
+  // const VERSION_NUMBER_OLD = DeviceInfo.getVersion();
+  // const VERSION_CODE_OLD = DeviceInfo.getBuildNumber();
   const {state, dispatch} = useAppContext();
   const {
     currentUser,
     search,
     data: {dataCoins},
   } = state;
-  console.log(currentUser);
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [page, setPage] = useState(1);
   const [show, setShow] = useState(dataCoins?.data?.total || 10);
+  // get version build on PlayStore of app
   useEffect(() => {
-    // getAsyncStore(dispatch);
     dispatch(setSearchValue(''));
   }, []);
   useEffect(() => {

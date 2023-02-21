@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">ShopCoins USA</string>
+    <!-- CODE PUSH/reactNativeCodePush_androidDeploymentKey -->
+    <string moduleConfig="true" name="CodePushDeploymentKey">RnDCT606GE9AL5GcXGePQ8eEGWK_Jm2Zuq4O5</string>
 </resources>

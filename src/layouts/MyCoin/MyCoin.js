@@ -1,4 +1,6 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable no-shadow */
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/react-in-jsx-scope */
 import {useCallback, useEffect, useState} from 'react';
@@ -12,6 +14,8 @@ import {routersMain} from '../../routers/Main';
 import styles from './MyCoinCss';
 import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
+import socketIO from 'socket.io-client';
+import {URL_SERVER} from '@env';
 
 const MyCoin = ({navigation}) => {
   const {state, dispatch} = useAppContext();
@@ -20,6 +24,8 @@ const MyCoin = ({navigation}) => {
     data: {dataMyCoin},
   } = state;
   const [refreshing, setRefreshing] = useState(false);
+  const [dataSocket, setDataSocket] = useState([]);
+  const data = dataMyCoin?.coins || [];
   useEffect(() => {
     SVgetAllMyCoin({
       id: currentUser?.id,
@@ -34,7 +40,6 @@ const MyCoin = ({navigation}) => {
       getAllMyCoin,
     });
   };
-  const data = dataMyCoin?.coins || [];
   const wait = timeout => {
     return new Promise(resolve => setTimeout(resolve, timeout));
   };
@@ -95,6 +100,9 @@ const MyCoin = ({navigation}) => {
   return (
     <View style={[styles.container]}>
       <Header refreshData={refreshData} />
+      <Text style={[styles.text_desc, stylesStatus.confirm]}>
+        Note: Coin prices in the list are updated every 5 minutes.
+      </Text>
       <View style={[styles.listCoin]}>
         {data?.length > 0 ? (
           <FlatList

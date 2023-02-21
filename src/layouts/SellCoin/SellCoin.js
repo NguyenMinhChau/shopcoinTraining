@@ -77,14 +77,14 @@ export default function SellCoin({navigation, route}) {
     const socket = socketIO(`${URL_SERVER}`, {
       jsonp: false,
     });
-    socket.on(`send-data-${dataById?.symbol}`, data => {
+    socket.on(`send-data-${item?.coin?.symbol}`, data => {
       dispatch(setPriceCoinSocket(data));
     });
     return () => {
       socket.disconnect();
       socket.close();
     };
-  }, [dataById?.symbol]);
+  }, [item?.coin?.symbol]);
   const sellCoinAPI = data => {
     SVsellCoin({
       gmailUser: currentUser?.email,
