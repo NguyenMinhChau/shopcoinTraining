@@ -61,12 +61,6 @@ export default function UploadDocumentUser({
     onChangeUploadLicenseFont,
     onChangeUploadLicenseBeside,
 }) {
-    console.log(
-        urlUploadCCCDFont,
-        urlUploadCCCDBeside,
-        urlUploadLicenseFont,
-        urlUploadLicenseBeside
-    );
     return (
         <>
             <div className={`${cx('container-document')}`}>
