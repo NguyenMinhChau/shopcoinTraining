@@ -101,6 +101,12 @@ const Profile = ({navigation}) => {
           redirectName="Profile Payment"
         />
         <RowDetail title="Live chat" nameIcon="chevron-right" />
+        <RowDetail
+          title="App info"
+          nameIcon="chevron-right"
+          navigation={navigation}
+          redirectName="App info"
+        />
       </View>
       <View style={[styles.list_actions, stylesGeneral.mt10]}>
         {/* <TouchableOpacity activeOpacity={0.6} style={[styles.actions_item]}>

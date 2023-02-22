@@ -18,5 +18,6 @@ export {default as Contact} from './Contact/Contact';
 export {default as ResetPwd} from './ResetPwd/ResetPwd';
 export {default as SellCoin} from './SellCoin/SellCoin';
 export {default as Login} from './Login/Login';
+export {default as InfoApp} from './InfoApp/InfoApp';
 export {default as Register} from './Register/Register';
 export {default as ForgotPwd} from './ForgotPwd/ForgotPwd';

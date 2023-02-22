@@ -15,6 +15,7 @@ import {
   SingleDeposits,
   SingleWithdraw,
   UploadDoument,
+  InfoApp,
 } from '../layouts';
 import Routers from '../navigation/Routers';
 
@@ -33,6 +34,7 @@ export const routersMain = {
   SellCoin: 'Sell Coin',
   ResetPwd: 'Reset Password',
   SellHistory: 'Sell History',
+  InfoApp: 'App info',
   ChangePwd: 'Change Password',
   MainPage: 'MainPage',
 };
@@ -95,6 +97,11 @@ const MainObject = [
   {
     name: routersMain.Contact,
     component: Contact,
+    options: 'custom',
+  },
+  {
+    name: routersMain.InfoApp,
+    component: InfoApp,
     options: 'custom',
   },
   {
