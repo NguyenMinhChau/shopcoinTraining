@@ -176,12 +176,12 @@ function App() {
                                 Download on Google Play
                             </div>
                         </a>
-                        <div className='list-app-item'>
+                        {/* <div className='list-app-item'>
                             <Icons.AppleStoreIcon />
                             <div className='list-app-item-text ml8'>
                                 Download on Apple Store
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 )}
             </div>

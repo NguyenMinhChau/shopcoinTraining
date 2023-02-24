@@ -148,7 +148,6 @@ function Dashboard() {
     //     return [d.getUTCFullYear(), weekNo];
     // };
     const handleChangePeriod = (item) => {
-        console.log(item);
         const date = new Date();
         let toDate = new Date();
         let fromDate = new Date();
