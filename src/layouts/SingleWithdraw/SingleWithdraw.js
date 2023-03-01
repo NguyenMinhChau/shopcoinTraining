@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import Clipboard from '@react-native-community/clipboard';
 import React, {useEffect, useState} from 'react';
 import {useAppContext} from '../../utils';
 import {formatUSDT, formatVND} from '../../utils/format/Money';
@@ -17,17 +18,15 @@ import styles from './SingleWithdrawCss';
 import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
 import {dateFormat} from '../../utils/format/Date';
-import {
-  SVcheckCode,
-  SVdeleteWithdraw,
-  SVresendCode,
-} from '../../services/withdraw';
+import {SVcheckCode, SVresendCode} from '../../services/withdraw';
 import {setCurrentUser} from '../../app/payloads/user';
 import {setMessage} from '../../app/payloads/message';
 import requestRefreshToken from '../../utils/axios/refreshToken';
 import {textLower} from '../../utils/format/textLowercase';
+import {useToast} from 'native-base';
 
 export default function SingleWithdraw({navigation, route}) {
+  const toast = useToast();
   const {data} = route.params;
   const {state, dispatch} = useAppContext();
   const {currentUser, codeVerify} = state;
@@ -141,7 +140,14 @@ export default function SingleWithdraw({navigation, route}) {
       console.log(err);
     }
   };
-
+  const copyToClipboard = value => {
+    Clipboard.setString(value);
+    toast.show({
+      title: 'Copied to clipboard success!',
+      status: 'success',
+      duration: 3000,
+    });
+  };
   return (
     <ScrollView
       style={[styles.container]}
@@ -205,6 +211,12 @@ export default function SingleWithdraw({navigation, route}) {
             <Text style={[styles.info_item_desc, stylesGeneral.text_black]}>
               {data?.withdraw?.method?.accountNumber ||
                 data?.method?.accountNumber}
+              {' | '}
+              <Text
+                style={[styles.text_copy, stylesStatus.confirm]}
+                onPress={() => copyToClipboard(data?.method?.accountNumber)}>
+                Copy
+              </Text>
             </Text>
           </View>
         </View>

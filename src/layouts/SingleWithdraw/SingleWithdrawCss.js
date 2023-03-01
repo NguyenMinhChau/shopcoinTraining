@@ -46,5 +46,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 17,
   },
+  text_copy: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
 export default styles;

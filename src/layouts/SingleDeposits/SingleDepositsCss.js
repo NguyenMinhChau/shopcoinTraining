@@ -45,6 +45,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 12,
   },
+  text_copy: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
 
 export default styles;

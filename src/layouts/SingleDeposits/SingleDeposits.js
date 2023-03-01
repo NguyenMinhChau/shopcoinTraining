@@ -8,6 +8,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import Clipboard from '@react-native-community/clipboard';
 import React, {useCallback, useState} from 'react';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 // import {launchImageLibrary} from 'react-native-image-picker';
@@ -25,8 +26,10 @@ import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
 import {SVupdateDeposits} from '../../services/deposits';
 import {textLower} from '../../utils/format/textLowercase';
+import {useToast} from 'native-base';
 
 export default function SingleDeposits({navigation, route}) {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {currentUser} = state;
   const {data, bankAdmin} = route.params;
@@ -89,6 +92,14 @@ export default function SingleDeposits({navigation, route}) {
       console.log(err);
     }
   };
+  const copyToClipboard = value => {
+    Clipboard.setString(value);
+    toast.show({
+      title: 'Copied to clipboard success!',
+      status: 'success',
+      duration: 3000,
+    });
+  };
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -143,6 +154,12 @@ export default function SingleDeposits({navigation, route}) {
             </Text>
             <Text style={[styles.item_desc, stylesGeneral.text_black]}>
               {bankAdmin?.accountNumber}
+              {' | '}
+              <Text
+                style={[styles.text_copy, stylesStatus.confirm]}
+                onPress={() => copyToClipboard(bankAdmin?.accountNumber)}>
+                Copy
+              </Text>
             </Text>
           </View>
         </View>

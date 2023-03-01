@@ -142,9 +142,9 @@ android {
         applicationId "com.shopcoin"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 30
-        // playStore: 1.1 mỗi lần update playStore thì tăng cả version code/name
-        versionName "1.1" 
+        versionCode 31
+        // playStore: 1.2 mỗi lần update playStore thì tăng cả version code/name
+        versionName "1.2" 
         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
         vectorDrawables.useSupportLibrary = true
 
