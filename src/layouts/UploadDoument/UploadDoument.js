@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 // import {launchImageLibrary} from 'react-native-image-picker';
-import ImagePicker from 'react-native-image-crop-picker';
+import ImageCropPicker from 'react-native-image-crop-picker';
 import {useAppContext} from '../../utils';
 import requestRefreshToken from '../../utils/axios/refreshToken';
 import {setCurrentUser} from '../../app/payloads/user';
@@ -57,12 +57,17 @@ export default function UploadDoument({navigation}) {
     });
   }, []);
   const handleDocumentSelectionFrontCCCD = async () => {
-    await ImagePicker.openCamera({
-      width: 300,
+    await ImageCropPicker.openPicker({
+      width: 500,
       height: 400,
       cropping: true,
-      compressImageQuality: 0.7,
+      compressImageQuality: 1,
       includeBase64: true,
+      // freeStyleCropEnabled: true,
+      // showCropGuidelines: true,
+      // showCropFrame: true,
+      // hideBottomControls: true,
+      // enableRotationGesture: true,
     }).then(image => {
       const object = {
         image: image?.data || image?.image,
@@ -77,12 +82,17 @@ export default function UploadDoument({navigation}) {
     });
   };
   const handleDocumentSelectionBackCCCD = async () => {
-    await ImagePicker.openCamera({
-      width: 300,
+    await ImageCropPicker.openPicker({
+      width: 500,
       height: 400,
       cropping: true,
-      compressImageQuality: 0.7,
+      compressImageQuality: 1,
       includeBase64: true,
+      // freeStyleCropEnabled: true,
+      // showCropGuidelines: true,
+      // showCropFrame: true,
+      // hideBottomControls: true,
+      // enableRotationGesture: true,
     }).then(image => {
       const object = {
         image: image?.data || image?.image,
@@ -99,12 +109,17 @@ export default function UploadDoument({navigation}) {
     });
   };
   const handleDocumentSelectionFrontLicense = async () => {
-    await ImagePicker.openCamera({
-      width: 300,
+    await ImageCropPicker.openPicker({
+      width: 500,
       height: 400,
       cropping: true,
-      compressImageQuality: 0.7,
+      compressImageQuality: 1,
       includeBase64: true,
+      // freeStyleCropEnabled: true,
+      // showCropGuidelines: true,
+      // showCropFrame: true,
+      // hideBottomControls: true,
+      // enableRotationGesture: true,
     }).then(image => {
       const object = {
         image: image?.data || image?.image,
@@ -112,9 +127,6 @@ export default function UploadDoument({navigation}) {
           ? image.modificationDate + '.' + image.mime.split('/')[1]
           : image.filename || image.fileName,
       };
-      // console.log('object', object);
-      // const formData = new FormData();
-      // formData.append('licenseFont', object);
       setFileResponseFrontLicense(
         `data:${image?.mime};base64,${image?.data || image?.image}`,
       );
@@ -122,12 +134,17 @@ export default function UploadDoument({navigation}) {
     });
   };
   const handleDocumentSelectionBackLicense = async () => {
-    await ImagePicker.openCamera({
-      width: 300,
+    await ImageCropPicker.openPicker({
+      width: 500,
       height: 400,
       cropping: true,
-      compressImageQuality: 0.7,
+      compressImageQuality: 1,
       includeBase64: true,
+      // freeStyleCropEnabled: true,
+      // showCropGuidelines: true,
+      // showCropFrame: true,
+      // hideBottomControls: true,
+      // enableRotationGesture: true,
     }).then(image => {
       const object = {
         image: image?.data || image?.image,
