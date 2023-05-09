@@ -5,48 +5,50 @@ import {routersMain} from '../routers/Main';
 
 // ADD BANK INFO
 export const addBankInfo = async (props = {}) => {
-  const resPut = await userPut(`/additionBankInfo/${props.id}`, {
-    bankName: props?.bank,
-    nameAccount: props?.accountName,
-    accountNumber: props?.accountNumber,
-    token: props?.token,
-  });
-  switch (resPut.code) {
-    case 0:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert('Success!', 'Your payment has been updated!', [
+  const {
+    id,
+    bank,
+    accountName,
+    accountNumber,
+    token,
+    setLoading,
+    setIsProcess,
+    navigation,
+  } = props;
+  try {
+    await userPut(`/additionBankInfo/${id}`, {
+      bankName: bank,
+      nameAccount: accountName,
+      accountNumber: accountNumber,
+      token: token,
+    });
+    setLoading(true);
+    setIsProcess(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Success!', 'Your payment has been updated!', [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate(routersMain.CreateWithdraw),
+        },
+      ]);
+    }, 3000);
+  } catch (err) {
+    setLoading(true);
+    setIsProcess(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert(
+        'Error!',
+        `${err?.response?.data?.message}. This account number already exists`,
+        [
           {
             text: 'OK',
-            onPress: () =>
-              props.navigation.navigate(routersMain.CreateWithdraw),
+            onPress: () => navigation.navigate(routersMain.ProfilePayment),
           },
-        ]);
-      }, 3000);
-      break;
-    case 1:
-    case 2:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert(
-          'Error!',
-          `${resPut?.message}. This account number already exists`,
-          [
-            {
-              text: 'OK',
-              onPress: () =>
-                props.navigation.navigate(routersMain.ProfilePayment),
-            },
-          ],
-        );
-      }, 3000);
-      break;
-    default:
-      break;
+        ],
+      );
+    }, 3000);
   }
 };
 // GET ALL PAYMENT ADMIN

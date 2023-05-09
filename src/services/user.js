@@ -9,20 +9,25 @@ import {
 import {removeAsyncStore, setAsyncStore} from '../utils/localStore/localStore';
 import {routersMain} from '../routers/Main';
 import {routers} from '../routers/Routers';
+import {getUserById} from '../app/payloads/getById';
+import {setFormValue} from '../app/payloads/form';
+import {setMessage} from '../app/payloads/message';
+import {getTokenForgotPwd} from '../app/payloads/getToken';
 
 // GET USER BY ID
 export const SVgetUserById = async (props = {}) => {
-  const resGet = await adminGet(`/getUser/${props.id}`);
-  props.dispatch(props.getUserById(resGet?.data));
-  if (props.setBalance && props.currentUser && props.setCurrentUser) {
-    props.setBalance(resGet?.data?.Wallet?.balance);
+  const {id, dispatch, setBalance, currentUser, setCurrentUser} = props;
+  const resGet = await adminGet(`/getUser/${id}`);
+  dispatch(getUserById(resGet?.data));
+  if (setBalance && currentUser && setCurrentUser) {
+    setBalance(resGet?.data?.Wallet?.balance);
     setAsyncStore({
-      ...props.currentUser,
+      ...currentUser,
       balance: resGet?.data?.Wallet?.balance,
     });
-    props.dispatch(
-      props.setCurrentUser({
-        ...props.currentUser,
+    dispatch(
+      setCurrentUser({
+        ...currentUser,
         balance: resGet?.data?.Wallet?.balance,
       }),
     );
@@ -31,182 +36,168 @@ export const SVgetUserById = async (props = {}) => {
 
 // CHANGE PASSWORD
 export const SVchangePassword = async (props = {}) => {
-  const resPut = await userPut(`/changePWD/${props.id}`, {
-    oldPWD: props.oldPWD,
-    newPWD: props.newPWD,
-    token: props.token,
-  });
-  switch (resPut.code) {
-    case 0:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert('Success!', 'Change password successfully!', [
-          {
-            text: 'OK',
-            onPress: () => props.navigation.navigate(routersMain.Login),
-          },
-        ]);
-      }, 3000);
-      props.dispatch(
-        props.setFormValue({
-          password: '',
-          oldPwd: '',
-          confirmPwd: '',
-        }),
-      );
-      await authPost('logout');
-      removeAsyncStore();
-      break;
-    case 1:
-    case 2:
-      props.dispatch(props.setMessage({error: resPut.message}));
-      props.setIsProcess(false);
-      break;
-    default:
-      break;
+  const {
+    id,
+    oldPWD,
+    newPWD,
+    token,
+    setLoading,
+    setIsProcess,
+    navigation,
+    dispatch,
+  } = props;
+  try {
+    await userPut(`/changePWD/${id}`, {
+      oldPWD: oldPWD,
+      newPWD: newPWD,
+      token: token,
+    });
+    setLoading(true);
+    setIsProcess(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Success!', 'Change password successfully!', [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate(routersMain.Login),
+        },
+      ]);
+    }, 3000);
+    dispatch(
+      setFormValue({
+        password: '',
+        oldPwd: '',
+        confirmPwd: '',
+      }),
+    );
+    await authPost('logout');
+    removeAsyncStore();
+  } catch (err) {
+    dispatch(setMessage({error: err?.response?.data?.message}));
+    setIsProcess(false);
   }
 };
 // FORGOT PASSWORD
 export const SVforgotPwd = async (props = {}) => {
-  const resPost = await userPost('/forgotPassword', {
-    email: props.email,
-  });
-  switch (resPost.code) {
-    case 0:
-      props.setLoading(true);
-      setTimeout(() => {
-        props.setLoading(false);
-        props.setIsProcess(false);
-        Alert.alert('Success!', 'Please check email with new password!', [
-          {
-            text: 'OK',
-            onPress: () => props.navigation.navigate(routersMain.ResetPwd),
-          },
-        ]);
-      }, 3000);
-      props.dispatch(props.getTokenForgotPwd(resPost?.data));
-      props.dispatch(
-        props.setFormValue({
-          email: '',
-        }),
-      );
-      break;
-    case 1:
-    case 2:
-      props.dispatch(
-        props.setMessage({
-          success: '',
-          error: resPost.message,
-        }),
-      );
-      props.setIsProcess(false);
-      props.dispatch(
-        props.setFormValue({
-          email: '',
-        }),
-      );
-      break;
-    default:
-      break;
+  const {email, setLoading, setIsProcess, navigation, dispatch} = props;
+  try {
+    const resPost = await userPost('/forgotPassword', {
+      email: email,
+    });
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setIsProcess(false);
+      Alert.alert('Success!', 'Please check email with new password!', [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate(routersMain.ResetPwd),
+        },
+      ]);
+    }, 3000);
+    dispatch(getTokenForgotPwd(resPost?.data));
+    dispatch(
+      setFormValue({
+        email: '',
+      }),
+    );
+  } catch (err) {
+    dispatch(
+      setMessage({
+        success: '',
+        error: err?.response?.data?.message,
+      }),
+    );
+    setIsProcess(false);
+    dispatch(
+      setFormValue({
+        email: '',
+      }),
+    );
   }
 };
 // UPLOAD DOCUMENT
 export const SVuploadDocument = async (props = {}) => {
+  const {imageForm, id, token, setLoading, setIsProcess, navigation} = props;
   const object = {
-    imagePersonNationalityFont: props?.imageForm[0],
-    imagePersonNationalityBeside: props?.imageForm[1],
-    imageLicenseFont: props?.imageForm[2],
-    imageLicenseBeside: props?.imageForm[3],
+    imagePersonNationalityFont: imageForm[0],
+    imagePersonNationalityBeside: imageForm[1],
+    imageLicenseFont: imageForm[2],
+    imageLicenseBeside: imageForm[3],
   };
-  const resPut = await userPut(
-    `/additionImages/${props.id}`,
-    {
-      ...object,
-    },
-    {
-      headers: {
-        // 'Content-Type': 'multipart/form-data',
-        token: props?.token,
+  try {
+    await userPut(
+      `/additionImages/${id}`,
+      {
+        ...object,
       },
-    },
-  );
-  // console.log(resPut);
-  switch (resPut.code) {
-    case 0:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert('Success!', 'Upload document successfully!', [
+      {
+        headers: {
+          // 'Content-Type': 'multipart/form-data',
+          token: token,
+        },
+      },
+    );
+    setLoading(true);
+    setIsProcess(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Success!', 'Upload document successfully!', [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate(routers.Profile),
+        },
+      ]);
+    }, 3000);
+  } catch (err) {
+    setLoading(true);
+    setIsProcess(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert(
+        'Error!',
+        err?.response?.data?.message +
+          '. If you edit you have to re-upload four pictures',
+        [
           {
             text: 'OK',
-            onPress: () => props.navigation.navigate(routers.Profile),
+            onPress: () => navigation.navigate(routersMain.UploadDoument),
           },
-        ]);
-      }, 3000);
-      break;
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert(
-          'Error!',
-          resPut?.message + '. If you edit you have to re-upload four pictures',
-          [
-            {
-              text: 'OK',
-              onPress: () =>
-                props.navigation.navigate(routersMain.UploadDoument),
-            },
-          ],
-        );
-      }, 3000);
-      break;
-    default:
-      break;
+        ],
+      );
+    }, 3000);
   }
 };
 // RESET PASSWORD
 export const SVresetPassword = async (props = {}) => {
-  const resPut = await userPut(`/getOTP/${props.token}`, {
-    otp: props?.otp,
-    pwd: props?.pwd,
-  });
-  switch (resPut.code) {
-    case 0:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert('Success!', 'Change password successfully!', [
-          {
-            text: 'OK',
-            onPress: () => props.navigation.navigate(routersMain.Login),
-          },
-        ]);
-      }, 3000);
-      break;
-    case 1:
-    case 2:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert('Error!', resPut?.message, [
-          {
-            text: 'OK',
-            onPress: () => props.navigation.navigate(routersMain.ResetPwd),
-          },
-        ]);
-      }, 3000);
-      break;
-    default:
-      break;
+  const {token, otp, pwd, setLoading, setIsProcess, navigation} = props;
+  try {
+    await userPut(`/getOTP/${token}`, {
+      otp: otp,
+      pwd: pwd,
+    });
+    setLoading(true);
+    setIsProcess(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Success!', 'Change password successfully!', [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate(routersMain.Login),
+        },
+      ]);
+    }, 3000);
+  } catch (err) {
+    setLoading(true);
+    setIsProcess(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Error!', err?.response?.data?.message, [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate(routersMain.ResetPwd),
+        },
+      ]);
+    }, 3000);
   }
 };

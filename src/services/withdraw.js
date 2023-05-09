@@ -1,4 +1,4 @@
-/* eslint-disable prettier/prettier */ routers;
+/* eslint-disable prettier/prettier */
 import {Alert} from 'react-native';
 import {
   adminGet,
@@ -8,6 +8,7 @@ import {
 } from '../utils/axios/axiosInstance';
 import {routersMain} from '../routers/Main';
 import {routers} from '../routers/Routers';
+import {getAllWithdraws} from '../app/payloads/getAll';
 
 // GET ALL WITHDRAW
 export const SVgetAllWithdraw = async (props = {}) => {
@@ -25,169 +26,158 @@ export const SVgetWithdrawByEmailUser = async (props = {}) => {
 
 // CREATE WITHDRAW
 export const SVcreateWithdraw = async (props = {}) => {
-  const resPost = await userPost('/withdraw', {
-    amountUsd: parseFloat(props?.amount),
-    user: props?.email,
-    rateWithdraw: props?.rateWithdraw,
-    token: props?.token,
-  });
-  switch (resPost.code) {
-    case 0:
-      props.setLoading(true);
-      props.setisProcess(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert('Success!', 'Withdraw request was successfully!', [
-          {
-            text: 'OK',
-            onPress: () =>
-              props.navigation.navigate({
-                name: routersMain.SingleWithdraw,
-                params: {
-                  data: resPost?.data,
-                },
-              }),
-          },
-        ]);
-      }, 3000);
-      break;
-    case 1:
-    case 2:
-      props.setLoading(true);
-      props.setisProcess(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert('Error!', 'Payment no field rateWithdraw. Result is NaN', [
-          {
-            text: 'OK',
-            onPress: () =>
-              props.navigation.navigate(routersMain.CreateWithdraw),
-          },
-        ]);
-      }, 3000);
-      break;
-    default:
-      break;
+  const {
+    amount,
+    email,
+    rateWithdraw,
+    token,
+    setLoading,
+    setisProcess,
+    navigation,
+  } = props;
+  try {
+    const resPost = await userPost('/withdraw', {
+      amountUsd: parseFloat(amount),
+      user: email,
+      rateWithdraw: rateWithdraw,
+      token: token,
+    });
+    setLoading(true);
+    setisProcess(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Success!', 'Withdraw request was successfully!', [
+        {
+          text: 'OK',
+          onPress: () =>
+            navigation.navigate({
+              name: routersMain.SingleWithdraw,
+              params: {
+                data: resPost?.data,
+              },
+            }),
+        },
+      ]);
+    }, 3000);
+  } catch (err) {
+    setLoading(true);
+    setisProcess(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Error!', 'Payment no field rateWithdraw. Result is NaN', [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate(routersMain.CreateWithdraw),
+        },
+      ]);
+    }, 3000);
   }
 };
 
 // CHECK CODE
 export const SVcheckCode = async (props = {}) => {
-  const resGet = await userGet(`/enterOTPWithdraw/${props?.code}`, {
-    code: props?.code,
-    token: props?.token,
-    headers: {
-      token: props?.token,
-    },
-  });
-  switch (resGet.code) {
-    case 0:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert('Success!', resGet?.message, [
-          {
-            text: 'OK',
-            onPress: async () => {
-              const res = await userGet(`/getAllWithdraw/${props?.email}`);
-              props.dispatch(props.getAllWithdraws(res?.data));
-              props.navigation.navigate(routers.Withdraw);
-            },
+  const {code, token, setLoading, setIsProcess, dispatch, navigation, id} =
+    props;
+  try {
+    const resGet = await userGet(`/enterOTPWithdraw/${code}`, {
+      code: code,
+      token: token,
+      headers: {
+        token: token,
+      },
+    });
+    setLoading(true);
+    setIsProcess(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Success!', resGet?.message, [
+        {
+          text: 'OK',
+          onPress: async () => {
+            const res = await userGet(`/getAllWithdraw/${props?.email}`);
+            dispatch(getAllWithdraws(res?.data));
+            navigation.navigate(routers.Withdraw);
           },
-        ]);
-      }, 3000);
-      break;
-    case 1:
-    case 2:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      await userDelete(`/cancelWithdraw/${props.id}`);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert('Error!', resGet?.message, [
-          {
-            text: 'OK',
-            onPress: () =>
-              props.navigation.navigate(routersMain.CreateWithdraw),
-          },
-        ]);
-      }, 3000);
-      break;
-    default:
-      break;
+        },
+      ]);
+    }, 3000);
+  } catch (err) {
+    setLoading(true);
+    setIsProcess(false);
+    await userDelete(`/cancelWithdraw/${id}`);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Error!', err?.response?.data?.message, [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate(routersMain.CreateWithdraw),
+        },
+      ]);
+    }, 3000);
   }
 };
 
 // DELETE WITHDRAW
 export const SVdeleteWithdraw = async (props = {}) => {
-  const resDel = await userDelete(`/cancelWithdraw/${props.id}`);
-  switch (resDel.code) {
-    case 0:
-      props.setLoading(true);
-      props.setIsProcessCancel(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        props.navigation.navigate(routers.Withdraw);
-      }, 3000);
-      break;
-    case 1:
-    case 2:
-      props.setLoading(true);
-      props.setIsProcessCancel(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert('Error!', resDel?.message, [
-          {
-            text: 'OK',
-            onPress: () => {},
-          },
-        ]);
-      }, 3000);
-      break;
-    default:
-      break;
+  const {id, setLoading, setIsProcessCancel, navigation} = props;
+  try {
+    await userDelete(`/cancelWithdraw/${id}`);
+    setLoading(true);
+    setIsProcessCancel(false);
+    setTimeout(() => {
+      setLoading(false);
+      navigation.navigate(routers.Withdraw);
+    }, 3000);
+  } catch (err) {
+    setLoading(true);
+    setIsProcessCancel(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Error!', err?.response?.data?.message, [
+        {
+          text: 'OK',
+          onPress: () => {},
+        },
+      ]);
+    }, 3000);
   }
 };
 
 // RESEND CODE
 export const SVresendCode = async (props = {}) => {
-  const resPost = await userPost(`/resendOTPWithdraw/${props?.id}`, {
-    email: props?.email,
-    token: props?.token,
-    headers: {
-      token: props?.token,
-    },
-  });
-  switch (resPost.code) {
-    case 0:
-      props.setLoading(true);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert(
-          'Success!',
-          'Resend Code successfully. Please check your mail!',
-          [
-            {
-              text: 'OK',
-              onPress: () => {},
-            },
-          ],
-        );
-      }, 3000);
-      break;
-    case 1:
-    case 2:
-      props.setLoading(true);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert('Error!', resPost?.message, [
+  const {id, email, token, setLoading} = props;
+  try {
+    await userPost(`/resendOTPWithdraw/${id}`, {
+      email: email,
+      token: token,
+      headers: {
+        token: token,
+      },
+    });
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert(
+        'Success!',
+        'Resend Code successfully. Please check your mail!',
+        [
           {
             text: 'OK',
             onPress: () => {},
           },
-        ]);
-      }, 3000);
-      break;
+        ],
+      );
+    }, 3000);
+  } catch (err) {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Error!', err?.response?.data?.message, [
+        {
+          text: 'OK',
+          onPress: () => {},
+        },
+      ]);
+    }, 3000);
   }
 };

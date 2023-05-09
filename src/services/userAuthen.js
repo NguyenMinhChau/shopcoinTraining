@@ -2,52 +2,49 @@
 import {authPost} from '../utils/axios/axiosInstance';
 import {setAsyncStore, removeAsyncStore} from '../utils/localStore/localStore';
 import {routersMain} from '../routers/Main';
+import {setFormValue} from '../app/payloads/form';
+import {setMessage} from '../app/payloads/message';
 
 // USER LOGIN
 export const userLogin = async (props = {}) => {
-  const resPost = await authPost('login', {
-    email: props.email,
-    password: props.password,
-  });
-  switch (resPost.code) {
-    case 0:
-      await setAsyncStore({
-        token: resPost?.token,
-        username: resPost?.userInfo?.payment?.username,
-        email: resPost?.userInfo?.payment?.email,
-        rule: resPost?.userInfo?.payment.rule,
-        rank: resPost?.userInfo?.rank,
-        id: resPost?.userInfo?._id,
-        balance: resPost?.userInfo?.Wallet?.balance,
-      });
-      props.dispatch(
-        props.setFormValue({
-          username: '',
-          email: '',
-          password: '',
-        }),
-      );
-      props.dispatch(
-        props.setMessage({
-          ...props.state.message,
-          error: '',
-        }),
-      );
-      props.setIsProcess(false);
-      props.redirect();
-      break;
-    case 1:
-    case 2:
-      props.dispatch(
-        props.setMessage({
-          ...props.state.message,
-          error: resPost?.message,
-        }),
-      );
-      props.setIsProcess(false);
-      break;
-    default:
-      break;
+  const {email, password, dispatch, setIsProcess, redirect, state} = props;
+  try {
+    const resPost = await authPost('login', {
+      email: email,
+      password: password,
+    });
+    await setAsyncStore({
+      token: resPost?.token,
+      username: resPost?.userInfo?.payment?.username,
+      email: resPost?.userInfo?.payment?.email,
+      rule: resPost?.userInfo?.payment.rule,
+      rank: resPost?.userInfo?.rank,
+      id: resPost?.userInfo?._id,
+      balance: resPost?.userInfo?.Wallet?.balance,
+    });
+    dispatch(
+      setFormValue({
+        username: '',
+        email: '',
+        password: '',
+      }),
+    );
+    dispatch(
+      setMessage({
+        ...state.message,
+        error: '',
+      }),
+    );
+    setIsProcess(false);
+    redirect();
+  } catch (err) {
+    dispatch(
+      setMessage({
+        ...state.message,
+        error: err?.response?.data?.message,
+      }),
+    );
+    setIsProcess(false);
   }
 };
 // USER LOGOUT
@@ -57,40 +54,36 @@ export const userLogout = async (props = {}) => {
 };
 // USER REGISTER
 export const userRegister = async (props = {}) => {
-  const resPost = await authPost('register', {
-    username: props.username,
-    email: props.email,
-    password: props.password,
-  });
-  switch (resPost.code) {
-    case 0:
-      props.dispatch(
-        props.setFormValue({
-          username: '',
-          email: '',
-          password: '',
-        }),
-      );
-      props.dispatch(
-        props.setMessage({
-          ...props.state.message,
-          error: '',
-        }),
-      );
-      props.setIsProcess(false);
-      props.navigation.navigate(routersMain.Login);
-      break;
-    case 1:
-    case 2:
-      props.dispatch(
-        props.setMessage({
-          ...props.state.message,
-          error: resPost?.message,
-        }),
-      );
-      props.setIsProcess(false);
-      break;
-    default:
-      break;
+  const {username, email, password, dispatch, setIsProcess, state, navigation} =
+    props;
+  try {
+    await authPost('register', {
+      username: username,
+      email: email,
+      password: password,
+    });
+    dispatch(
+      setFormValue({
+        username: '',
+        email: '',
+        password: '',
+      }),
+    );
+    dispatch(
+      setMessage({
+        ...state.message,
+        error: '',
+      }),
+    );
+    setIsProcess(false);
+    navigation.navigate(routersMain.Login);
+  } catch (err) {
+    dispatch(
+      setMessage({
+        ...state.message,
+        error: err?.response?.data?.message,
+      }),
+    );
+    setIsProcess(false);
   }
 };

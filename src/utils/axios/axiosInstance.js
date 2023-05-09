@@ -4,9 +4,7 @@ import {URL_SERVER} from '@env';
 
 // AUTHENTICATION
 export const authInstance = axios.create({
-  baseURL: `${URL_SERVER}authen/`,
-  // baseURL: 'https://apishopcoin.4eve.site/authen/',
-  // baseURL: 'http://localhost:8000/authen/',
+  baseURL: `${URL_SERVER}authentication/`,
   withCredentials: true,
 });
 export const authPost = async (path, options = {}) => {
@@ -21,7 +19,6 @@ export const refreshToken = async (path, options = {}) => {
 // ADMIN
 export const adminInstance = axios.create({
   baseURL: `${URL_SERVER}admin/`,
-  // baseURL: 'http://localhost:8000/admin/',
   withCredentials: true,
 });
 export const adminGet = async (path, options = {}) => {
@@ -43,7 +40,6 @@ export const adminDelete = async (path, options = {}) => {
 // USERS
 export const userInstance = axios.create({
   baseURL: `${URL_SERVER}users/`,
-  // baseURL: 'http://localhost:8000/users/',
   withCredentials: true,
 });
 export const userGet = async (path, options = {}, others = {}) => {
@@ -64,8 +60,7 @@ export const userDelete = async (path, options = {}) => {
 };
 // COINS
 export const coinInstance = axios.create({
-  baseURL: `${URL_SERVER}coins/`,
-  // baseURL: 'http://localhost:8000/coins/',
+  baseURL: `${URL_SERVER}coin/`,
   withCredentials: true,
 });
 export const coinGet = async (path, options = {}) => {
@@ -87,7 +82,6 @@ export const coinDelete = async (path, options = {}, others = {}) => {
 // RATE
 export const rateInstance = axios.create({
   baseURL: `${URL_SERVER}rates/`,
-  // baseURL: 'http://localhost:8000/coins/',
   withCredentials: true,
 });
 export const rateGet = async (path, options = {}) => {

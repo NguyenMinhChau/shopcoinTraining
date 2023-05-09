@@ -34,119 +34,130 @@ export const SVgetCoinBySymbol = async (props = {}) => {
 };
 // BUY COIN
 export const SVbuyCoin = async (props = {}) => {
-  const resPost = await userPost('/BuyCoin', {
-    gmailUser: props?.gmailUser,
-    amount: props?.amount,
-    amountUsd: props?.amountUsd, //amount * price
-    symbol: props?.symbol,
-    price: props?.price, // api
-    type: 'BuyCoin',
-    token: props?.token,
-  });
-  switch (resPost.code) {
-    case 0:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert(
-          'Success!',
-          `${props.symbol.replace(
-            'USDT',
-            '',
-          )} has been bought! Please wait for admin to approve.`,
-          [
-            {
-              text: 'Continue',
-              onPress: () => props.navigation.navigate(routers.Home),
-            },
-            {
-              text: 'View History',
-              onPress: () => props.navigation.navigate(routers.History),
-            },
-          ],
-        );
-      }, 3000);
-      break;
-    case 1:
-    case 2:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert(
-          'Error!',
-          `An error occurred, please try again. ${resPost.message}`,
-          [
-            {
-              text: 'OK',
-              onPress: () => props.navigation.navigate(routers.Home),
-            },
-          ],
-        );
-      }, 3000);
-      break;
-    default:
-      break;
+  const {
+    gmailUser,
+    amount,
+    amountUsd,
+    symbol,
+    price,
+    token,
+    setLoading,
+    setIsProcess,
+    navigation,
+  } = props;
+  try {
+    await userPost('/BuyCoin', {
+      gmailUser: gmailUser,
+      amount: amount,
+      amountUsd: amountUsd, //amount * price
+      symbol: symbol,
+      price: price, // api
+      type: 'BuyCoin',
+      token: token,
+    });
+    setLoading(true);
+    setIsProcess(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert(
+        'Success!',
+        `${symbol.replace(
+          'USDT',
+          '',
+        )} has been bought! Please wait for admin to approve.`,
+        [
+          {
+            text: 'Continue',
+            onPress: () => navigation.navigate(routers.Home),
+          },
+          {
+            text: 'View History',
+            onPress: () => navigation.navigate(routers.History),
+          },
+        ],
+      );
+    }, 3000);
+  } catch (err) {
+    setLoading(true);
+    setIsProcess(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert(
+        'Error!',
+        `An error occurred, please try again. ${err?.response?.data?.message}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate(routers.Home),
+          },
+        ],
+      );
+    }, 3000);
   }
 };
 // SELL COIN
 export const SVsellCoin = async (props = {}) => {
-  const resPost = await userPost('/SellCoin', {
-    gmailUser: props?.gmailUser,
-    amount: props?.amount,
-    amountUsd: props?.amountUsd, //amount * price
-    symbol: props?.symbol,
-    price: props?.price, // api
-    type: 'SellCoin',
-    token: props?.token,
-  });
-  switch (resPost.code) {
-    case 0:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      props.setIsProcessSellAll(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert(
-          'Success!',
-          `${props.symbol.replace(
-            'USDT',
-            '',
-          )} has been sold! Please wait for admin to approve.`,
-          [
-            {
-              text: 'Continue',
-              onPress: () => props.navigation.navigate(routers.MyCoin),
-            },
-            {
-              text: 'View History',
-              onPress: () => props.navigation.navigate(routersMain.SellHistory),
-            },
-          ],
-        );
-      }, 3000);
-      break;
-    case 1:
-    case 2:
-      props.setLoading(true);
-      props.setIsProcess(false);
-      props.setIsProcessSellAll(false);
-      setTimeout(() => {
-        props.setLoading(false);
-        Alert.alert(
-          'Error!',
-          `An error occurred, please try again. ${resPost.message}`,
-          [
-            {
-              text: 'OK',
-              onPress: () => props.navigation.navigate(routers.MyCoin),
-            },
-          ],
-        );
-      }, 3000);
-      break;
-    default:
-      break;
+  const {
+    gmailUser,
+    amount,
+    amountUsd,
+    symbol,
+    price,
+    token,
+    setLoading,
+    setIsProcess,
+    setIsProcessSellAll,
+    navigation,
+  } = props;
+  try {
+    await userPost('/SellCoin', {
+      gmailUser: gmailUser,
+      amount: amount,
+      amountUsd: amountUsd, //amount * price
+      symbol: symbol,
+      price: price, // api
+      type: 'SellCoin',
+      token: token,
+    });
+    setLoading(true);
+    setIsProcess(false);
+    setIsProcessSellAll(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert(
+        'Success!',
+        `${symbol.replace(
+          'USDT',
+          '',
+        )} has been sold! Please wait for admin to approve.`,
+        [
+          {
+            text: 'Continue',
+            onPress: () => navigation.navigate(routers.MyCoin),
+          },
+          {
+            text: 'View History',
+            onPress: () => navigation.navigate(routersMain.SellHistory),
+          },
+        ],
+      );
+    }, 3000);
+  } catch (err) {
+    setLoading(true);
+    setIsProcess(false);
+    setIsProcessSellAll(false);
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert(
+        'Error!',
+        `An error occurred, please try again. ${err?.response?.data?.message}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate(routers.MyCoin),
+          },
+        ],
+      );
+    }, 3000);
   }
 };

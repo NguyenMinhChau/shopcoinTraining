@@ -19,7 +19,7 @@ const requestRefreshToken = async (
       const decodedToken = await jwt_decode(accessToken);
       const date = new Date();
       if (decodedToken.exp < date.getTime() / 1000) {
-        const res = await refreshToken('refreshToken');
+        const res = await refreshToken(`refreshToken/${currentUser?.id}`);
         if (res === 'No jwt' || res === 'Invalid token') {
           await setAsyncStore(null);
           Alert.alert(
@@ -48,15 +48,6 @@ const requestRefreshToken = async (
           handleFunc(refreshUser, id ? id : '');
           return refreshUser;
         } else {
-          // dispatch(
-          //   setMessage({
-          //     ...state.set,
-          //     message: {
-          //       ...state.set.message,
-          //       error: 'RefreshToken not found- Please login again',
-          //     },
-          //   }),
-          // );
           await setAsyncStore(null);
           Alert.alert(
             'Invalid token',
