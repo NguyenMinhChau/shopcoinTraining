@@ -1,9 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import className from 'classnames/bind';
-import Alert from '@mui/material/Alert';
-import { Image, FormInput, Button } from '../../components';
-import { useAppContext, formUtils, alertUtils } from '../../utils';
+import { Image, FormInput, Button, SnackbarCp } from '../../components';
+import { useAppContext, formUtils } from '../../utils';
 import { actions } from '../../app/';
 import styles from './Form.module.css';
 import { Link } from 'react-router-dom';
@@ -28,24 +27,23 @@ function Form({
     isProcess,
     className,
     children,
+    openSnackbar,
+    handleCloseSnackbar,
+    messageSnackbar,
+    typeSnackbar,
 }) {
     const { state, dispatch } = useAppContext();
     const { email, password, username, otpCode } = state.set.form;
-    const { error } = state.set.message;
     const classed = cx('form-container', className);
     const handleChange = (e) => {
         return formUtils.changeForm(e, dispatch, state, actions);
-    };
-    const handleCloseAlert = () => {
-        return alertUtils.closeAlert(dispatch, state, actions);
     };
     return (
         <div
             className={classed}
             style={{
                 backgroundImage: 'url(/images/bg-login.png)',
-            }}
-        >
+            }}>
             <div className={`${cx('form-container-main')}`}>
                 <div className={`${cx('form-login')}`}>
                     <Image
@@ -54,15 +52,12 @@ function Form({
                         className={`${cx('form-logo')}`}
                     />
                     <p className={`${cx('form-title')}`}>{titleForm}</p>
-                    {error && (
-                        <Alert
-                            severity='error'
-                            style={{ width: '100%' }}
-                            onClose={handleCloseAlert}
-                        >
-                            {error}
-                        </Alert>
-                    )}
+                    <SnackbarCp
+                        openSnackbar={openSnackbar}
+                        handleCloseSnackbar={handleCloseSnackbar}
+                        messageSnackbar={messageSnackbar}
+                        typeSnackbar={typeSnackbar}
+                    />
                     {bolUsername && (
                         <FormInput
                             label='Username'
@@ -117,25 +112,17 @@ function Form({
                         isProcess={isProcess}
                         disabled={isProcess || disabled}
                         className={`${cx('form-btn')}`}
-                        onClick={onClick}
-                    >
+                        onClick={onClick}>
                         {textBtn}
                     </Button>
                     {(loginForm || registerForm) && (
                         <div className={`${cx('form-help')}`}>
                             <span>
-                                {loginForm
-                                    ? "Don't have an account?"
-                                    : 'Have an account?'}{' '}
+                                {loginForm ? "Don't have an account?" : 'Have an account?'}{' '}
                             </span>
                             <Link
                                 className={`${cx('form-link')}`}
-                                to={
-                                    loginForm
-                                        ? `${routers.register}`
-                                        : `${routers.login}`
-                                }
-                            >
+                                to={loginForm ? `${routers.register}` : `${routers.login}`}>
                                 {loginForm ? 'Register' : 'Login'}
                             </Link>
                         </div>
@@ -144,19 +131,13 @@ function Form({
                         <>
                             <div className={`${cx('form-help')}`}>
                                 <span>Have an account? </span>
-                                <Link
-                                    className={`${cx('form-link')}`}
-                                    to={`${routers.login}`}
-                                >
+                                <Link className={`${cx('form-link')}`} to={`${routers.login}`}>
                                     Login
                                 </Link>
                             </div>
                             <div className={`${cx('form-help')}`}>
                                 <span>Don't have an account? </span>
-                                <Link
-                                    className={`${cx('form-link')}`}
-                                    to={`${routers.register}`}
-                                >
+                                <Link className={`${cx('form-link')}`} to={`${routers.register}`}>
                                     Register
                                 </Link>
                             </div>

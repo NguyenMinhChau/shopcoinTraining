@@ -1,22 +1,21 @@
+import { actions } from '../../app/';
+
 export const validateCase1_2 = (res, props) => {
     props.dispatch(
-        props.actions.setData({
-            ...props.state.set,
-            message: {
-                error: res.message,
-            },
-        })
-    );
-    props.dispatch(
-        props.actions.toggleModal({
-            ...props.state.toggle,
+        actions.toggleModal({
+            modalPaymentEdit: false,
+            modalSettingEdit: false,
+            modalDepositsEdit: false,
+            modalWithdrawEdit: false,
+            modalBuyEdit: false,
+            modalSellEdit: false,
             modalDelete: false,
             modalStatus: false,
-            alertModal: true,
         })
     );
-    // window.scrollTo({
-    //     top: 0,
-    //     behavior: 'smooth',
-    // });
+    props.setSnackbar({
+        open: true,
+        message: res?.message ? res?.message : 'Error',
+        type: 'error',
+    });
 };

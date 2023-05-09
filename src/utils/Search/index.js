@@ -5,7 +5,6 @@ export const logicSearch = (e, dispatch, state, actions) => {
     } else {
         dispatch(
             actions.setData({
-                ...state.set,
                 searchValues: {
                     ...state.set.searchValues,
                     [e.target.name]: searchValueInput,
@@ -17,9 +16,6 @@ export const logicSearch = (e, dispatch, state, actions) => {
 export const searchInput = (valueSearch, filed) => {
     return (
         filed &&
-        filed
-            ?.toString()
-            ?.toLowerCase()
-            ?.indexOf(valueSearch?.toString()?.toLowerCase()) !== -1
+        filed?.toString()?.toLowerCase()?.indexOf(valueSearch?.toString()?.toLowerCase()) !== -1
     );
 };

@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import className from 'classnames/bind';
 import moment from 'moment';
 import styles from './ProfileUser.module.css';
-import { AlertCp, Button, Icons, Modal } from '../../components';
+import { Button, Icons, Modal, SnackbarCp } from '../../components';
 import {
     axiosUtils,
     dataBank,
@@ -40,8 +40,7 @@ export default function ProfileUser() {
     const [stateModalBank, setStateModalBank] = useState(false);
     const [stateModalUpload, setStateModalUpload] = useState(false);
     const [stateModalChangePwd, setStateModalChangePwd] = useState(false);
-    const [stateModalProfilePayment, setStateModalProfilePayment] =
-        useState(false);
+    const [stateModalProfilePayment, setStateModalProfilePayment] = useState(false);
     const [uploadCCCDFont, setUploadCCCDFont] = useState(null);
     const [uploadCCCDBeside, setUploadCCCDBeside] = useState(null);
     const [uploadLicenseFont, setUploadLicenseFont] = useState(null);
@@ -55,10 +54,22 @@ export default function ProfileUser() {
         accountName: '',
         accountNumber: '',
     });
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        type: '',
+        message: '',
+    });
+    const handleCloseSnackbar = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbar({
+            ...snackbar,
+            open: false,
+        });
+    };
     const getUser = async () => {
-        const process = await axiosUtils.adminGet(
-            `/getUser/${currentUser?.id}`
-        );
+        const process = await axiosUtils.adminGet(`/getUser/${currentUser?.id}`);
         setUser(process.data);
     };
     useEffect(() => {
@@ -168,32 +179,23 @@ export default function ProfileUser() {
             cccdBeside: uploadCCCDBeside?.file,
             licenseFont: uploadLicenseFont?.file,
             licenseBeside: uploadLicenseBeside?.file,
-            state,
             dispatch,
-            actions,
             setIsProcess,
+            setStateModalUpload,
+            setSnackbar,
             id: currentUser?.id,
         });
     };
     const handleSubmitFormUpload = useCallback(async (e) => {
-        try {
-            await 1;
-            setIsProcess(true);
-            setTimeout(() => {
-                // console.log(formUploadImage);
-                requestRefreshToken(
-                    currentUser,
-                    uploadDocumentAPI,
-                    state,
-                    dispatch,
-                    actions,
-                    currentUser?.id
-                );
-                setStateModalUpload(false);
-            }, 3000);
-        } catch (err) {
-            console.log(err);
-        }
+        setIsProcess(true);
+        requestRefreshToken(
+            currentUser,
+            uploadDocumentAPI,
+            state,
+            dispatch,
+            actions,
+            currentUser?.id
+        );
     });
     const handleChangeFormPwd = useCallback(
         (e) => {
@@ -216,38 +218,27 @@ export default function ProfileUser() {
             newPWD: formChangePwd?.newPwd,
             token: data?.token,
             dispatch,
-            actions,
             setIsProcess,
+            setStateModalChangePwd,
+            setSnackbar,
         });
     };
     const handleSubmitFormPwd = useCallback(
-        async (e) => {
-            try {
-                if (
-                    !formChangePwd.currentPwd ||
-                    !formChangePwd.confirmPwd ||
-                    !formChangePwd.newPwd
-                ) {
-                    alert('Please fill all fields');
-                } else if (formChangePwd.newPwd !== formChangePwd.confirmPwd) {
-                    alert('Password confirm not match with new password');
-                } else {
-                    await 1;
-                    setIsProcess(true);
-                    setTimeout(() => {
-                        requestRefreshToken(
-                            currentUser,
-                            changePwdAPI,
-                            state,
-                            dispatch,
-                            actions,
-                            currentUser?.id
-                        );
-                        setStateModalChangePwd(false);
-                    }, 3000);
-                }
-            } catch (err) {
-                console.log(err);
+        (e) => {
+            if (!formChangePwd.currentPwd || !formChangePwd.confirmPwd || !formChangePwd.newPwd) {
+                alert('Please fill all fields');
+            } else if (formChangePwd.newPwd !== formChangePwd.confirmPwd) {
+                alert('Password confirm not match with new password');
+            } else {
+                setIsProcess(true);
+                requestRefreshToken(
+                    currentUser,
+                    changePwdAPI,
+                    state,
+                    dispatch,
+                    actions,
+                    currentUser?.id
+                );
             }
         },
         [formChangePwd]
@@ -262,28 +253,21 @@ export default function ProfileUser() {
             dispatch,
             actions,
             setIsProcess,
+            setSnackbar,
+            setStateModalProfilePayment,
         });
     };
     const handleSubmitFormProfilePayment = useCallback(
-        async (e) => {
-            try {
-                await 1;
-                setIsProcess(true);
-                setTimeout(() => {
-                    // console.log(formProfilePayment, bankValue);
-                    requestRefreshToken(
-                        currentUser,
-                        addBankInfoAPI,
-                        state,
-                        dispatch,
-                        actions,
-                        currentUser?.id
-                    );
-                    setStateModalProfilePayment(false);
-                }, 3000);
-            } catch (err) {
-                console.log(err);
-            }
+        (e) => {
+            setIsProcess(true);
+            requestRefreshToken(
+                currentUser,
+                addBankInfoAPI,
+                state,
+                dispatch,
+                actions,
+                currentUser?.id
+            );
         },
         [formProfilePayment, bankValue]
     );
@@ -293,35 +277,32 @@ export default function ProfileUser() {
     });
     return (
         <>
-            <Button
-                className='confirmbgc mb8'
-                onClick={refreshPage.refreshPage}
-            >
+            <Button className='confirmbgc mb8' onClick={refreshPage.refreshPage}>
                 <div className='flex-center'>
                     <Icons.RefreshIcon className='fz12 mr8' />
-                    <span className={`${cx('general-button-text')}`}>
-                        Refresh Page
-                    </span>
+                    <span className={`${cx('general-button-text')}`}>Refresh Page</span>
                 </div>
             </Button>
-            <AlertCp />
+            {/* <AlertCp /> */}
+            <SnackbarCp
+                openSnackbar={snackbar.open}
+                handleCloseSnackbar={handleCloseSnackbar}
+                messageSnackbar={snackbar.message}
+                typeSnackbar={snackbar.type}
+            />
             <div className={`${cx('info-container')}`}>
                 <div className={`${cx('detail-container')}`}>
                     <div className={`${cx('info-detail')}`}>
                         <div className={`${cx('detail-item')}`}>
                             <div className={`${cx('item-title')}`}>Rank</div>
                             <div className={`${cx('item-desc')}`}>
-                                <span
-                                    className={`fwb ${user?.rank.toLowerCase()}`}
-                                >
+                                <span className={`fwb ${user?.rank.toLowerCase()}`}>
                                     {textUtils.FirstUpc(user?.rank) || '---'}
                                 </span>
                             </div>
                         </div>
                         <div className={`${cx('detail-item')}`}>
-                            <div className={`${cx('item-title')}`}>
-                                Username
-                            </div>
+                            <div className={`${cx('item-title')}`}>Username</div>
                             <div className={`${cx('item-desc')}`}>
                                 {user?.payment?.username || '---'}
                             </div>
@@ -333,44 +314,28 @@ export default function ProfileUser() {
                             </div>
                         </div>
                         <div className={`${cx('detail-item')}`}>
-                            <div className={`${cx('item-title')}`}>
-                                Your wallet
-                            </div>
+                            <div className={`${cx('item-title')}`}>Your wallet</div>
                             <div className={`${cx('item-desc')} cancel`}>
-                                {numberUtils.coinUSD(user?.Wallet?.balance) ||
-                                    '---'}
+                                {numberUtils.coinUSD(user?.Wallet?.balance) || '---'}
                             </div>
                         </div>
                         <div className={`${cx('detail-item')}`}>
-                            <div className={`${cx('item-title')}`}>
-                                Created At
-                            </div>
+                            <div className={`${cx('item-title')}`}>Created At</div>
                             <div className={`${cx('item-desc')}`}>
-                                {moment(user?.createdAt).format(
-                                    'DD/MM/YYYY HH:mm:ss'
-                                ) || '---'}
+                                {moment(user?.createdAt).format('DD/MM/YYYY HH:mm:ss') || '---'}
                             </div>
                         </div>
                     </div>
                 </div>
                 <div className={`${cx('detail-container')}`}>
                     <div className={`${cx('info-detail', 'btn-container')}`}>
-                        <Button
-                            className='confirmbgc w100'
-                            onClick={openModalUpload}
-                        >
+                        <Button className='confirmbgc w100' onClick={openModalUpload}>
                             Upload Document
                         </Button>
-                        <Button
-                            className='completebgc w100 ml0 mt8'
-                            onClick={openModalChangePwd}
-                        >
+                        <Button className='completebgc w100 ml0 mt8' onClick={openModalChangePwd}>
                             Change Password
                         </Button>
-                        <Button
-                            className='vipbgc w100 ml0 mt8'
-                            onClick={openModalProfilePayment}
-                        >
+                        <Button className='vipbgc w100 ml0 mt8' onClick={openModalProfilePayment}>
                             Profile Payment
                         </Button>
                     </div>
@@ -384,8 +349,7 @@ export default function ProfileUser() {
                     openModal={openModalUpload}
                     closeModal={closeModalUpload}
                     onClick={handleSubmitFormUpload}
-                    isProcess={isProcess}
-                >
+                    isProcess={isProcess}>
                     <UploadDocumentUser
                         user={user}
                         uploadCCCDFont='uploadCCCDFont'
@@ -398,12 +362,8 @@ export default function ProfileUser() {
                         urlUploadLicenseBeside={uploadLicenseBeside?.url}
                         onChangeUploadCCCDFont={handleChangeUploadCCCDFont}
                         onChangeUploadCCCDBeside={handleChangeUploadCCCDBeside}
-                        onChangeUploadLicenseFont={
-                            handleChangeUploadLicenseFont
-                        }
-                        onChangeUploadLicenseBeside={
-                            handleChangeUploadLicenseBeside
-                        }
+                        onChangeUploadLicenseFont={handleChangeUploadLicenseFont}
+                        onChangeUploadLicenseBeside={handleChangeUploadLicenseBeside}
                     />
                 </Modal>
             )}
@@ -420,8 +380,7 @@ export default function ProfileUser() {
                         !formChangePwd.currentPwd ||
                         !formChangePwd.newPwd ||
                         !formChangePwd.confirmPwd
-                    }
-                >
+                    }>
                     <ChangePwdUser
                         onChange={handleChangeFormPwd}
                         nameCr='currentPwd'
@@ -443,8 +402,7 @@ export default function ProfileUser() {
                         !formProfilePayment.accountName ||
                         !formProfilePayment.accountNumber ||
                         !bankValue
-                    }
-                >
+                    }>
                     <ProfilePaymentUser
                         toogleModalBank={toogleModalBank}
                         stateModalBank={stateModalBank}

@@ -8,8 +8,6 @@ import { actions } from '../../app/';
 import { General } from '../';
 import {
     getPayments,
-    checkFormPayment,
-    checkErrorPayment,
     handleCreate,
     handleUpdate,
     handleDelete,
@@ -42,16 +40,15 @@ function Payment() {
         data: { dataPayment },
         searchValues: { payment },
         pagination: { page, show },
-        form: {
-            accountName,
-            bankName,
-            accountNumber,
-            rateDeposit,
-            rateWithdraw,
-        },
+        form: { accountName, bankName, accountNumber, rateDeposit, rateWithdraw },
     } = state.set;
     const { modalPaymentEdit, modalDelete, modalStatus } = state.toggle;
     const [isProcess, setIsProcess] = useState(false);
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        type: '',
+        message: '',
+    });
     // Ref Input
     const refAccountName = useRef();
     const refBankName = useRef();
@@ -59,6 +56,15 @@ function Payment() {
     useEffect(() => {
         document.title = `Payment | ${process.env.REACT_APP_TITLE_WEB}`;
     }, []);
+    const handleCloseSnackbar = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbar({
+            ...snackbar,
+            open: false,
+        });
+    };
     const useDebouncePayment = useDebounce(payment, 500);
     useEffect(() => {
         if (useDebouncePayment) {
@@ -75,7 +81,6 @@ function Payment() {
         getPayments({
             dispatch,
             state,
-            actions,
             page,
             show,
             search: useDebouncePayment,
@@ -84,23 +89,10 @@ function Payment() {
     const dataPaymentFlag = dataPayment?.data?.payments || dataPayment?.data;
     // Modal Payment + Input Form
     const modalPaymentTrue = (e, item) => {
-        return modalUtils.modalTrue(
-            e,
-            item,
-            dispatch,
-            state,
-            actions,
-            'modalPaymentEdit'
-        );
+        return modalUtils.modalTrue(e, item, dispatch, state, actions, 'modalPaymentEdit');
     };
     const modalPaymentFalse = (e) => {
-        return modalUtils.modalFalse(
-            e,
-            dispatch,
-            state,
-            actions,
-            'modalPaymentEdit'
-        );
+        return modalUtils.modalFalse(e, dispatch, state, actions, 'modalPaymentEdit');
     };
     const modalDeleteTrue = (e, id) => {
         return deleteUtils.deleteTrue(e, id, dispatch, state, actions);
@@ -122,12 +114,11 @@ function Payment() {
         return formUtils.changeForm(e, dispatch, state, actions);
     };
     // Create + Update Payment
-    const handleCreatePayment = async (data) => {
-        await handleCreate({
+    const handleCreatePayment = (data) => {
+        handleCreate({
             data,
             dispatch,
             state,
-            actions,
             bankName,
             accountName,
             accountNumber,
@@ -135,44 +126,21 @@ function Payment() {
             rateWithdraw,
             page,
             show,
+            setSnackbar,
+            setIsProcess,
         });
     };
-    const createPayment = async (e) => {
-        try {
-            const isCheck = checkFormPayment({
-                bankName,
-                accountName,
-                accountNumber,
-                refAccountName,
-                refBankName,
-                refAccountNumber,
-            });
-            if (isCheck) {
-                e.preventDefault();
-                await 1;
-                setIsProcess(true);
-                setTimeout(() => {
-                    requestRefreshToken(
-                        currentUser,
-                        handleCreatePayment,
-                        state,
-                        dispatch,
-                        actions
-                    );
-                    setIsProcess(false);
-                }, 1000);
-            }
-        } catch (err) {
-            checkErrorPayment({ dispatch, state, actions, err });
-        }
+    const createPayment = (e) => {
+        e.preventDefault();
+        setIsProcess(true);
+        requestRefreshToken(currentUser, handleCreatePayment, state, dispatch, actions);
     };
-    const handleUpdatePayment = async (data, id) => {
-        await handleUpdate({
+    const handleUpdatePayment = (data, id) => {
+        handleUpdate({
             data,
             id,
             dispatch,
             state,
-            actions,
             bankName,
             accountName,
             accountNumber,
@@ -181,58 +149,31 @@ function Payment() {
             page,
             show,
             search: payment,
+            setSnackbar,
+            setIsProcess,
         });
     };
-    const updatePayment = async (id) => {
-        try {
-            await 1;
-            setIsProcess(true);
-            setTimeout(() => {
-                requestRefreshToken(
-                    currentUser,
-                    handleUpdatePayment,
-                    state,
-                    dispatch,
-                    actions,
-                    id
-                );
-                setIsProcess(false);
-            }, 1000);
-        } catch (err) {
-            checkErrorPayment({ dispatch, state, actions, err });
-        }
+    const updatePayment = (id) => {
+        setIsProcess(true);
+        requestRefreshToken(currentUser, handleUpdatePayment, state, dispatch, actions, id);
     };
-    const handleUpdateTypePayment = async (data, id) => {
+    const handleUpdateTypePayment = (data, id) => {
         handleUpdateType({
             data,
             id,
             dispatch,
             state,
-            actions,
             statusUpdate,
             statusCurrent,
             page,
             show,
+            setIsProcess,
+            setSnackbar,
         });
     };
-    const updatedTypePayment = async (id) => {
-        try {
-            await 1;
-            setIsProcess(true);
-            setTimeout(() => {
-                requestRefreshToken(
-                    currentUser,
-                    handleUpdateTypePayment,
-                    state,
-                    dispatch,
-                    actions,
-                    id
-                );
-                setIsProcess(false);
-            }, 1000);
-        } catch (err) {
-            checkErrorPayment({ dispatch, state, actions, err });
-        }
+    const updatedTypePayment = (id) => {
+        setIsProcess(true);
+        requestRefreshToken(currentUser, handleUpdateTypePayment, state, dispatch, actions, id);
     };
     const handleDeletePayment = (data, id) => {
         handleDelete({
@@ -240,25 +181,14 @@ function Payment() {
             id,
             dispatch,
             state,
-            actions,
             page,
             show,
             search: payment,
+            setSnackbar,
         });
     };
-    const deletePayment = async (id) => {
-        try {
-            requestRefreshToken(
-                currentUser,
-                handleDeletePayment,
-                state,
-                dispatch,
-                actions,
-                id
-            );
-        } catch (err) {
-            checkErrorPayment({ dispatch, state, actions, err });
-        }
+    const deletePayment = (id) => {
+        requestRefreshToken(currentUser, handleDeletePayment, state, dispatch, actions, id);
     };
     function RenderBodyTable({ data }) {
         return (
@@ -266,9 +196,7 @@ function Payment() {
                 {data.map((item, index) => {
                     return (
                         <tr key={index}>
-                            <td className='upc'>
-                                {handleUtils.indexTable(page, show, index)}
-                            </td>
+                            <td className='upc'>{handleUtils.indexTable(page, show, index)}</td>
                             <td className='item-w150'>
                                 {item.accountName || <Skeleton width={50} />}
                             </td>
@@ -281,22 +209,15 @@ function Payment() {
                             <td>
                                 <TrStatus
                                     item={item.type}
-                                    onClick={(e) =>
-                                        toggleEditTrue(e, item.type, item._id)
-                                    }
+                                    onClick={(e) => toggleEditTrue(e, item.type, item._id)}
                                 />
                             </td>
 
                             <td>
                                 <ActionsTable
                                     edit
-                                    onClickDel={(e) =>
-                                        modalDeleteTrue(e, item._id)
-                                    }
-                                    onClickEdit={(e) =>
-                                        modalPaymentTrue(e, item)
-                                    }
-                                ></ActionsTable>
+                                    onClickDel={(e) => modalDeleteTrue(e, item._id)}
+                                    onClickEdit={(e) => modalPaymentTrue(e, item)}></ActionsTable>
                             </td>
                         </tr>
                     );
@@ -316,7 +237,10 @@ function Payment() {
                 totalData={dataPayment?.total || dataPayment?.data?.total}
                 classNameButton='completebgc'
                 classNameButtonUpdateAllFields='vipbgc'
-            >
+                handleCloseSnackbar={handleCloseSnackbar}
+                openSnackbar={snackbar.open}
+                typeSnackbar={snackbar.type}
+                messageSnackbar={snackbar.message}>
                 <RenderBodyTable data={dataPaymentFlag} />
             </General>
             {modalStatus && (
@@ -326,14 +250,9 @@ function Payment() {
                     openModal={toggleEditTrue}
                     closeModal={toggleEditFalse}
                     classNameButton='vipbgc'
-                    onClick={() =>
-                        updatedTypePayment(currentUser?.idUpdate || edit.id)
-                    }
-                    isProcess={isProcess}
-                >
-                    <p className='modal-delete-desc'>
-                        Are you sure change type payment?
-                    </p>
+                    onClick={() => updatedTypePayment(currentUser?.idUpdate || edit.id)}
+                    isProcess={isProcess}>
+                    <p className='modal-delete-desc'>Are you sure change type payment?</p>
                     <SelectStatus typePayment />
                 </Modal>
             )}
@@ -345,14 +264,9 @@ function Payment() {
                     openModal={modalPaymentTrue}
                     classNameButton='vipbgc'
                     errorMessage={error}
-                    onClick={
-                        edit.itemData
-                            ? () => updatePayment(edit.itemData._id)
-                            : createPayment
-                    }
+                    onClick={edit.itemData ? () => updatePayment(edit.itemData._id) : createPayment}
                     isProcess={isProcess}
-                    disabled={!accountName || !bankName || !accountNumber}
-                >
+                    disabled={!accountName || !bankName || !accountNumber}>
                     <FormInput
                         label='Account Name'
                         type='text'
@@ -396,11 +310,8 @@ function Payment() {
                     closeModal={modalDeleteFalse}
                     classNameButton='cancelbgc'
                     onClick={() => deletePayment(edit.id)}
-                    isProcess={isProcess}
-                >
-                    <p className='modal-delete-desc'>
-                        Are you sure to delete this payment?
-                    </p>
+                    isProcess={isProcess}>
+                    <p className='modal-delete-desc'>Are you sure to delete this payment?</p>
                 </Modal>
             )}
         </>

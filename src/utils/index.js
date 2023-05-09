@@ -29,7 +29,6 @@ export * as deleteUtils from './ModalConfirm';
 export * as searchUtils from './Search';
 export * as formUtils from './handleForm';
 export * as fileUploadUtils from './FileUpload';
-export * as alertUtils from './AlertModal';
 export * as localStoreUtils from './localStore/localStore';
 export * as numberUtils from './format/FormatMoney';
 export * as textUtils from './format/LetterFirstUpc';

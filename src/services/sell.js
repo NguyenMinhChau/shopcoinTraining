@@ -1,124 +1,137 @@
+import { actions } from '../app/';
 import {
-    axiosUtils,
-    searchUtils,
-    dispatchEdit,
-    dispatchDelete,
-    validates,
+	axiosUtils,
+	searchUtils,
+	dispatchEdit,
+	dispatchDelete,
 } from '../utils';
 
 // GET DATA BUYS
 export const getSells = async (props = {}) => {
-    const processSells = await axiosUtils.adminGet(
-        `/getAllSell?page=${props.page}&show=${props.show}&search=${props.search}`
-    );
-    const processUser = await axiosUtils.adminGet('/getAllUser');
-    props.dispatch(
-        props.actions.setData({
-            ...props.state.set,
-            data: {
-                ...props.state.set.data,
-                dataSell: processSells,
-                dataUser: processUser,
-            },
-        })
-    );
-};
-// CHECK ERROR ACTIONS
-export const checkErrorSells = (props = {}) => {
-    return props.dispatch(
-        props.actions.setData({
-            ...props.state.set,
-            message: {
-                error: props.err?.response?.data,
-            },
-        })
-    );
+	const { page, show, dispatch, state, search, setSnackbar } = props;
+	try {
+		const processSells = await axiosUtils.adminGet(
+			`bill/sellCoin/paging?page=${page}&show=${show}&search=${search}`,
+		);
+		const processUser = await axiosUtils.adminGet('user');
+		dispatch(
+			actions.setData({
+				data: {
+					...state.set.data,
+					dataSell: processSells,
+					dataUser: processUser,
+				},
+			}),
+		);
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
 // SEARCH DATA BUYS
 export const searchSells = (props = {}) => {
-    let dataSellFlag =
-        props.dataSell &&
-        props.dataSell?.data?.filter((x) => x?.type === 'SellCoin');
-    if (props.sell) {
-        dataSellFlag = dataSellFlag.filter((item) => {
-            return (
-                searchUtils.searchInput(props.sell, item._id) ||
-                searchUtils.searchInput(props.sell, item.buyer.gmailUSer) ||
-                searchUtils.searchInput(props.sell, item?.amountUsd) ||
-                searchUtils.searchInput(props.sell, item?.amount) ||
-                searchUtils.searchInput(props.sell, item?.symbol) ||
-                searchUtils.searchInput(props.sell, item?.createdAt) ||
-                searchUtils.searchInput(props.sell, item?.createBy) ||
-                searchUtils.searchInput(props.sell, item.status)
-            );
-        });
-    }
-    return dataSellFlag;
+	const { dataSell, sell } = props;
+	let dataSellFlag =
+		dataSell && dataSell?.data?.filter((x) => x?.type === 'SellCoin');
+	if (sell) {
+		dataSellFlag = dataSellFlag.filter((item) => {
+			return (
+				searchUtils.searchInput(sell, item._id) ||
+				searchUtils.searchInput(sell, item.buyer.gmailUSer) ||
+				searchUtils.searchInput(sell, item?.amountUsd) ||
+				searchUtils.searchInput(sell, item?.amount) ||
+				searchUtils.searchInput(sell, item?.symbol) ||
+				searchUtils.searchInput(sell, item?.createdAt) ||
+				searchUtils.searchInput(sell, item?.createBy) ||
+				searchUtils.searchInput(sell, item.status)
+			);
+		});
+	}
+	return dataSellFlag;
 };
 // UPDATE STATUS/FEE BUYS
 export const handleUpdateStatusFeeSell = async (props = {}) => {
-    const object = props.fee
-        ? {
-              fee: props.fee,
-              token: props.data?.token,
-          }
-        : {
-              status: props.statusUpdate || props.statusCurrent,
-              note: props.note,
-              token: props.data?.token,
-          };
-    const resPut = await axiosUtils.adminPut(
-        `/handleSellCoin/${props.id}`,
-        object
-    );
-    switch (resPut.code) {
-        case 0:
-            const res = await axiosUtils.adminGet(
-                `/getAllSell?page=${props.page}&show=${props.show}&search=${props.search}`
-            );
-            dispatchEdit(
-                props.dispatch,
-                props.state,
-                props.actions,
-                res,
-                'dataSell',
-                resPut.message
-            );
-            return props.data;
-        case 1:
-        case 2:
-            validates.validateCase1_2(resPut, props);
-            break;
-        default:
-            break;
-    }
+	const {
+		fee,
+		data,
+		id,
+		dispatch,
+		state,
+		note,
+		page,
+		show,
+		statusUpdate,
+		statusCurrent,
+		search,
+		setSnackbar,
+		setIsProcess,
+	} = props;
+	const object = fee
+		? {
+				fee: fee,
+				token: data?.token,
+		  }
+		: {
+				status: statusUpdate || statusCurrent,
+				note: note,
+				token: data?.token,
+		  };
+	try {
+		const resPut = await axiosUtils.adminPut(`handle/sell/${id}`, object);
+		setIsProcess && setIsProcess(false);
+		const res = await axiosUtils.adminGet(
+			`/getAllSell?page=${page}&show=${show}&search=${search}`,
+		);
+		dispatchEdit(
+			dispatch,
+			state,
+			setSnackbar,
+			actions,
+			res,
+			'dataSell',
+			resPut.message,
+		);
+		return data;
+	} catch (err) {
+		setIsProcess && setIsProcess(false);
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
 // DELETE BUYS
 export const handleDelete = async (props = {}) => {
-    const resDel = await axiosUtils.adminDelete(`/deleteSell/${props.id}`, {
-        headers: {
-            token: props.data?.token,
-        },
-    });
-    switch (resDel.code) {
-        case 0:
-            const res = await axiosUtils.adminGet(
-                `/getAllSell?page=${props.page}&show=${props.show}&search=${props.search}`
-            );
-            dispatchDelete(
-                props.dispatch,
-                props.state,
-                props.actions,
-                res,
-                'dataSell',
-                resDel.message
-            );
-            return props.data;
-        case 1:
-        case 2:
-            validates.validateCase1_2(resDel, props);
-            break;
-        default:
-            break;
-    }
+	const { data, id, dispatch, state, page, show, search, setSnackbar } =
+		props;
+	try {
+		const resDel = await axiosUtils.adminDelete(`/deleteSell/${id}`, {
+			headers: {
+				token: data?.token,
+			},
+		});
+		const res = await axiosUtils.adminGet(
+			`/getAllSell?page=${page}&show=${show}&search=${search}`,
+		);
+		dispatchDelete(
+			dispatch,
+			state,
+			setSnackbar,
+			actions,
+			res,
+			'dataSell',
+			resDel.message,
+		);
+		return data;
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };

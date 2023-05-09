@@ -48,10 +48,6 @@ export default function BuyHistoryUser() {
     useEffect(() => {
         getDataBuyHistory();
     }, [page, show, debounceValue]);
-    // const dataSettingFlag = searchHistoryBuyCoins({
-    //     buyHistory,
-    //     data: data?.buys || data || [],
-    // });
     function RenderBodyTable({ data }) {
         return (
             <>
@@ -59,30 +55,19 @@ export default function BuyHistoryUser() {
                     return (
                         <tr key={index}>
                             <td>{handleUtils.indexTable(page, show, index)}</td>
-                            <td className='item-w150'>
-                                {item?.symbol.replace('USDT', '')}
-                            </td>
+                            <td className='item-w150'>{item?.symbol.replace('USDT', '')}</td>
                             <td className='vip item-w150'>{item?.amount}</td>
                             <td className='confirm item-w100'>
                                 {item?.price?.toFixed(5) || '---'}
                             </td>
                             <td className='complete item-w150'>
-                                {'~ ' +
-                                    numberUtils
-                                        .coinUSD(item?.amountUsd)
-                                        .replace('USD', '')}
+                                {'~ ' + numberUtils.coinUSD(item?.amountUsd).replace('USD', '')}
                             </td>
                             <td className='item-w100'>
-                                {moment(item?.createdAt).format(
-                                    'DD/MM/YYYY HH:mm:ss'
-                                )}
+                                {moment(item?.createdAt).format('DD/MM/YYYY HH:mm:ss')}
                             </td>
                             <td className='flex-center'>
-                                <span
-                                    className={`status ${
-                                        item?.status?.toLowerCase() + 'bgc'
-                                    }`}
-                                >
+                                <span className={`status ${item?.status?.toLowerCase() + 'bgc'}`}>
                                     {textUtils.FirstUpc(item?.status)}
                                 </span>
                             </td>
@@ -103,8 +88,7 @@ export default function BuyHistoryUser() {
                 totalData={data?.total || data?.totalSearch}
                 classNameButton='completebgc'
                 isRefreshPage
-                noActions
-            >
+                noActions>
                 <RenderBodyTable data={data?.buys || []} />
             </General>
         </>

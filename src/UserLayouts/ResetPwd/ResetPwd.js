@@ -6,81 +6,61 @@ import styles from './ResetPwd.module.css';
 import { axiosUtils, useAppContext } from '../../utils';
 import routers from '../../routers/routers';
 import { actions } from '../../app/';
+import { ForgotPasswordOTP } from '../../services/authen';
 
 const cx = className.bind(styles);
 
 export default function ResetPwd() {
-    const { state, dispatch } = useAppContext();
-    const { otpCode, password } = state.set.form;
-    const { tokenResetPwd } = state.set;
-    const [isProcess, setIsProcess] = useState(false);
-    const history = useNavigate();
-    useEffect(() => {
-        document.title = `Reset Password | ${process.env.REACT_APP_TITLE_WEB}`;
-    }, []);
-    const handleReset = async (e) => {
-        try {
-            await 1;
-            setIsProcess(true);
-            const resPut = await axiosUtils.userPut(
-                `/getOTP/${tokenResetPwd}`,
-                {
-                    otp: otpCode,
-                    pwd: password,
-                }
-            );
-            switch (resPut.code) {
-                case 0:
-                    dispatch(
-                        actions.setData({
-                            ...state.set,
-                            tokenResetPwd: resPut?.data,
-                            form: {
-                                username: '',
-                                email: '',
-                                password: '',
-                            },
-                            message: {
-                                error: '',
-                            },
-                        })
-                    );
-                    history(routers.login);
-                    break;
-                case 1:
-                case 2:
-                    dispatch(
-                        actions.setData({
-                            ...state.set,
-                            message: {
-                                ...state.set.message,
-                                error: resPut?.message,
-                            },
-                        })
-                    );
-                    break;
-                default:
-                    break;
-            }
-            setIsProcess(false);
-        } catch (err) {
-            console.log(err);
-        }
-    };
-    const onEnter = (e) => {
-        handleReset(e);
-    };
-    return (
-        <Form
-            titleForm='Reset Password'
-            textBtn='Submit'
-            onClick={handleReset}
-            bolPassword
-            bolOtpCode
-            resetPwdForm
-            className={cx('form-page-login')}
-            isProcess={isProcess}
-            onEnter={onEnter}
-        ></Form>
-    );
+	const { state, dispatch } = useAppContext();
+	const { otpCode } = state.set.form;
+	const [isProcess, setIsProcess] = useState(false);
+	const [snackbar, setSnackbar] = useState({
+		open: false,
+		type: '',
+		message: '',
+	});
+	const handleCloseSnackbar = (event, reason) => {
+		if (reason === 'clickaway') {
+			return;
+		}
+		setSnackbar({
+			...snackbar,
+			open: false,
+		});
+	};
+	const history = useNavigate();
+	useEffect(() => {
+		document.title = `Reset Password | ${process.env.REACT_APP_TITLE_WEB}`;
+	}, []);
+	const handleReset = (e) => {
+		e.preventDefault();
+		setIsProcess(true);
+		ForgotPasswordOTP({
+			otpCode,
+			dispatch,
+			history,
+			setIsProcess,
+			setSnackbar,
+		});
+	};
+	const onEnter = (e) => {
+		handleReset(e);
+	};
+	return (
+		<Form
+			titleForm="Reset Password"
+			textBtn="Submit"
+			onClick={handleReset}
+			bolOtpCode
+			resetPwdForm
+			className={cx('form-page-login')}
+			isProcess={isProcess}
+			disabled={!otpCode}
+			onEnter={onEnter}
+			handleCloseSnackbar={handleCloseSnackbar}
+			openSnackbar={snackbar.open}
+			typeSnackbar={snackbar.type}
+			messageSnackbar={snackbar.message}
+		></Form>
+	);
 }

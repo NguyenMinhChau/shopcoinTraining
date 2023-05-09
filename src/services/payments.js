@@ -1,206 +1,267 @@
+import { actions } from '../app/';
 import {
-    axiosUtils,
-    dispatchCreate,
-    dispatchEdit,
-    dispatchDelete,
-    searchUtils,
-    numberUtils,
-    validates,
+	axiosUtils,
+	dispatchCreate,
+	dispatchEdit,
+	dispatchDelete,
+	searchUtils,
+	numberUtils,
 } from '../utils';
 // GET DATA PAYMENT
 export const getPayments = async (props = {}) => {
-    const processPayment = await axiosUtils.adminGet(
-        `/getAllPayments?page=${props.page}&show=${props.show}&search=${props.search}`
-    );
-    props.dispatch(
-        props.actions.setData({
-            ...props.state.set,
-            data: {
-                ...props.state.set.data,
-                dataPayment: processPayment,
-            },
-        })
-    );
+	const { page, show, search, dispatch, state, setSnackbar } = props;
+	try {
+		const processPayment = await axiosUtils.adminGet(
+			`/getAllPayments?page=${page}&show=${show}&search=${search}`,
+		);
+		dispatch(
+			actions.setData({
+				data: {
+					...state.set.data,
+					dataPayment: processPayment,
+				},
+			}),
+		);
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
 // GET ALL PAYMENT ADMIN
 export const SVgetAllPaymentAdmin = async (props = {}) => {
-    const resGet = await axiosUtils.adminGet('/getAllPaymentAdmin', {});
-    props.dispatch(
-        props.actions.setData({
-            ...props.state.set,
-            data: {
-                ...props.state.set.data,
-                dataPaymentAdmin: resGet.data,
-            },
-        })
-    );
+	const { dispatch, state, setSnackbar } = props;
+	try {
+		const resGet = await axiosUtils.adminGet('/getAllPaymentAdmin', {});
+		dispatch(
+			actions.setData({
+				data: {
+					...state.set.data,
+					dataPaymentAdmin: resGet.data,
+				},
+			}),
+		);
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
 // CHECK VALIDITY OF PAYMENT
 export const checkFormPayment = (props = {}) => {
-    if (!props.accountName) {
-        props.refAccountName.current.focus();
-        return false;
-    } else if (!props.bankName) {
-        props.refBankName.current.focus();
-        return false;
-    } else if (!props.accountNumber) {
-        props.refAccountNumber.current.focus();
-        return false;
-    }
-    return true;
-};
-// CHECK ERROR ACTIONS
-export const checkErrorPayment = (props = {}) => {
-    return props.dispatch(
-        props.actions.setData({
-            ...props.state.set,
-            message: {
-                error: props.err?.response?.data,
-            },
-        })
-    );
+	const {
+		accountName,
+		refAccountName,
+		bankName,
+		refBankName,
+		accountNumber,
+		refAccountNumber,
+	} = props;
+	if (!accountName) {
+		refAccountName.current.focus();
+		return false;
+	} else if (!bankName) {
+		refBankName.current.focus();
+		return false;
+	} else if (!accountNumber) {
+		refAccountNumber.current.focus();
+		return false;
+	}
+	return true;
 };
 // SEARCH PAYMENT
 export const searchPayment = (props = {}) => {
-    let dataUserFlag = props.dataPayment;
-    if (props.payment) {
-        dataUserFlag = dataUserFlag.filter((item) => {
-            return (
-                searchUtils.searchInput(props.payment, item.code) ||
-                searchUtils.searchInput(props.payment, item.accountName) ||
-                searchUtils.searchInput(props.payment, item.methodName) ||
-                searchUtils.searchInput(props.payment, item.accountNumber) ||
-                searchUtils.searchInput(props.payment, item.type) ||
-                searchUtils.searchInput(
-                    props.payment,
-                    numberUtils.formatUSD(item.transform)
-                )
-            );
-        });
-    }
-    return dataUserFlag;
+	const { dataPayment, payment } = props;
+	let dataUserFlag = dataPayment;
+	if (payment) {
+		dataUserFlag = dataUserFlag.filter((item) => {
+			return (
+				searchUtils.searchInput(payment, item.code) ||
+				searchUtils.searchInput(payment, item.accountName) ||
+				searchUtils.searchInput(payment, item.methodName) ||
+				searchUtils.searchInput(payment, item.accountNumber) ||
+				searchUtils.searchInput(payment, item.type) ||
+				searchUtils.searchInput(
+					payment,
+					numberUtils.formatUSD(item.transform),
+				)
+			);
+		});
+	}
+	return dataUserFlag;
 };
 // CREATE PAYMENT
 export const handleCreate = async (props = {}) => {
-    const resPost = await axiosUtils.adminPost('/payment', {
-        methodName: props.bankName,
-        accountName: props.accountName,
-        accountNumber: props.accountNumber,
-        rateDeposit: props.rateDeposit || 0,
-        rateWithdraw: props.rateWithdraw || 0,
-        token: props.data?.token,
-    });
-    switch (resPost.code) {
-        case 0:
-            const res = await axiosUtils.adminGet(
-                `/getAllPayments?page=${props.page}&show=${props.show}`
-            );
-            dispatchCreate(
-                props.dispatch,
-                props.state,
-                props.actions,
-                res,
-                'dataPayment',
-                resPost.message
-            );
-            return props.data;
-        case 1:
-        case 2:
-            validates.validateCase1_2(resPost, props);
-            break;
-        default:
-            break;
-    }
+	const {
+		bankName,
+		accountName,
+		accountNumber,
+		rateDeposit,
+		rateWithdraw,
+		data,
+		page,
+		show,
+		dispatch,
+		state,
+		setSnackbar,
+		setIsProcess,
+	} = props;
+	try {
+		const resPost = await axiosUtils.adminPost('/payment', {
+			methodName: bankName,
+			accountName: accountName,
+			accountNumber: accountNumber,
+			rateDeposit: rateDeposit || 0,
+			rateWithdraw: rateWithdraw || 0,
+			token: data?.token,
+		});
+		setIsProcess(false);
+		const res = await axiosUtils.adminGet(
+			`/getAllPayments?page=${page}&show=${show}`,
+		);
+		dispatchCreate(
+			dispatch,
+			state,
+			setSnackbar,
+			actions,
+			res,
+			'dataPayment',
+			resPost.message,
+		);
+		return data;
+	} catch (err) {
+		setIsProcess(false);
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
 // UPDATE PAYMENT
 export const handleUpdate = async (props = {}) => {
-    const resPut = await axiosUtils.adminPut(`/updatePayment/${props.id}`, {
-        methodName: props.bankName,
-        accountName: props.accountName,
-        accountNumber: props.accountNumber,
-        rateDeposit: props.rateDeposit,
-        rateWithdraw: props.rateWithdraw,
-        token: props.data?.token,
-    });
-    switch (resPut.code) {
-        case 0:
-            const res = await axiosUtils.adminGet(
-                `/getAllPayments?page=${props.page}&show=${props.show}&search=${props.search}`
-            );
-            dispatchEdit(
-                props.dispatch,
-                props.state,
-                props.actions,
-                res,
-                'dataPayment',
-                resPut.message
-            );
-            return props.data;
-        case 1:
-        case 2:
-            validates.validateCase1_2(resPut, props);
-            break;
-        default:
-            break;
-    }
+	const {
+		id,
+		bankName,
+		accountName,
+		accountNumber,
+		rateDeposit,
+		rateWithdraw,
+		data,
+		page,
+		show,
+		search,
+		dispatch,
+		state,
+		setIsProcess,
+		setSnackbar,
+	} = props;
+	try {
+		const resPut = await axiosUtils.adminPut(`/updatePayment/${id}`, {
+			methodName: bankName,
+			accountName: accountName,
+			accountNumber: accountNumber,
+			rateDeposit: rateDeposit,
+			rateWithdraw: rateWithdraw,
+			token: data?.token,
+		});
+		setIsProcess(false);
+		const res = await axiosUtils.adminGet(
+			`/getAllPayments?page=${page}&show=${show}&search=${search}`,
+		);
+		dispatchEdit(
+			dispatch,
+			state,
+			setSnackbar,
+			actions,
+			res,
+			'dataPayment',
+			resPut.message,
+		);
+		return data;
+	} catch (err) {
+		setIsProcess(false);
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
 // UPDATE TYPE PAYMENT
 export const handleUpdateType = async (props = {}) => {
-    const resPut = await axiosUtils.adminPut(`/updatePayment/${props.id}`, {
-        type:
-            props.statusUpdate.toLowerCase() ||
-            props.statusCurrent.toLowerCase(),
-        token: props.data?.token,
-    });
-    switch (resPut.code) {
-        case 0:
-            const res = await axiosUtils.adminGet(
-                `/getAllPayments?page=${props.page}&show=${props.show}`
-            );
-            dispatchEdit(
-                props.dispatch,
-                props.state,
-                props.actions,
-                res,
-                'dataPayment',
-                resPut.message
-            );
-            return props.data;
-        case 1:
-        case 2:
-            validates.validateCase1_2(resPut, props);
-            break;
-        default:
-            break;
-    }
+	const {
+		id,
+		statusUpdate,
+		statusCurrent,
+		data,
+		dispatch,
+		state,
+		page,
+		show,
+		setIsProcess,
+		setSnackbar,
+	} = props;
+	try {
+		const resPut = await axiosUtils.adminPut(`/updatePayment/${id}`, {
+			type: statusUpdate.toLowerCase() || statusCurrent.toLowerCase(),
+			token: data?.token,
+		});
+		setIsProcess(false);
+		const res = await axiosUtils.adminGet(
+			`/getAllPayments?page=${page}&show=${show}`,
+		);
+		dispatchEdit(
+			dispatch,
+			state,
+			setSnackbar,
+			actions,
+			res,
+			'dataPayment',
+			resPut.message,
+		);
+		return data;
+	} catch (err) {
+		setIsProcess(false);
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
-
 // DELETE PAYMENT
 export const handleDelete = async (props = {}) => {
-    const resDel = await axiosUtils.adminDelete(`/deletePayment/${props.id}`, {
-        headers: {
-            token: props.data.token,
-        },
-    });
-    switch (resDel.code) {
-        case 0:
-            const resPayment = await axiosUtils.adminGet(
-                `/getAllPayments?page=${props.page}&show=${props.show}&search=${props.search}`
-            );
-            dispatchDelete(
-                props.dispatch,
-                props.state,
-                props.actions,
-                resPayment,
-                'dataPayment',
-                resDel.message
-            );
-            return props.data;
-        case 1:
-        case 2:
-            validates.validateCase1_2(resDel, props);
-            break;
-        default:
-            break;
-    }
+	const { id, data, page, show, search, dispatch, state, setSnackbar } =
+		props;
+	try {
+		const resDel = await axiosUtils.adminDelete(`/deletePayment/${id}`, {
+			headers: {
+				token: data.token,
+			},
+		});
+		const resPayment = await axiosUtils.adminGet(
+			`/getAllPayments?page=${page}&show=${show}&search=${search}`,
+		);
+		dispatchDelete(
+			dispatch,
+			state,
+			setSnackbar,
+			actions,
+			resPayment,
+			'dataPayment',
+			resDel.message,
+		);
+		return data;
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };

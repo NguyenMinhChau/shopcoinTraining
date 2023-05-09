@@ -1,15 +1,9 @@
-const dispatchEdit = (dispatch, state, actions, data, nameData, message) => {
+const dispatchEdit = (dispatch, state, setSnackbar, actions, data, nameData, message) => {
     dispatch(
         actions.setData({
             statusUpdate: '',
             statusCurrent: '',
             fee: '',
-            message: {
-                upd: message ? message : 'Updated Success',
-                error: '',
-                cre: '',
-                del: '',
-            },
             data: {
                 ...state.set.data,
                 [nameData]: data,
@@ -37,14 +31,19 @@ const dispatchEdit = (dispatch, state, actions, data, nameData, message) => {
     dispatch(
         actions.toggleModal({
             modalPaymentEdit: false,
+            modalSettingEdit: false,
+            modalDepositsEdit: false,
+            modalWithdrawEdit: false,
+            modalBuyEdit: false,
+            modalSellEdit: false,
             modalStatus: false,
-            alertModal: true,
         })
     );
-    // window.scrollTo({
-    //     top: 0,
-    //     behavior: 'smooth',
-    // });
+    setSnackbar({
+        open: true,
+        message: message ? message : 'Updated Success',
+        type: 'success',
+    });
 };
 
 export default dispatchEdit;

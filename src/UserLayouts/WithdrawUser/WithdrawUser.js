@@ -61,9 +61,7 @@ function RenderBodyTable({ data }) {
                             {numberUtils.formatVND(rate?.rateWithdraw) || '---'}
                         </td>
                         <td className='item-w100'>
-                            {moment(item?.createdAt).format(
-                                'DD/MM/YYYY HH:mm:ss'
-                            )}
+                            {moment(item?.createdAt).format('DD/MM/YYYY HH:mm:ss')}
                         </td>
                         <td className='item-w150'>
                             <div>{item?.method?.methodName}</div>
@@ -73,18 +71,13 @@ function RenderBodyTable({ data }) {
                         <td style={{ alignItems: 'center' }}>
                             <span
                                 className={`status ${
-                                    item?.status
-                                        ?.toLowerCase()
-                                        .replace(/\s/g, '') + 'bgc'
-                                }`}
-                            >
+                                    item?.status?.toLowerCase().replace(/\s/g, '') + 'bgc'
+                                }`}>
                                 {item?.status}
                             </span>
                         </td>
-                        {item?.status?.toLowerCase().replace(/\s/g, '') !==
-                            'completed' &&
-                            item?.status?.toLowerCase().replace(/\s/g, '') !==
-                                'confirmed' && (
+                        {item?.status?.toLowerCase().replace(/\s/g, '') !== 'completed' &&
+                            item?.status?.toLowerCase().replace(/\s/g, '') !== 'confirmed' && (
                                 <td>
                                     <ActionsTable
                                         view
@@ -116,6 +109,20 @@ export default function WithdrawUser() {
     const [error, setError] = useState('');
     const [isProcess, setIsProcess] = useState(false);
     const useDebounceWithdraw = useDebounce(withdrawUser, 500);
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        type: '',
+        message: '',
+    });
+    const handleCloseSnackbar = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbar({
+            ...snackbar,
+            open: false,
+        });
+    };
     useEffect(() => {
         if (useDebounceWithdraw) {
             setTimeout(() => {
@@ -138,9 +145,7 @@ export default function WithdrawUser() {
         setRate(resGet.data);
     };
     const getUser = async () => {
-        const process = await axiosUtils.adminGet(
-            `/getUser/${currentUser?.id}`
-        );
+        const process = await axiosUtils.adminGet(`/getUser/${currentUser?.id}`);
         setUser(process.data);
     };
     useEffect(() => {
@@ -187,33 +192,19 @@ export default function WithdrawUser() {
             rateWithdraw: rate?.rateWithdraw,
             dispatch,
             state,
-            actions,
             token: data?.token,
             setIsProcess,
             setData,
+            setSnackbar,
         });
     };
     const handleSubmit = useCallback(
-        async (e) => {
-            try {
-                await 1;
-                setIsProcess(true);
-                setTimeout(() => {
-                    requestRefreshToken(
-                        currentUser,
-                        createWithdrawAPI,
-                        state,
-                        dispatch,
-                        actions
-                    );
-                }, 3000);
-            } catch (e) {
-                console.log(e);
-            }
+        (e) => {
+            setIsProcess(true);
+            requestRefreshToken(currentUser, createWithdrawAPI, state, dispatch, actions);
         },
         [amountUSD]
     );
-    // console.log(data);
     const dataSettingFlag = data?.withdraws || [];
     const isShowBodyModalWithdarw =
         (user?.Wallet?.balance || user?.Wallet?.balance === 0) &&
@@ -237,7 +228,10 @@ export default function WithdrawUser() {
                 textBtnNew='Create Withdraw'
                 noActions
                 onCreate={openModal}
-            >
+                handleCloseSnackbar={handleCloseSnackbar}
+                openSnackbar={snackbar.open}
+                typeSnackbar={snackbar.type}
+                messageSnackbar={snackbar.message}>
                 <RenderBodyTable data={dataSettingFlag} />
             </General>
             {selectBank && (
@@ -250,34 +244,21 @@ export default function WithdrawUser() {
                     isProcess={isProcess}
                     disabled={error || !amountUSD}
                     onClick={handleSubmit}
-                    hideButton={!isShowBodyModalWithdarw}
-                >
+                    hideButton={!isShowBodyModalWithdarw}>
                     {isShowBodyModalWithdarw ? (
                         <>
                             <div className={`${cx('info-user')}`}>
                                 <div className={`${cx('info-user-item')}`}>
-                                    <div className={`${cx('info-user-title')}`}>
-                                        Your Wallet
-                                    </div>
-                                    <div
-                                        className={`${cx(
-                                            'info-user-desc'
-                                        )} vip`}
-                                    >
-                                        {numberUtils.coinUSD(
-                                            user?.Wallet?.balance
-                                        )}
+                                    <div className={`${cx('info-user-title')}`}>Your Wallet</div>
+                                    <div className={`${cx('info-user-desc')} vip`}>
+                                        {numberUtils.coinUSD(user?.Wallet?.balance)}
                                     </div>
                                 </div>
                                 <div className={`${cx('info-user-item')}`}>
                                     <div className={`${cx('info-user-title')}`}>
                                         Your bank account
                                     </div>
-                                    <div
-                                        className={`${cx(
-                                            'info-user-desc'
-                                        )} complete`}
-                                    >
+                                    <div className={`${cx('info-user-desc')} complete`}>
                                         <div className='text-right'>
                                             {user?.payment?.bank?.bankName}
                                         </div>
@@ -297,27 +278,19 @@ export default function WithdrawUser() {
                                 name='amountUSD'
                                 onChange={handleChangeAmountUSD}
                             />
-                            {error && (
-                                <div className='cancel fz14'>{error}</div>
-                            )}
+                            {error && <div className='cancel fz14'>{error}</div>}
                             {amountUSD && (
                                 <div className='fz16 complete fwb'>
                                     Receive (VND):{' '}
-                                    {numberUtils.formatVND(
-                                        amountUSD * rate?.rateWithdraw || 0
-                                    )}
+                                    {numberUtils.formatVND(amountUSD * rate?.rateWithdraw || 0)}
                                 </div>
                             )}
                         </>
                     ) : (
                         <div className={`${cx('text-desc')}`}>
-                            You don't have a payment account yet or you haven't
-                            uploaded the document yet, please create one before
-                            doing so. Click{' '}
-                            <Link
-                                to={`${routers.profileUser}`}
-                                onClick={closeModal}
-                            >
+                            You don't have a payment account yet or you haven't uploaded the
+                            document yet, please create one before doing so. Click{' '}
+                            <Link to={`${routers.profileUser}`} onClick={closeModal}>
                                 here
                             </Link>{' '}
                             create payment and upload documents. Thank you!

@@ -1,4 +1,4 @@
-const dispatchDelete = (dispatch, state, actions, data, nameData, message) => {
+const dispatchDelete = (dispatch, state, setSnackbar, actions, data, nameData, message) => {
     dispatch(
         actions.setData({
             data: {
@@ -6,24 +6,20 @@ const dispatchDelete = (dispatch, state, actions, data, nameData, message) => {
                 [nameData]: data,
             },
             edit: { ...state.set.edit, id: '', itemData: null, data: null },
-            message: {
-                del: message ? message : 'Deleted Success',
-                error: '',
-                cre: '',
-                upd: '',
-            },
         })
     );
+    console.log('delete');
+
     dispatch(
         actions.toggleModal({
             modalDelete: false,
-            alertModal: true,
         })
     );
-    // window.scrollTo({
-    //     top: 0,
-    //     behavior: 'smooth',
-    // });
+    setSnackbar({
+        open: true,
+        message: message ? message : 'Deleted Success',
+        type: 'success',
+    });
 };
 
 export default dispatchDelete;

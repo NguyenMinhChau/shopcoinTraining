@@ -1,798 +1,802 @@
 /* eslint-disable array-callback-return */
 import {
-    axiosUtils,
-    dispatchCreate,
-    dispatchEdit,
-    dispatchDelete,
-    searchUtils,
-    validates,
+	axiosUtils,
+	dispatchCreate,
+	dispatchEdit,
+	dispatchDelete,
+	searchUtils,
 } from '../utils';
 import routers from '../routers/routers';
+import { actions } from '../app/';
 // GET DATA COINS
 export const getCoins = async (props = {}) => {
-    const processCoins = await axiosUtils.coinGet(
-        `/getAllCoin?page=${props.page}&show=${props.show}&search=${props.search}`
-    );
-    const processCoinsInactive = await axiosUtils.coinNAGet(`/getList`);
-    props.dispatch(
-        props.actions.setData({
-            data: {
-                ...props.state.set.data,
-                dataSettingCoin: processCoins,
-                dataDashboard: processCoins,
-                dataCoinInactive: processCoinsInactive,
-            },
-        })
-    );
+	const { page, show, search, dispatch, state, setSnackbar } = props;
+	try {
+		const processCoins = await axiosUtils.coinGet(
+			`coins/paging?page=${page}&show=${show}&search=${search}`,
+		);
+		const processCoinsInactive = await axiosUtils.coinNAGet(`/getList`);
+		dispatch(
+			actions.setData({
+				data: {
+					...state.set.data,
+					dataSettingCoin: processCoins,
+					dataDashboard: processCoins,
+					dataCoinInactive: processCoinsInactive,
+				},
+			}),
+		);
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
 // GET DATA COINS USER
 export const getCoinsUser = async (props = {}) => {
-    const processCoins = await axiosUtils.userGet(
-        `/getAllCoin/${props.email}?page=${props.page}&show=${props.show}&search=${props.search}`
-    );
-    props.dispatch(
-        props.actions.setData({
-            data: {
-                ...props.state.set.data,
-                dataSettingCoin: processCoins,
-            },
-        })
-    );
+	const { dispatch, state, page, show, search, id, setSnackbar } = props;
+	try {
+		const res = await axiosUtils.userGet(
+			`coin/${id}?page=${page}&show=${show}&search=${search}`,
+		);
+		dispatch(
+			actions.setData({
+				data: {
+					...state.set.data,
+					dataSettingCoin: res,
+				},
+			}),
+		);
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
+
 // GET DATA COINS INACTIVE
 export const getCoinsInactive = async (props = {}) => {
-    const processCoins = await axiosUtils.coinNAGet(
-        `/getList?page=${props.page}&show=${props.show}&search=${props.search}`
-    );
-    props.dispatch(
-        props.actions.setData({
-            data: {
-                ...props.state.set.data,
-                dataCoinInactive: processCoins,
-            },
-        })
-    );
+	const { dispatch, state, page, show, search, setSnackbar } = props;
+	try {
+		const processCoins = await axiosUtils.adminGet(
+			`coin/inactive?page=${page}&show=${show}&search=${search}`,
+		);
+		dispatch(
+			actions.setData({
+				data: {
+					...state.set.data,
+					dataCoinInactive: processCoins,
+				},
+			}),
+		);
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
 // GET DATA COINS USER BUY
 export const getCoinsUserBuy = async (props = {}) => {
-    const processCoins = await axiosUtils.coinGet(
-        `/getAmountCoinUserBuy?page=${props.page}&show=${props.show}`
-    );
-    props.dispatch(
-        props.actions.setData({
-            data: {
-                ...props.state.set.data,
-                dataDashboard: processCoins,
-            },
-        })
-    );
+	const { page, show, dispatch, state, actions } = props;
+	const processCoins = await axiosUtils.coinGet(
+		`/getAmountCoinUserBuy?page=${page}&show=${show}`,
+	);
+	dispatch(
+		actions.setData({
+			data: {
+				...state.set.data,
+				dataDashboard: processCoins,
+			},
+		}),
+	);
 };
 // GET COIN BY ID
 export const getCoinById = async (props = {}) => {
-    if (props.idCoin) {
-        const res = await axiosUtils.coinGet(`/getCoin/${props.idCoin}`);
-        const processUser = await axiosUtils.adminGet('/getAllUser');
-        const { data } = res;
-        const unShowList =
-            data?.unshow?.length > 1
-                ? data?.unshow
-                : data?.unshow.length === 1
-                ? data?.unshow[0]?.split(',')?.filter((x) => x)
-                : [];
-        props.dispatch(
-            props.actions.setData({
-                ...props.state.set,
-                form: {
-                    ...props.state.set.form,
-                    nameCoin: data.name,
-                    symbolCoin: data.symbol,
-                    logo: [data.logo],
-                    fullName: data.fullName,
-                },
-                data: {
-                    ...props.state.set.data,
-                    dataBlacklistUser: unShowList?.reduce((acc, item) => {
-                        processUser?.dataUser?.map((user) => {
-                            if (user?.payment?.email === item) {
-                                acc.push(user);
-                            }
-                        });
-                        props.setDataUserFake(acc);
-                        return acc;
-                    }, []),
-                    dataUser: processUser,
-                },
-                edit: {
-                    ...props.state.set.edit,
-                    id: data._id,
-                    itemData: data,
-                },
-            })
-        );
-    }
+	const { idCoin, dispatch, state, setDataUserFake, setSnackbar } = props;
+	try {
+		if (idCoin) {
+			const res = await axiosUtils.coinGet(`${idCoin}`);
+			const processUser = await axiosUtils.adminGet('user');
+			const { data } = res;
+			const unShowList =
+				data?.unshow?.length > 1
+					? data?.unshow
+					: data?.unshow.length === 1
+					? data?.unshow[0]?.split(',')?.filter((x) => x)
+					: [];
+			dispatch(
+				actions.setData({
+					form: {
+						...state.set.form,
+						nameCoin: data.name,
+						symbolCoin: data.symbol,
+						logo: [data.logo],
+						fullName: data.fullName,
+					},
+					data: {
+						...state.set.data,
+						dataBlacklistUser: unShowList?.reduce((acc, item) => {
+							processUser?.dataUser?.map((user) => {
+								if (user?.payment?.email === item) {
+									acc.push(user);
+								}
+							});
+							setDataUserFake(acc);
+							return acc;
+						}, []),
+						dataUser: processUser,
+					},
+					edit: {
+						...state.set.edit,
+						id: data._id,
+						itemData: data,
+					},
+				}),
+			);
+		}
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
-// CHECK VALIDITY OF COINS
-export const checkFormCoins = (props = {}) => {
-    if (!props.nameCoin) {
-        props.refNameCoin.current.focus();
-        return false;
-    } else if (!props.symbolCoin) {
-        props.refSymbolCoin.current.focus();
-        return false;
-    } else if (!props.fullName) {
-        props.refFullName.current.focus();
-        return false;
-    } else if (!props.logo) {
-        props.dispatch(
-            props.actions.setData({
-                ...props.state.set,
-                message: {
-                    error: `Please upload logo`,
-                },
-            })
-        );
-        props.dispatch(
-            props.actions.toggleModal({
-                ...props.state.toggle,
-                alertModal: true,
-            })
-        );
-        return false;
-    }
-    return true;
-};
-// CHECK ERROR ACTIONS
-export const checkErrorCoins = (props = {}) => {
-    return props.dispatch(
-        props.actions.setData({
-            ...props.state.set,
-            message: {
-                error: props.err?.response?.data,
-            },
-        })
-    );
-};
+
 // SEARCH COINS
 export const searchCoins = (props = {}) => {
-    let dataSettingFlag = props.dataSettingCoin; //.data
-    if (props.settingCoin) {
-        dataSettingFlag = dataSettingFlag.filter((item) => {
-            return (
-                searchUtils.searchInput(props.settingCoin, item._id) ||
-                searchUtils.searchInput(props.settingCoin, item.name) ||
-                searchUtils.searchInput(props.settingCoin, item.createdAt) ||
-                searchUtils.searchInput(props.settingCoin, item?.coin?.name) ||
-                searchUtils.searchInput(
-                    props.settingCoin.toString(),
-                    item?.high
-                ) ||
-                searchUtils.searchInput(
-                    props.settingCoin.toString(),
-                    item?.low
-                ) ||
-                searchUtils.searchInput(
-                    props.settingCoin.toString(),
-                    item?.price
-                ) ||
-                searchUtils.searchInput(
-                    props.settingCoin.toString(),
-                    item?.amount
-                ) ||
-                searchUtils.searchInput(
-                    props.settingCoin.toString(),
-                    item?.coin?.price
-                )
-            );
-        });
-    }
-    return dataSettingFlag;
+	const { dataSettingCoin, settingCoin } = props;
+	let dataSettingFlag = dataSettingCoin; //.data
+	if (settingCoin) {
+		dataSettingFlag = dataSettingFlag.filter((item) => {
+			return (
+				searchUtils.searchInput(settingCoin, item._id) ||
+				searchUtils.searchInput(settingCoin, item.name) ||
+				searchUtils.searchInput(settingCoin, item.createdAt) ||
+				searchUtils.searchInput(settingCoin, item?.coin?.name) ||
+				searchUtils.searchInput(settingCoin.toString(), item?.high) ||
+				searchUtils.searchInput(settingCoin.toString(), item?.low) ||
+				searchUtils.searchInput(settingCoin.toString(), item?.price) ||
+				searchUtils.searchInput(settingCoin.toString(), item?.amount) ||
+				searchUtils.searchInput(
+					settingCoin.toString(),
+					item?.coin?.price,
+				)
+			);
+		});
+	}
+	return dataSettingFlag;
 };
 // SEARCH HISTORY BUY COINS
 export const searchHistoryBuyCoins = (props = {}) => {
-    let dataFlag = props.data; //.data
-    if (props.buyHistory) {
-        dataFlag = dataFlag.filter((item) => {
-            return (
-                searchUtils.searchInput(props.buyHistory, item._id) ||
-                searchUtils.searchInput(props.buyHistory, item.symbol) ||
-                searchUtils.searchInput(props.buyHistory, item.createdAt) ||
-                searchUtils.searchInput(
-                    props.buyHistory.toString(),
-                    item.amount
-                ) ||
-                searchUtils.searchInput(
-                    props.buyHistory.toString(),
-                    item.amountUsd
-                ) ||
-                searchUtils.searchInput(
-                    props.buyHistory.toString(),
-                    item.status
-                )
-            );
-        });
-    }
-    return dataFlag;
+	const { data, buyHistory } = props;
+	let dataFlag = data; //.data
+	if (buyHistory) {
+		dataFlag = dataFlag.filter((item) => {
+			return (
+				searchUtils.searchInput(buyHistory, item._id) ||
+				searchUtils.searchInput(buyHistory, item.symbol) ||
+				searchUtils.searchInput(buyHistory, item.createdAt) ||
+				searchUtils.searchInput(buyHistory.toString(), item.amount) ||
+				searchUtils.searchInput(
+					buyHistory.toString(),
+					item.amountUsd,
+				) ||
+				searchUtils.searchInput(buyHistory.toString(), item.status)
+			);
+		});
+	}
+	return dataFlag;
 };
 // SEARCH HISTORY SELL COINS
 export const searchHistorySellCoins = (props = {}) => {
-    let dataFlag = props.data; //.data
-    if (props.sellHistory) {
-        dataFlag = dataFlag.filter((item) => {
-            return (
-                searchUtils.searchInput(props.sellHistory, item._id) ||
-                searchUtils.searchInput(props.sellHistory, item.symbol) ||
-                searchUtils.searchInput(props.sellHistory, item.createdAt) ||
-                searchUtils.searchInput(
-                    props.sellHistory.toString(),
-                    item.amount
-                ) ||
-                searchUtils.searchInput(
-                    props.sellHistory.toString(),
-                    item.amountUsd
-                )
-            );
-        });
-    }
-    return dataFlag;
+	const { data, sellHistory } = props;
+	let dataFlag = data; //.data
+	if (sellHistory) {
+		dataFlag = dataFlag.filter((item) => {
+			return (
+				searchUtils.searchInput(sellHistory, item._id) ||
+				searchUtils.searchInput(sellHistory, item.symbol) ||
+				searchUtils.searchInput(sellHistory, item.createdAt) ||
+				searchUtils.searchInput(sellHistory.toString(), item.amount) ||
+				searchUtils.searchInput(sellHistory.toString(), item.amountUsd)
+			);
+		});
+	}
+	return dataFlag;
 };
 // SEARCH DEPOSIT USER
 export const searchDepositUser = (props = {}) => {
-    let dataFlag = props.data; //.data
-    if (props.depositUser) {
-        dataFlag = dataFlag.filter((item) => {
-            return (
-                searchUtils.searchInput(props.depositUser, item._id) ||
-                searchUtils.searchInput(props.depositUser, item.code) ||
-                searchUtils.searchInput(props.depositUser, item.symbol) ||
-                searchUtils.searchInput(props.depositUser, item.amount) ||
-                searchUtils.searchInput(props.depositUser, item.amountVnd) ||
-                searchUtils.searchInput(props.depositUser, item.status) ||
-                searchUtils.searchInput(
-                    props.depositUser,
-                    item?.bankAdmin?.methodName
-                ) ||
-                searchUtils.searchInput(
-                    props.depositUser,
-                    item?.bankAdmin?.accountName
-                ) ||
-                searchUtils.searchInput(
-                    props.depositUser,
-                    item?.bankAdmin?.accountNumber
-                )
-            );
-        });
-    }
-    return dataFlag;
+	const { data, depositUser } = props;
+	let dataFlag = data; //.data
+	if (depositUser) {
+		dataFlag = dataFlag.filter((item) => {
+			return (
+				searchUtils.searchInput(depositUser, item._id) ||
+				searchUtils.searchInput(depositUser, item.code) ||
+				searchUtils.searchInput(depositUser, item.symbol) ||
+				searchUtils.searchInput(depositUser, item.amount) ||
+				searchUtils.searchInput(depositUser, item.amountVnd) ||
+				searchUtils.searchInput(depositUser, item.status) ||
+				searchUtils.searchInput(
+					depositUser,
+					item?.bankAdmin?.methodName,
+				) ||
+				searchUtils.searchInput(
+					depositUser,
+					item?.bankAdmin?.accountName,
+				) ||
+				searchUtils.searchInput(
+					depositUser,
+					item?.bankAdmin?.accountNumber,
+				)
+			);
+		});
+	}
+	return dataFlag;
 };
 // SEARCH WITHDRAW USER
 export const searchWithdrawUser = (props = {}) => {
-    let dataFlag = props.data; //.data
-    if (props.withdrawUser) {
-        dataFlag = dataFlag.filter((item) => {
-            return (
-                searchUtils.searchInput(props.withdrawUser, item.symbol) ||
-                searchUtils.searchInput(props.withdrawUser, item.amountUsd) ||
-                searchUtils.searchInput(props.withdrawUser, item.amountVnd) ||
-                searchUtils.searchInput(props.withdrawUser, item.status) ||
-                searchUtils.searchInput(
-                    props.withdrawUser,
-                    item?.method?.methodName
-                ) ||
-                searchUtils.searchInput(
-                    props.withdrawUser,
-                    item?.method?.accountName
-                ) ||
-                searchUtils.searchInput(
-                    props.withdrawUser,
-                    item?.method?.accountNumber
-                )
-            );
-        });
-    }
-    return dataFlag;
+	const { data, withdrawUser } = props;
+	let dataFlag = data; //.data
+	if (withdrawUser) {
+		dataFlag = dataFlag.filter((item) => {
+			return (
+				searchUtils.searchInput(withdrawUser, item.symbol) ||
+				searchUtils.searchInput(withdrawUser, item.amountUsd) ||
+				searchUtils.searchInput(withdrawUser, item.amountVnd) ||
+				searchUtils.searchInput(withdrawUser, item.status) ||
+				searchUtils.searchInput(
+					withdrawUser,
+					item?.method?.methodName,
+				) ||
+				searchUtils.searchInput(
+					withdrawUser,
+					item?.method?.accountName,
+				) ||
+				searchUtils.searchInput(
+					withdrawUser,
+					item?.method?.accountNumber,
+				)
+			);
+		});
+	}
+	return dataFlag;
 };
 // SEARCH BANK ADMIN USER
 export const searchBankAdminUser = (props = {}) => {
-    let dataFlag = props.data; //.data
-    if (props.bank) {
-        dataFlag = dataFlag.filter((item) => {
-            return (
-                searchUtils.searchInput(props.bank, item.accountName) ||
-                searchUtils.searchInput(props.bank, item.accountNumber) ||
-                searchUtils.searchInput(props.bank, item.code) ||
-                searchUtils.searchInput(props.bank, item.methodName) ||
-                searchUtils.searchInput(props.bank, item.name)
-            );
-        });
-    }
-    return dataFlag;
+	const { data, bank } = props;
+	let dataFlag = data; //.data
+	if (bank) {
+		dataFlag = dataFlag.filter((item) => {
+			return (
+				searchUtils.searchInput(bank, item.accountName) ||
+				searchUtils.searchInput(bank, item.accountNumber) ||
+				searchUtils.searchInput(bank, item.code) ||
+				searchUtils.searchInput(bank, item.methodName) ||
+				searchUtils.searchInput(bank, item.name)
+			);
+		});
+	}
+	return dataFlag;
 };
 // SEARCH BLACKLIST USERS
 export const searchBlacklistUsers = (props = {}) => {
-    let searchDataFlag = props.dataUser; //.dataUser
-    if (props.userBlacklist) {
-        searchDataFlag = searchDataFlag?.filter((item) => {
-            return (
-                searchUtils.searchInput(
-                    props.userBlacklist,
-                    item.payment.email
-                ) ||
-                searchUtils.searchInput(props.userBlacklist, item.payment.name)
-            );
-        });
-    }
-    return searchDataFlag;
+	const { dataUser, userBlacklist } = props;
+	let searchDataFlag = dataUser; //.dataUser
+	if (userBlacklist) {
+		searchDataFlag = searchDataFlag?.filter((item) => {
+			return (
+				searchUtils.searchInput(userBlacklist, item.payment.email) ||
+				searchUtils.searchInput(userBlacklist, item.payment.name)
+			);
+		});
+	}
+	return searchDataFlag;
 };
 // CREATE COINS
 export const handleCreate = async (props = {}) => {
-    const form = {
-        nameCoin: props.nameCoin,
-        symbolCoin: props.symbolCoin,
-        indexCoin: props.indexCoin,
-        fullName: props.fullName,
-        logo: props.logo,
-        hideAllUser: props.hideAllUser,
-        dataBlacklistUser: props.hideAllUser
-            ? props.dataUser.dataUser
-            : props.dataBlacklistUser,
-    };
-    const unShowList = form?.dataBlacklistUser?.reduce((acc, item) => {
-        acc += `${item.payment.email},`;
-        return acc;
-    }, '');
-    const resPost = await axiosUtils.coinPost(
-        '/add',
-        {
-            logo: form.logo[0],
-            name: form.nameCoin,
-            symbol: form.symbolCoin,
-            fullname: form.fullName,
-            unshow: unShowList,
-        },
-        {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                token: props.data?.token,
-            },
-        }
-    );
-    switch (resPost.code) {
-        case 0:
-            props.history(`${routers.settingCoin}`);
-            const res = await axiosUtils.coinGet(
-                `/getAllCoin?page=${props.page}&show=${props.show}`
-            );
-            dispatchCreate(
-                props.dispatch,
-                props.state,
-                props.actions,
-                res,
-                'dataSettingCoin',
-                resPost.message
-            );
-            return props.data;
-        case 1:
-        case 2:
-            validates.validateCase1_2(resPost, props);
-            break;
-        default:
-            break;
-    }
+	const {
+		nameCoin,
+		symbolCoin,
+		indexCoin,
+		fullName,
+		logo,
+		hideAllUser,
+		dataUser,
+		dataBlacklistUser,
+		data,
+		history,
+		page,
+		show,
+		setSnackbar,
+		dispatch,
+		state,
+		setIsProcess,
+	} = props;
+	const form = {
+		nameCoin: nameCoin,
+		symbolCoin: symbolCoin,
+		indexCoin: indexCoin,
+		fullName: fullName,
+		logo: logo,
+		hideAllUser: hideAllUser,
+		dataBlacklistUser: hideAllUser ? dataUser.dataUser : dataBlacklistUser,
+	};
+	const unShowList = form?.dataBlacklistUser?.reduce((acc, item) => {
+		acc += `${item.payment.email},`;
+		return acc;
+	}, '');
+	try {
+		const resPost = await axiosUtils.coinPost(
+			'/add',
+			{
+				logo: form.logo[0],
+				name: form.nameCoin,
+				symbol: form.symbolCoin,
+				fullname: form.fullName,
+				unshow: unShowList,
+			},
+			{
+				headers: {
+					'Content-Type': 'multipart/form-data',
+					token: data?.token,
+				},
+			},
+		);
+		setIsProcess(false);
+		const res = await axiosUtils.coinGet(
+			`/getAllCoin?page=${page}&show=${show}`,
+		);
+		dispatchCreate(
+			dispatch,
+			state,
+			setSnackbar,
+			actions,
+			res,
+			'dataSettingCoin',
+			resPost.message,
+		);
+		history(`${routers.settingCoin}`);
+	} catch (err) {
+		setIsProcess(false);
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
 // CREATE COINS
 export const handleCreateCoinInactive = async (props = {}) => {
-    const objectBody = props.logo_sub
-        ? {
-              logo_sub: props.logo_sub,
-              name: props.nameCoin,
-              symbol: props.symbolCoin,
-              fullName: props.fullName,
-          }
-        : {
-              logo: props.logo[0],
-              name: props.nameCoin,
-              symbol: props.symbolCoin,
-              fullName: props.fullName,
-          };
-    const resPost = await axiosUtils.coinNAPost('/add', objectBody, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-            token: props.data?.token,
-        },
-    });
-    switch (resPost.code) {
-        case 0:
-            props.history(`${routers.coinInactive}`);
-            const res = await axiosUtils.coinNAGet(
-                `/getList?page=${props.page}&show=${props.show}`
-            );
-            dispatchCreate(
-                props.dispatch,
-                props.state,
-                props.actions,
-                res,
-                'dataCoinInactive',
-                resPost.message
-            );
-            return props.data;
-        case 1:
-        case 2:
-            validates.validateCase1_2(resPost, props);
-            break;
-        default:
-            break;
-    }
+	const {
+		logo_sub,
+		nameCoin,
+		symbolCoin,
+		fullName,
+		logo,
+		dispatch,
+		state,
+		data,
+		page,
+		show,
+		history,
+		setSnackbar,
+		setIsProcess,
+	} = props;
+	const objectBody = logo_sub
+		? {
+				logo_sub: logo_sub,
+				name: nameCoin,
+				symbol: symbolCoin,
+				fullName: fullName,
+		  }
+		: {
+				logo: logo[0],
+				name: nameCoin,
+				symbol: symbolCoin,
+				fullName: fullName,
+		  };
+	try {
+		const resPost = await axiosUtils.adminPost(
+			'/coin/inactive',
+			objectBody,
+			{
+				headers: {
+					'Content-Type': 'multipart/form-data',
+					token: data?.token,
+				},
+			},
+		);
+		setIsProcess && setIsProcess(false);
+		const res = await axiosUtils.adminGet(
+			`coin/inactive?page=${page}&show=${show}`,
+		);
+		dispatchCreate(
+			dispatch,
+			state,
+			setSnackbar,
+			actions,
+			res,
+			'dataCoinInactive',
+			resPost.message,
+		);
+		history(`${routers.coinInactive}`);
+		return data;
+	} catch (err) {
+		setIsProcess && setIsProcess(false);
+		setSnackbar({
+			open: true,
+			severity: 'error',
+			message: err?.response?.data?.message || 'Something error!',
+		});
+	}
 };
 // UPDATE COINS
 export const handleUpdate = async (props = {}) => {
-    const form = {
-        nameCoin: props.nameCoin,
-        symbolCoin: props.symbolCoin,
-        indexCoin: props.indexCoin,
-        fullName: props.fullName,
-        logo: props.logo,
-        hideAllUser: props.hideAllUser,
-        dataBlacklistUser: props.hideAllUser
-            ? props.dataUser.dataUser
-            : props.dataBlacklistUser,
-    };
-    const unshowList = form.dataBlacklistUser.reduce((acc, item) => {
-        acc += `${item.payment.email},`;
-        return acc;
-    }, '');
-    const resPut = await axiosUtils.coinPut(
-        `/updateCoin/${props.id}`,
-        {
-            logo: form.logo[0],
-            name: form.nameCoin,
-            symbol: form.symbolCoin,
-            fullName: form.fullName,
-            unshow: [unshowList],
-        },
-        {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                token: props.data?.token,
-            },
-        }
-    );
-    switch (resPut.code) {
-        case 0:
-            props.history(`${routers.settingCoin}`);
-            const res = await axiosUtils.coinGet(
-                `/getAllCoin?page=${props.page}&show=${props.show}&search=${props.search}`
-            );
-            dispatchEdit(
-                props.dispatch,
-                props.state,
-                props.actions,
-                res,
-                'dataSettingCoin',
-                resPut.message
-            );
-            return props.data;
-        case 1:
-        case 2:
-            validates.validateCase1_2(resPut, props);
-            break;
-        default:
-            break;
-    }
+	const {
+		nameCoin,
+		symbolCoin,
+		indexCoin,
+		fullName,
+		logo,
+		hideAllUser,
+		dataUser,
+		dataBlacklistUser,
+		id,
+		data,
+		history,
+		dispatch,
+		state,
+		setSnackbar,
+		page,
+		show,
+		search,
+		setIsProcess,
+	} = props;
+	const form = {
+		nameCoin: nameCoin,
+		symbolCoin: symbolCoin,
+		indexCoin: indexCoin,
+		fullName: fullName,
+		logo: logo,
+		hideAllUser: hideAllUser,
+		dataBlacklistUser: hideAllUser ? dataUser.dataUser : dataBlacklistUser,
+	};
+	const unshowList = form.dataBlacklistUser.reduce((acc, item) => {
+		acc += `${item.payment.email},`;
+		return acc;
+	}, '');
+	try {
+		const resPut = await axiosUtils.coinPut(
+			`/updateCoin/${id}`,
+			{
+				logo: form.logo[0],
+				name: form.nameCoin,
+				symbol: form.symbolCoin,
+				fullName: form.fullName,
+				unshow: [unshowList],
+			},
+			{
+				headers: {
+					'Content-Type': 'multipart/form-data',
+					token: data?.token,
+				},
+			},
+		);
+		setIsProcess(false);
+		const res = await axiosUtils.coinGet(
+			`/getAllCoin?page=${page}&show=${show}&search=${search}`,
+		);
+		dispatchEdit(
+			dispatch,
+			state,
+			setSnackbar,
+			actions,
+			res,
+			'dataSettingCoin',
+			resPut.message,
+		);
+		history(`${routers.settingCoin}`);
+	} catch (err) {
+		setIsProcess(false);
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
 // UPDATE COINS INACTIVE
 export const handleUpdateInactive = async (props = {}) => {
-    const form = {
-        nameCoin: props.nameCoin,
-        symbolCoin: props.symbolCoin,
-        fullName: props.fullName,
-        logo: props.logo,
-    };
-    const resPut = await axiosUtils.coinNAPut(
-        `/updateCoin/${props.id}`,
-        {
-            logo: form.logo[0],
-            name: form.nameCoin,
-            symbol: form.symbolCoin,
-            fullName: form.fullName,
-        },
-        {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                token: props.data?.token,
-            },
-        }
-    );
-    switch (resPut.code) {
-        case 0:
-            props.history(`${routers.coinInactive}`);
-            const res = await axiosUtils.coinNAGet(
-                `/getList?page=${props.page}&show=${props.show}&search=${props.search}`
-            );
-            dispatchEdit(
-                props.dispatch,
-                props.state,
-                props.actions,
-                res,
-                'dataCoinInactive',
-                resPut.message
-            );
-            return props.data;
-        case 1:
-        case 2:
-            validates.validateCase1_2(resPut, props);
-            break;
-        default:
-            break;
-    }
+	const {
+		data,
+		dispatch,
+		state,
+		nameCoin,
+		symbolCoin,
+		fullName,
+		logo,
+		page,
+		show,
+		id,
+		search,
+		history,
+		setIsProcess,
+		setSnackbar,
+	} = props;
+	const form = {
+		nameCoin: nameCoin,
+		symbolCoin: symbolCoin,
+		fullName: fullName,
+		logo: logo,
+	};
+	try {
+		const resPut = await axiosUtils.adminPut(
+			`coin/inactive/${id}`,
+			{
+				logo: form.logo[0],
+				name: form.nameCoin,
+				symbol: form.symbolCoin,
+				fullName: form.fullName,
+			},
+			{
+				headers: {
+					'Content-Type': 'multipart/form-data',
+					token: data?.token,
+				},
+			},
+		);
+		setIsProcess(false);
+		const res = await axiosUtils.adminGet(
+			`coin/inactive?page=${page}&show=${show}&search=${search}`,
+		);
+		dispatchEdit(
+			dispatch,
+			state,
+			setSnackbar,
+			actions,
+			res,
+			'dataCoinInactive',
+			resPut.message,
+		);
+
+		history(`${routers.coinInactive}`);
+		return data;
+	} catch (err) {
+		setIsProcess(false);
+		setSnackbar({
+			open: true,
+			severity: 'error',
+			message: err?.response?.data?.message || 'Something error!',
+		});
+	}
 };
 
 // DELETE COINS
 export const handleDelete = async (props = {}) => {
-    const resDel = await axiosUtils.coinDelete(`/deleteCoin/${props.id}`, {
-        headers: {
-            token: props.data.token,
-        },
-    });
-    switch (resDel.code) {
-        case 0:
-            const res = await axiosUtils.coinGet(
-                `/getAllCoin?page=${props.page}&show=${props.show}&search=${props.search}`
-            );
-            dispatchDelete(
-                props.dispatch,
-                props.state,
-                props.actions,
-                res,
-                'dataSettingCoin',
-                resDel.message
-            );
-            return props.data;
-        case 1:
-        case 2:
-            validates.validateCase1_2(resDel, props);
-            break;
-        default:
-            break;
-    }
+	const { id, data, page, show, search, dispatch, state, setSnackbar } =
+		props;
+	try {
+		const resDel = await axiosUtils.coinDelete(`/deleteCoin/${id}`, {
+			headers: {
+				token: data.token,
+			},
+		});
+		const res = await axiosUtils.coinGet(
+			`/getAllCoin?page=${page}&show=${show}&search=${search}`,
+		);
+		dispatchDelete(
+			dispatch,
+			state,
+			setSnackbar,
+			actions,
+			res,
+			'dataSettingCoin',
+			resDel.message,
+		);
+		return data;
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
 };
 // DELETE COINS
 export const handleDeleteInactive = async (props = {}) => {
-    const resDel = await axiosUtils.coinNADelete(`/deleteCoin/${props.id}`, {
-        headers: {
-            token: props.data.token,
-        },
-    });
-    switch (resDel.code) {
-        case 0:
-            const res = await axiosUtils.coinNAGet(
-                `/getList?page=${props.page}&show=${props.show}&search=${props.search}`
-            );
-            dispatchDelete(
-                props.dispatch,
-                props.state,
-                props.actions,
-                res,
-                'dataCoinInactive',
-                resDel.message
-            );
-            return props.data;
-        case 1:
-        case 2:
-            validates.validateCase1_2(resDel, props);
-            break;
-        default:
-            break;
-    }
+	const {
+		data,
+		id,
+		dispatch,
+		state,
+		actions,
+		page,
+		show,
+		search,
+		setSnackbar,
+	} = props;
+	try {
+		const resDel = await axiosUtils.adminDelete(`coin/inactive/${id}`, {
+			headers: {
+				token: data.token,
+			},
+		});
+		const res = await axiosUtils.coinNAGet(
+			`coin/inactive?page=${page}&show=${show}&search=${search}`,
+		);
+		dispatchDelete(
+			dispatch,
+			state,
+			setSnackbar,
+			actions,
+			res,
+			'dataCoinInactive',
+			resDel.message,
+		);
+		return data;
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			severity: 'error',
+			message: err?.response?.data?.message || 'Something error!',
+		});
+	}
 };
 // ONCLICK EDIT COINS
 export const onClickEdit = async (props = {}) => {
-    const dataUser = await axiosUtils.adminGet('/getAllUser');
-    const data =
-        props?.item?.unshow?.length > 1
-            ? props?.item?.unshow
-            : props?.item?.unshow?.length === 1
-            ? props?.item?.unshow[0]?.split(',')?.filter((x) => x)
-            : [];
-    props.dispatch(
-        props.actions.setData({
-            ...props.state.set,
-            form: {
-                ...props.state.set.form,
-                nameCoin: props.item.name,
-                symbolCoin: props.item.symbol,
-                indexCoin: props.item.index,
-                logo: [props.item.logo],
-                fullName: props.item.fullName,
-            },
-            data: {
-                ...props.state.set.data,
-                dataBlacklistUser: data?.reduce((acc, item) => {
-                    dataUser?.dataUser?.map((user) => {
-                        if (user?.payment?.email === item) {
-                            acc.push(user);
-                        }
-                    });
-                    return acc;
-                }, []),
-            },
-            edit: {
-                // ...props.state.set.edit,
-                id: props?.item?._id || props?.item?.id,
-                itemData: props?.item,
-            },
-        })
-    );
+	const { item, dispatch, state } = props;
+	const dataUser = await axiosUtils.adminGet('/getAllUser');
+	const data =
+		item?.unshow?.length > 1
+			? item?.unshow
+			: item?.unshow?.length === 1
+			? item?.unshow[0]?.split(',')?.filter((x) => x)
+			: [];
+	dispatch(
+		actions.setData({
+			form: {
+				...state.set.form,
+				nameCoin: item.name,
+				symbolCoin: item.symbol,
+				indexCoin: item.index,
+				logo: [item.logo],
+				fullName: item.fullName,
+			},
+			data: {
+				...state.set.data,
+				dataBlacklistUser: data?.reduce((acc, item) => {
+					dataUser?.dataUser?.map((user) => {
+						if (user?.payment?.email === item) {
+							acc.push(user);
+						}
+					});
+					return acc;
+				}, []),
+			},
+			edit: {
+				id: item?._id || item?.id,
+				itemData: item,
+			},
+		}),
+	);
 };
 // HANDLE APPLY BLACKLIST USERS
 export const handleApplyBlacklist = async (props = {}) => {
-    if (props.userBlacklist) {
-        props.dispatch(
-            props.actions.setData({
-                ...props.state.set,
-                data: {
-                    ...props.state.set.data,
-                    dataBlacklistUser: props.dataUserFake,
-                },
-                searchValues: {
-                    ...props.state.set.searchValues,
-                    userBlacklist: '',
-                },
-                message: {
-                    ...props.state.set.message,
-                    del: '',
-                },
-            })
-        );
-    }
+	const { userBlacklist, dispatch, state, dataUserFake } = props;
+	if (userBlacklist) {
+		dispatch(
+			actions.setData({
+				data: {
+					...state.set.data,
+					dataBlacklistUser: dataUserFake,
+				},
+				searchValues: {
+					...state.set.searchValues,
+					userBlacklist: '',
+				},
+			}),
+		);
+	}
 };
 // HANDLE DELETE BLACKLIST USERS
 export const handleDeleteBlacklist = async (props = {}) => {
-    await 1;
-    props.dispatch(
-        props.actions.setData({
-            ...props.state.set,
-            data: {
-                ...props.state.set.data,
-                dataBlacklistUser: props.dataUserFake.filter(
-                    (item) => item._id !== props.id
-                ),
-            },
-            // edit: { ...state.set.edit, id: '' },
-            message: {
-                ...props.state.set.message,
-                del: `Xoá thành công user blacklist - Delete successfully | id: ${props.id}`,
-            },
-        })
-    );
-    props.dispatch(
-        props.actions.toggleModal({
-            ...props.state.toggle,
-            modalDelete: false,
-            modalStatus: false,
-            alertModal: true,
-        })
-    );
-    props.setDataUserFake(
-        props.dataUserFake.filter((item) => item._id !== props.id)
-    );
+	const { dispatch, state, id, setDataUserFake, dataUserFake, setSnackbar } =
+		props;
+	await 1;
+	dispatch(
+		actions.setData({
+			data: {
+				...state.set.data,
+				dataBlacklistUser: dataUserFake.filter(
+					(item) => item._id !== id,
+				),
+			},
+		}),
+	);
+	dispatch(
+		actions.toggleModal({
+			modalDelete: false,
+			modalStatus: false,
+		}),
+	);
+	setSnackbar({
+		open: true,
+		message: `Xoá thành công user blacklist - Delete successfully | id: ${id}`,
+		type: 'success',
+	});
+	setDataUserFake(dataUserFake.filter((item) => item._id !== id));
 };
 // HANDLE BUY COIN USER
 export const handleBuyCoin = async (props = {}) => {
-    const resPost = await axiosUtils.userPost('/BuyCoin', {
-        gmailUser: props?.gmailUser,
-        amount: props?.amount,
-        amountUsd: props?.amountUsd, //amount * price
-        symbol: props?.symbol,
-        price: props?.price, // api
-        type: 'BuyCoin',
-        token: props?.token,
-    });
-    switch (resPost.code) {
-        case 0:
-            props.setIsProcess(false);
-            props.dispatch(
-                props.actions.setData({
-                    message: {
-                        cre: resPost?.message
-                            ? resPost?.message
-                            : 'Buy coin successfully',
-                        error: '',
-                        upd: '',
-                        del: '',
-                    },
-                })
-            );
-            props.dispatch(
-                props.actions.toggleModal({
-                    alertModal: true,
-                })
-            );
-            props.history(routers.homeUser);
-            break;
-        case 1:
-        case 2:
-            props.setIsProcess(false);
-            props.dispatch(
-                props.actions.setData({
-                    message: {
-                        error: resPost?.message
-                            ? resPost?.message
-                            : 'Buy coin failed',
-                        cre: '',
-                        upd: '',
-                        del: '',
-                    },
-                })
-            );
-            props.dispatch(
-                props.actions.toggleModal({
-                    alertModal: true,
-                })
-            );
-            props.history(routers.homeUser);
-            break;
-        default:
-            break;
-    }
+	const {
+		idUser,
+		symbol,
+		amount,
+		price,
+		date,
+		token,
+		setIsProcess,
+		history,
+	} = props;
+	try {
+		const resPost = await axiosUtils.userPost(`buy/${idUser}`, {
+			symbol: symbol,
+			quantity: amount,
+			price: price,
+			date: date,
+			token: token,
+		});
+		setIsProcess(false);
+		alert(resPost?.message || 'Buy coin successfully');
+		history(routers.homeUser);
+	} catch (err) {
+		setIsProcess(false);
+		alert(err?.response?.data?.message || 'Buy coin failed');
+		history(routers.homeUser);
+	}
 };
 // HANDLE SELL COIN USER
 export const handleSellCoin = async (props = {}) => {
-    const resPost = await axiosUtils.userPost('/SellCoin', {
-        gmailUser: props?.gmailUser,
-        amount: props?.amount,
-        amountUsd: props?.amountUsd, //amount * price
-        symbol: props?.symbol,
-        price: props?.price, // api
-        type: 'SellCoin',
-        token: props?.token,
-    });
-    switch (resPost.code) {
-        case 0:
-            props.setIsProcess(false);
-            props.setIsProcessAll(false);
-            props.dispatch(
-                props.actions.setData({
-                    message: {
-                        cre: resPost?.message
-                            ? resPost?.message
-                            : 'Sell coin successfully',
-                        error: '',
-                        upd: '',
-                        del: '',
-                    },
-                })
-            );
-            props.dispatch(
-                props.actions.toggleModal({
-                    alertModal: true,
-                })
-            );
-            props.history(routers.myCoinUser);
-            break;
-        case 1:
-        case 2:
-            props.setIsProcess(false);
-            props.setIsProcessAll(false);
-            props.dispatch(
-                props.actions.setData({
-                    message: {
-                        error: resPost?.message
-                            ? resPost?.message
-                            : 'Sell coin failed',
-                        cre: '',
-                        upd: '',
-                        del: '',
-                    },
-                })
-            );
-            props.dispatch(
-                props.actions.toggleModal({
-                    alertModal: true,
-                })
-            );
-            props.history(routers.myCoinUser);
-            break;
-        default:
-            break;
-    }
+	const {
+		gmailUser,
+		amount,
+		amountUsd,
+		symbol,
+		price,
+		token,
+		setIsProcessAll,
+		setIsProcess,
+		history,
+		setAmountSell,
+		dispatch,
+	} = props;
+	try {
+		const resPost = await axiosUtils.userPost('/SellCoin', {
+			gmailUser: gmailUser,
+			amount: amount,
+			amountUsd: amountUsd, //amount * price
+			symbol: symbol,
+			price: price, // api
+			type: 'SellCoin',
+			token: token,
+		});
+		setIsProcess(false);
+		setIsProcessAll(false);
+		dispatch(setAmountSell(''));
+		alert(resPost?.message || 'Sell coin successfully');
+		history(routers.myCoinUser);
+	} catch (err) {
+		setIsProcess(false);
+		setIsProcessAll(false);
+		alert(err?.response?.data?.message || 'Something error!');
+		history(routers.myCoinUser);
+	}
 };

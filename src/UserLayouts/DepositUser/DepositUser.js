@@ -13,17 +13,10 @@ import {
     useAppContext,
     useDebounce,
 } from '../../utils';
-import { useNavigate } from 'react-router-dom';
 import { actions } from '../../app/';
 import { searchBankAdminUser } from '../../services/coins';
 import { changeBankSelect } from '../../services/users';
-import {
-    ActionsTable,
-    FormInput,
-    Icons,
-    Modal,
-    SelectValue,
-} from '../../components';
+import { ActionsTable, FormInput, Icons, Modal, SelectValue } from '../../components';
 import { TrObjectIcon } from '../../components/TableData/TableData';
 import moment from 'moment';
 import routers from '../../routers/routers';
@@ -70,9 +63,7 @@ function RenderBodyTable({ data }) {
                             {numberUtils.formatVND(rate?.rateDeposit) || '---'}
                         </td>
                         <td className='item-w100'>
-                            {moment(item?.createdAt).format(
-                                'DD/MM/YYYY HH:mm:ss'
-                            )}
+                            {moment(item?.createdAt).format('DD/MM/YYYY HH:mm:ss')}
                         </td>
                         <td className='item-w150'>
                             <div>{item?.bankAdmin?.methodName}</div>
@@ -82,11 +73,8 @@ function RenderBodyTable({ data }) {
                         <td style={{ alignItems: 'center' }}>
                             <span
                                 className={`status ${
-                                    item?.status
-                                        ?.toLowerCase()
-                                        .replace(/\s/g, '') + 'bgc'
-                                }`}
-                            >
+                                    item?.status?.toLowerCase().replace(/\s/g, '') + 'bgc'
+                                }`}>
                                 {item?.status}
                             </span>
                         </td>
@@ -119,7 +107,11 @@ export default function DepositUser() {
     const [amountUSD, setAmountUSD] = useState();
     const [stateModalBank, setStateModalBank] = useState(false);
     const [isProcess, setIsProcess] = useState(false);
-    const history = useNavigate();
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        type: '',
+        message: '',
+    });
     const useDebounceDeposit = useDebounce(depositUser, 500);
     useEffect(() => {
         if (useDebounceDeposit) {
@@ -132,6 +124,15 @@ export default function DepositUser() {
             }, 500);
         }
     }, [useDebounceDeposit]);
+    const handleCloseSnackbar = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbar({
+            ...snackbar,
+            open: false,
+        });
+    };
     const getDepositByEmail = async () => {
         const resGet = await axiosUtils.userGet(
             `/getAllDeposits/${currentUser?.email}?page=${page}&show=${show}&search=${useDebounceDeposit}`
@@ -188,7 +189,6 @@ export default function DepositUser() {
                 selectBank,
                 dispatch,
                 state,
-                actions,
             });
             setStateModalBank(false);
         },
@@ -203,30 +203,15 @@ export default function DepositUser() {
             bankAdmin: bankValue,
             rateDeposit: rate?.rateDeposit,
             dispatch,
-            actions,
-            history,
             setIsProcess,
             setData,
+            setSnackbar,
         });
     };
     const handleSubmit = useCallback(
-        async (e) => {
-            try {
-                await 1;
-                setIsProcess(true);
-                setTimeout(() => {
-                    // console.log(amountUSD, bankValue);
-                    requestRefreshToken(
-                        currentUser,
-                        createDepositsAPI,
-                        state,
-                        dispatch,
-                        actions
-                    );
-                }, 3000);
-            } catch (e) {
-                console.log(e);
-            }
+        (e) => {
+            setIsProcess(true);
+            requestRefreshToken(currentUser, createDepositsAPI, state, dispatch, actions);
         },
         [amountUSD, bankValue, isProcess, data]
     );
@@ -250,7 +235,10 @@ export default function DepositUser() {
                 textBtnNew='Create Deposit'
                 noActions
                 onCreate={openModal}
-            >
+                handleCloseSnackbar={handleCloseSnackbar}
+                openSnackbar={snackbar.open}
+                typeSnackbar={snackbar.type}
+                messageSnackbar={snackbar.message}>
                 <RenderBodyTable data={dataSettingFlag} />
             </General>
             {selectBank && (
@@ -262,8 +250,7 @@ export default function DepositUser() {
                     closeModal={closeModal}
                     isProcess={isProcess}
                     onClick={handleSubmit}
-                    disabled={!amountUSD || !bankValue}
-                >
+                    disabled={!amountUSD || !bankValue}>
                     <FormInput
                         label='Amount USD'
                         placeholder='Enter amount USD'
@@ -284,9 +271,7 @@ export default function DepositUser() {
                     {idDisabled && (
                         <div className='fz16 complete fwb'>
                             Deposits (VND):{' '}
-                            {numberUtils.formatVND(
-                                amountUSD * rate?.rateDeposit || 0
-                            )}
+                            {numberUtils.formatVND(amountUSD * rate?.rateDeposit || 0)}
                         </div>
                     )}
                 </Modal>

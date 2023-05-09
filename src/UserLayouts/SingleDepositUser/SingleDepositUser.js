@@ -13,10 +13,7 @@ import {
     useAppContext,
 } from '../../utils';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-    getDepositsWithdrawById,
-    handleUpdateBillDeposit,
-} from '../../services/deposits';
+import { getDepositsWithdrawById, handleUpdateBillDeposit } from '../../services/deposits';
 
 const cx = className.bind(styles);
 
@@ -37,18 +34,12 @@ export default function SingleDepositUser() {
             idDeposits: idDeposit,
             state,
             dispatch,
-            actions,
         });
     }, []);
     const x = edit?.itemData && edit?.itemData;
     const handleRejected = useCallback(
         (fileRejections) => {
-            return fileUploadUtils.handleRejected(
-                fileRejections,
-                dispatch,
-                state,
-                actions
-            );
+            return fileUploadUtils.handleRejected(fileRejections, dispatch, state, actions);
         },
         [fileRejections]
     );
@@ -70,23 +61,9 @@ export default function SingleDepositUser() {
             history,
         });
     };
-    const handleSubmit = useCallback(async () => {
-        try {
-            await 1;
-            setIsProcess(true);
-            setTimeout(() => {
-                requestRefreshToken(
-                    currentUser,
-                    handleUploadImageAPI,
-                    state,
-                    dispatch,
-                    actions,
-                    idDeposit
-                );
-            }, 3000);
-        } catch (err) {
-            console.log(err);
-        }
+    const handleSubmit = useCallback(() => {
+        setIsProcess(true);
+        requestRefreshToken(currentUser, handleUploadImageAPI, state, dispatch, actions, idDeposit);
     }, [logo]);
     const URL_SERVER =
         process.env.REACT_APP_TYPE === 'development'
@@ -94,15 +71,10 @@ export default function SingleDepositUser() {
             : process.env.REACT_APP_URL_SERVER_PRODUCTION;
     return (
         <>
-            <Button
-                className='confirmbgc mb8'
-                onClick={refreshPage.refreshPage}
-            >
+            <Button className='confirmbgc mb8' onClick={refreshPage.refreshPage}>
                 <div className='flex-center'>
                     <Icons.RefreshIcon className='fz12 mr8' />
-                    <span className={`${cx('general-button-text')}`}>
-                        Refresh Page
-                    </span>
+                    <span className={`${cx('general-button-text')}`}>Refresh Page</span>
                 </div>
             </Button>
             <div className={`${cx('info-container')}`}>
@@ -110,9 +82,7 @@ export default function SingleDepositUser() {
                     <div className={`${cx('info-detail')}`}>
                         <div className={`${cx('detail-item')}`}>
                             <div className={`${cx('item-title')}`}>Code</div>
-                            <div className={`${cx('item-desc')}`}>
-                                {x?.code || '---'}
-                            </div>
+                            <div className={`${cx('item-desc')}`}>{x?.code || '---'}</div>
                         </div>
                         <div className={`${cx('detail-item')}`}>
                             <div className={`${cx('item-title')}`}>Status</div>
@@ -120,44 +90,31 @@ export default function SingleDepositUser() {
                                 <span
                                     className={`fwb ${x?.status
                                         ?.toLowerCase()
-                                        ?.replace(/ /g, '')}`}
-                                >
+                                        ?.replace(/ /g, '')}`}>
                                     {x?.status || '---'}
                                 </span>
                             </div>
                         </div>
                         <div className={`${cx('detail-item')}`}>
-                            <div className={`${cx('item-title')}`}>
-                                Created At
-                            </div>
+                            <div className={`${cx('item-title')}`}>Created At</div>
                             <div className={`${cx('item-desc')}`}>
-                                {moment(x?.createdAt).format(
-                                    'DD/MM/YYYY HH:mm:ss'
-                                ) || '---'}
+                                {moment(x?.createdAt).format('DD/MM/YYYY HH:mm:ss') || '---'}
                             </div>
                         </div>
                         <div className={`${cx('detail-item')}`}>
-                            <div className={`${cx('item-title')}`}>
-                                Updated At
-                            </div>
+                            <div className={`${cx('item-title')}`}>Updated At</div>
                             <div className={`${cx('item-desc')}`}>
-                                {moment(x?.updatedAt).format(
-                                    'DD/MM/YYYY HH:mm:ss'
-                                ) || '---'}
+                                {moment(x?.updatedAt).format('DD/MM/YYYY HH:mm:ss') || '---'}
                             </div>
                         </div>
                         <div className={`${cx('detail-item')}`}>
-                            <div className={`${cx('item-title')}`}>
-                                Amount USD
-                            </div>
+                            <div className={`${cx('item-title')}`}>Amount USD</div>
                             <div className={`${cx('item-desc')}`}>
                                 {numberUtils.coinUSD(x?.amountUsd) || '---'}
                             </div>
                         </div>
                         <div className={`${cx('detail-item')}`}>
-                            <div className={`${cx('item-title')}`}>
-                                Amount VND
-                            </div>
+                            <div className={`${cx('item-title')}`}>Amount VND</div>
                             <div className={`${cx('item-desc')}`}>
                                 {numberUtils.formatVND(x?.amountVnd)}
                             </div>
@@ -165,15 +122,9 @@ export default function SingleDepositUser() {
                         <div className={`${cx('detail-item')}`}>
                             <div className={`${cx('item-title')}`}>Method</div>
                             <div className={`${cx('item-desc')}`}>
-                                <div className='text-right'>
-                                    {x?.bankAdmin?.methodName}
-                                </div>
-                                <div className='text-right'>
-                                    {x?.bankAdmin?.accountName}
-                                </div>
-                                <div className='text-right'>
-                                    {x?.bankAdmin?.accountNumber}
-                                </div>
+                                <div className='text-right'>{x?.bankAdmin?.methodName}</div>
+                                <div className='text-right'>{x?.bankAdmin?.accountName}</div>
+                                <div className='text-right'>{x?.bankAdmin?.accountNumber}</div>
                             </div>
                         </div>
                     </div>
@@ -191,10 +142,7 @@ export default function SingleDepositUser() {
                         ) : (
                             <div className={`${cx('image-view-container')}`}>
                                 <Image
-                                    src={`${URL_SERVER}${x?.statement?.replace(
-                                        'uploads/',
-                                        ''
-                                    )}`}
+                                    src={`${URL_SERVER}${x?.statement?.replace('uploads/', '')}`}
                                     alt=''
                                     className={`${cx('image-view')}`}
                                 />
@@ -207,8 +155,7 @@ export default function SingleDepositUser() {
                                 className='w100 confirmbgc'
                                 onClick={handleSubmit}
                                 isProcess={isProcess}
-                                disabled={isProcess}
-                            >
+                                disabled={isProcess || !logo}>
                                 Submit
                             </Button>
                         </div>

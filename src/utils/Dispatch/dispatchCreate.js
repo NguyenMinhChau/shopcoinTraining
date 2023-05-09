@@ -1,4 +1,4 @@
-const dispatchCreate = (dispatch, state, actions, data, nameData, message) => {
+const dispatchCreate = (dispatch, state, setSnackbar, actions, data, nameData, message) => {
     dispatch(
         actions.setData({
             form: {
@@ -23,24 +23,24 @@ const dispatchCreate = (dispatch, state, actions, data, nameData, message) => {
                 [nameData]: data,
             },
             edit: { ...state.set.edit, id: '', itemData: null, data: null },
-            message: {
-                cre: message ? message : 'Created Success',
-                error: '',
-                del: '',
-                upd: '',
-            },
         })
     );
     dispatch(
         actions.toggleModal({
             modalPaymentEdit: false,
-            alertModal: true,
+            modalSettingEdit: false,
+            modalDepositsEdit: false,
+            modalWithdrawEdit: false,
+            modalBuyEdit: false,
+            modalSellEdit: false,
+            modalStatus: false,
         })
     );
-    // window.scrollTo({
-    //     top: 0,
-    //     behavior: 'smooth',
-    // });
+    setSnackbar({
+        open: true,
+        message: message ? message : 'Created Success',
+        type: 'success',
+    });
 };
 
 export default dispatchCreate;
