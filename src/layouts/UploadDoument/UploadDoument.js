@@ -10,7 +10,6 @@ import {
   Alert,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
-// import {launchImageLibrary} from 'react-native-image-picker';
 import ImageCropPicker from 'react-native-image-crop-picker';
 import {useAppContext} from '../../utils';
 import requestRefreshToken from '../../utils/axios/refreshToken';
@@ -23,8 +22,10 @@ import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
 import {SVgetUserById, SVuploadDocument} from '../../services/user';
 import {routersMain} from '../../routers/Main';
+import {useToast} from 'native-base';
 
 export default function UploadDoument({navigation}) {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {currentUser, userById} = state;
   const [refreshing, setRefreshing] = useState(false);
@@ -45,7 +46,7 @@ export default function UploadDoument({navigation}) {
     SVgetUserById({
       id: currentUser?.id,
       dispatch,
-      getUserById,
+      toast,
     });
     wait(2000).then(() => setRefreshing(false));
   }, []);
@@ -53,7 +54,7 @@ export default function UploadDoument({navigation}) {
     SVgetUserById({
       id: currentUser?.id,
       dispatch,
-      getUserById,
+      toast,
     });
   }, []);
   const handleDocumentSelectionFrontCCCD = async () => {
@@ -63,11 +64,6 @@ export default function UploadDoument({navigation}) {
       cropping: true,
       compressImageQuality: 1,
       includeBase64: true,
-      // freeStyleCropEnabled: true,
-      // showCropGuidelines: true,
-      // showCropFrame: true,
-      // hideBottomControls: true,
-      // enableRotationGesture: true,
     }).then(image => {
       const object = {
         image: image?.data || image?.image,
@@ -88,11 +84,6 @@ export default function UploadDoument({navigation}) {
       cropping: true,
       compressImageQuality: 1,
       includeBase64: true,
-      // freeStyleCropEnabled: true,
-      // showCropGuidelines: true,
-      // showCropFrame: true,
-      // hideBottomControls: true,
-      // enableRotationGesture: true,
     }).then(image => {
       const object = {
         image: image?.data || image?.image,
@@ -115,11 +106,6 @@ export default function UploadDoument({navigation}) {
       cropping: true,
       compressImageQuality: 1,
       includeBase64: true,
-      // freeStyleCropEnabled: true,
-      // showCropGuidelines: true,
-      // showCropFrame: true,
-      // hideBottomControls: true,
-      // enableRotationGesture: true,
     }).then(image => {
       const object = {
         image: image?.data || image?.image,
@@ -140,11 +126,6 @@ export default function UploadDoument({navigation}) {
       cropping: true,
       compressImageQuality: 1,
       includeBase64: true,
-      // freeStyleCropEnabled: true,
-      // showCropGuidelines: true,
-      // showCropFrame: true,
-      // hideBottomControls: true,
-      // enableRotationGesture: true,
     }).then(image => {
       const object = {
         image: image?.data || image?.image,
@@ -169,6 +150,7 @@ export default function UploadDoument({navigation}) {
       setLoading,
       navigation,
       setIsProcess,
+      toast,
     });
   };
   const handleSubmit = async id => {
@@ -181,7 +163,8 @@ export default function UploadDoument({navigation}) {
         state,
         dispatch,
         setCurrentUser,
-        setMessage,
+        toast,
+        navigation,
         id,
       );
       if (isProcess) {
@@ -197,8 +180,6 @@ export default function UploadDoument({navigation}) {
           },
         ]);
       }
-      // setTimeout(() => {
-      // }, 8000);
     } catch (err) {
       console.log(err);
     }
@@ -211,9 +192,6 @@ export default function UploadDoument({navigation}) {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
       <View style={[styles.content]}>
-        {/* <Text style={[styles.title, stylesGeneral.mb10]}>
-          Upload your image document
-        </Text> */}
         <View style={[styles.image_container]}>
           <Text
             style={[

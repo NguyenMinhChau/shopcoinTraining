@@ -3,6 +3,7 @@ import {Alert} from 'react-native';
 import {
   adminGet,
   authPost,
+  userGet,
   userPost,
   userPut,
 } from '../utils/axios/axiosInstance';
@@ -13,24 +14,30 @@ import {getUserById} from '../app/payloads/getById';
 import {setFormValue} from '../app/payloads/form';
 import {setMessage} from '../app/payloads/message';
 import {getTokenForgotPwd} from '../app/payloads/getToken';
+import {toastShow} from '../utils/toast';
 
 // GET USER BY ID
 export const SVgetUserById = async (props = {}) => {
-  const {id, dispatch, setBalance, currentUser, setCurrentUser} = props;
-  const resGet = await adminGet(`/getUser/${id}`);
-  dispatch(getUserById(resGet?.data));
-  if (setBalance && currentUser && setCurrentUser) {
-    setBalance(resGet?.data?.Wallet?.balance);
-    setAsyncStore({
-      ...currentUser,
-      balance: resGet?.data?.Wallet?.balance,
-    });
-    dispatch(
-      setCurrentUser({
+  const {id, dispatch, setBalance, currentUser, setCurrentUser, toast} = props;
+  try {
+    const resGet = await adminGet(`user/${id}`);
+    dispatch(getUserById(resGet?.metadata));
+    if (setBalance && currentUser && setCurrentUser) {
+      setBalance(resGet?.metadata?.Wallet?.balance);
+      setAsyncStore({
         ...currentUser,
-        balance: resGet?.data?.Wallet?.balance,
-      }),
-    );
+        balance: resGet?.metadata?.Wallet?.balance,
+      });
+      dispatch(
+        setCurrentUser({
+          ...currentUser,
+          balance: resGet?.metadata?.Wallet?.balance,
+        }),
+      );
+    }
+  } catch (err) {
+    console.log('Get user by id: ', err);
+    toastShow(toast, err?.response?.data?.messge || 'Something error!');
   }
 };
 
@@ -45,11 +52,12 @@ export const SVchangePassword = async (props = {}) => {
     setIsProcess,
     navigation,
     dispatch,
+    toast,
+    setFormValue,
   } = props;
   try {
-    await userPut(`/changePWD/${id}`, {
-      oldPWD: oldPWD,
-      newPWD: newPWD,
+    const resPut = await userPut(`password/${id}`, {
+      password: newPWD,
       token: token,
     });
     setLoading(true);
@@ -62,7 +70,7 @@ export const SVchangePassword = async (props = {}) => {
           onPress: () => navigation.navigate(routersMain.Login),
         },
       ]);
-    }, 3000);
+    }, 1000);
     dispatch(
       setFormValue({
         password: '',
@@ -70,45 +78,32 @@ export const SVchangePassword = async (props = {}) => {
         confirmPwd: '',
       }),
     );
-    await authPost('logout');
+    await authPost(`logout/${id}`);
     removeAsyncStore();
   } catch (err) {
-    dispatch(setMessage({error: err?.response?.data?.message}));
+    toastShow(toast, err?.response?.data?.message || 'Something error!');
     setIsProcess(false);
   }
 };
 // FORGOT PASSWORD
 export const SVforgotPwd = async (props = {}) => {
-  const {email, setLoading, setIsProcess, navigation, dispatch} = props;
+  const {email, setLoading, setIsProcess, navigation, toast, dispatch} = props;
   try {
-    const resPost = await userPost('/forgotPassword', {
-      email: email,
-    });
+    const resGet = await userGet(`forgot/password/${email}`, {});
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setIsProcess(false);
-      Alert.alert('Success!', 'Please check email with new password!', [
-        {
-          text: 'OK',
-          onPress: () => navigation.navigate(routersMain.ResetPwd),
-        },
-      ]);
-    }, 3000);
-    dispatch(getTokenForgotPwd(resPost?.data));
     dispatch(
       setFormValue({
         email: '',
       }),
     );
-  } catch (err) {
-    dispatch(
-      setMessage({
-        success: '',
-        error: err?.response?.data?.message,
-      }),
+    toastShow(
+      toast,
+      resGet?.message || 'Sent mail which has otp code for forgot password!',
     );
+    navigation.navigate(routersMain.ResetPwd);
+  } catch (err) {
     setIsProcess(false);
+    toastShow(toast, err?.response?.data?.message || 'Something error!');
     dispatch(
       setFormValue({
         email: '',
@@ -120,20 +115,19 @@ export const SVforgotPwd = async (props = {}) => {
 export const SVuploadDocument = async (props = {}) => {
   const {imageForm, id, token, setLoading, setIsProcess, navigation} = props;
   const object = {
-    imagePersonNationalityFont: imageForm[0],
-    imagePersonNationalityBeside: imageForm[1],
-    imageLicenseFont: imageForm[2],
-    imageLicenseBeside: imageForm[3],
+    image1: {name: imageForm[0].fileName, base64: imageForm[0].image},
+    image2: {name: imageForm[1].fileName, base64: imageForm[1].image},
+    image3: {name: imageForm[2].fileName, base64: imageForm[2].image},
+    image4: {name: imageForm[3].fileName, base64: imageForm[3].image},
   };
   try {
     await userPut(
-      `/additionImages/${id}`,
+      `image/${id}`,
       {
         ...object,
       },
       {
         headers: {
-          // 'Content-Type': 'multipart/form-data',
           token: token,
         },
       },
@@ -148,7 +142,7 @@ export const SVuploadDocument = async (props = {}) => {
           onPress: () => navigation.navigate(routers.Profile),
         },
       ]);
-    }, 3000);
+    }, 1000);
   } catch (err) {
     setLoading(true);
     setIsProcess(false);
@@ -165,39 +159,24 @@ export const SVuploadDocument = async (props = {}) => {
           },
         ],
       );
-    }, 3000);
+    }, 1000);
   }
 };
 // RESET PASSWORD
 export const SVresetPassword = async (props = {}) => {
-  const {token, otp, pwd, setLoading, setIsProcess, navigation} = props;
+  const {token, otp, pwd, setLoading, setIsProcess, toast, navigation} = props;
   try {
-    await userPut(`/getOTP/${token}`, {
-      otp: otp,
-      pwd: pwd,
-    });
+    const resPost = await userPost(`/forgot/password/${otp}`, {});
     setLoading(true);
     setIsProcess(false);
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert('Success!', 'Change password successfully!', [
-        {
-          text: 'OK',
-          onPress: () => navigation.navigate(routersMain.Login),
-        },
-      ]);
-    }, 3000);
+    toastShow(
+      toast,
+      resPost?.message || 'Change password successfully, please check email!',
+    );
+    navigation.navigate(routersMain.Login);
   } catch (err) {
     setLoading(true);
     setIsProcess(false);
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert('Error!', err?.response?.data?.message, [
-        {
-          text: 'OK',
-          onPress: () => navigation.navigate(routersMain.ResetPwd),
-        },
-      ]);
-    }, 3000);
+    toastShow(toast, err?.response?.data?.message || 'Somrthing error!');
   }
 };

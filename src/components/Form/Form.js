@@ -71,17 +71,6 @@ const Form = ({
           <Text style={[styles.title_form, stylesGeneral.text_black]}>
             {titleForm}
           </Text>
-          {(error || success) && (
-            <View style={[styles.error_container, stylesGeneral.flexCenter]}>
-              <Text
-                style={[
-                  error ? stylesStatus.cancel : stylesStatus.complete,
-                  stylesGeneral.text_center,
-                ]}>
-                {error || success}
-              </Text>
-            </View>
-          )}
           {bolUsername && (
             <FormInput
               label="Username"

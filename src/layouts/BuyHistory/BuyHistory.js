@@ -11,48 +11,71 @@ import {routers} from '../../routers/Routers';
 import styles from './BuyHistoryCss';
 import stylesGeneral from '../../styles/General';
 import {BuySellHistoryDetail, NodataText} from '../../components';
+import {useToast} from 'native-base';
+import requestRefreshToken from '../../utils/axios/refreshToken';
+import {setCurrentUser} from '../../app/payloads/user';
 
 const History = ({navigation}) => {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     currentUser,
     history: {dataBuyHistory},
   } = state;
   const [refreshing, setRefreshing] = useState(false);
-  useEffect(() => {
+  const getHistory = dataToken => {
     SVgetBuyHistory({
-      id: currentUser?.id,
+      toast,
+      id_user: currentUser?.id,
       dispatch,
-      getHistoryBuy,
+      token: dataToken?.token,
     });
+  };
+  useEffect(() => {
+    requestRefreshToken(
+      currentUser,
+      getHistory,
+      state,
+      dispatch,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
   }, []);
   const wait = timeout => {
     return new Promise(resolve => setTimeout(resolve, timeout));
   };
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    SVgetBuyHistory({
-      id: currentUser?.id,
+    requestRefreshToken(
+      currentUser,
+      getHistory,
+      state,
       dispatch,
-      getHistoryBuy,
-    });
+      setCurrentUser,
+      toast,
+      navigation,
+    );
     wait(2000).then(() => setRefreshing(false));
   }, []);
   const renderItem = ({item}) => {
     return <BuySellHistoryDetail item={item} />;
   };
-  console.log(dataBuyHistory);
   return (
     <View style={[styles.container]}>
       <View style={[styles.btn_container, stylesGeneral.mb10]}>
         <View
           style={[styles.btn]}
           onTouchStart={() => {
-            SVgetBuyHistory({
-              id: currentUser?.id,
+            requestRefreshToken(
+              currentUser,
+              getHistory,
+              state,
               dispatch,
-              getHistoryBuy,
-            });
+              setCurrentUser,
+              toast,
+              navigation,
+            );
             navigation.navigate(routers.History);
           }}>
           <Text style={[styles.btn_text, stylesGeneral.text_black]}>
@@ -62,11 +85,15 @@ const History = ({navigation}) => {
         <View
           style={[styles.btn]}
           onTouchStart={() => {
-            SVgetSellHistory({
-              id: currentUser?.id,
+            requestRefreshToken(
+              currentUser,
+              getHistory,
+              state,
               dispatch,
-              getHistorySell,
-            });
+              setCurrentUser,
+              toast,
+              navigation,
+            );
             navigation.navigate(routersMain.SellHistory);
           }}>
           <Text style={[styles.btn_text, stylesGeneral.text_black]}>

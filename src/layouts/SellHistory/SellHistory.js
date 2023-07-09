@@ -4,38 +4,57 @@
 import {View, Text, RefreshControl, FlatList} from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {useAppContext} from '../../utils/';
-import {SVgetBuyHistory, SVgetSellHistory} from '../../services/bills';
-import {getHistorySell, getHistoryBuy} from '../../app/payloads/history';
+import {SVgetBuyHistory} from '../../services/bills';
 import {BuySellHistoryDetail, NodataText} from '../../components';
 import {routersMain} from '../../routers/Main';
 import {routers} from '../../routers/Routers';
 import styles from './SellHistoryCss';
 import stylesGeneral from '../../styles/General';
+import {setCurrentUser} from '../../app/payloads/user';
+import {useToast} from 'native-base';
+import requestRefreshToken from '../../utils/axios/refreshToken';
 
 export default function SellHistory({navigation}) {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     currentUser,
-    history: {dataSellHistory},
+    history: {dataBuyHistory},
   } = state;
   const [refreshing, setRefreshing] = useState(false);
-  useEffect(() => {
-    SVgetSellHistory({
-      id: currentUser?.id,
+  const getHistory = dataToken => {
+    SVgetBuyHistory({
+      toast,
+      id_user: currentUser?.id,
       dispatch,
-      getHistorySell,
+      token: dataToken?.token,
     });
+  };
+  useEffect(() => {
+    requestRefreshToken(
+      currentUser,
+      getHistory,
+      state,
+      dispatch,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
   }, []);
   const wait = timeout => {
     return new Promise(resolve => setTimeout(resolve, timeout));
   };
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    SVgetSellHistory({
-      id: currentUser?.id,
+    requestRefreshToken(
+      currentUser,
+      getHistory,
+      state,
       dispatch,
-      getHistorySell,
-    });
+      setCurrentUser,
+      toast,
+      navigation,
+    );
     wait(2000).then(() => setRefreshing(false));
   }, []);
   const renderItem = ({item}) => {
@@ -47,11 +66,15 @@ export default function SellHistory({navigation}) {
         <View
           style={[styles.btn]}
           onTouchStart={() => {
-            SVgetBuyHistory({
-              id: currentUser?.id,
+            requestRefreshToken(
+              currentUser,
+              getHistory,
+              state,
               dispatch,
-              getHistoryBuy,
-            });
+              setCurrentUser,
+              toast,
+              navigation,
+            );
             navigation.navigate(routers.History);
           }}>
           <Text style={[styles.btn_text, stylesGeneral.text_black]}>
@@ -61,11 +84,15 @@ export default function SellHistory({navigation}) {
         <View
           style={[styles.btn]}
           onTouchStart={() => {
-            SVgetSellHistory({
-              id: currentUser?.id,
+            requestRefreshToken(
+              currentUser,
+              getHistory,
+              state,
               dispatch,
-              getHistorySell,
-            });
+              setCurrentUser,
+              toast,
+              navigation,
+            );
             navigation.navigate(routersMain.SellHistory);
           }}>
           <Text style={[styles.btn_text, stylesGeneral.text_black]}>
@@ -74,13 +101,13 @@ export default function SellHistory({navigation}) {
         </View>
       </View>
       <View style={[styles.listItem]}>
-        {dataSellHistory?.sell?.length > 0 ? (
+        {dataBuyHistory?.sells?.length > 0 ? (
           <FlatList
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
-            data={dataSellHistory?.sell}
+            data={dataBuyHistory?.sells}
             keyExtractor={(item, index) => index.toString()}
             renderItem={renderItem}
           />

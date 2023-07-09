@@ -23,30 +23,51 @@ import {dateFormat} from '../../utils/format/Date';
 import {textLower} from '../../utils/format/textLowercase';
 import {routersMain} from '../../routers/Main';
 import styles from './WithdrawCss';
+import {useToast} from 'native-base';
+import requestRefreshToken from '../../utils/axios/refreshToken';
+import {setCurrentUser} from '../../app/payloads/user';
 
 const Withdraw = ({navigation}) => {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     currentUser,
     data: {dataWithdraws},
   } = state;
   const [refreshing, setRefreshing] = useState(false);
-  useEffect(() => {
+  const getWRByEmail = dataToken => {
     SVgetWithdrawByEmailUser({
-      email: currentUser?.email,
+      email_user: currentUser?.email,
+      id_user: currentUser?.id,
       dispatch,
-      getAllWithdraws,
-    });
-  }, []);
-  const refreshData = () => {
-    SVgetWithdrawByEmailUser({
-      email: currentUser?.email,
-      dispatch,
-      getAllWithdraws,
+      toast,
+      token: dataToken?.token,
     });
   };
+  useEffect(() => {
+    requestRefreshToken(
+      currentUser,
+      getWRByEmail,
+      state,
+      dispatch,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
+  }, []);
+  const refreshData = () => {
+    requestRefreshToken(
+      currentUser,
+      getWRByEmail,
+      state,
+      dispatch,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
+  };
   const data =
-    dataWithdraws?.withdraws?.sort(
+    dataWithdraws?.sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     ) || [];
   const wait = timeout => {
@@ -54,15 +75,18 @@ const Withdraw = ({navigation}) => {
   };
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    SVgetWithdrawByEmailUser({
-      email: currentUser?.email,
+    requestRefreshToken(
+      currentUser,
+      getWRByEmail,
+      state,
       dispatch,
-      getAllWithdraws,
-    });
+      setCurrentUser,
+      toast,
+      navigation,
+    );
     wait(2000).then(() => setRefreshing(false));
   }, []);
   const renderItem = ({item}) => {
-    console.log('item', item);
     return (
       <DataTable.Row
         onPress={
@@ -79,12 +103,12 @@ const Withdraw = ({navigation}) => {
         }>
         <DataTable.Cell numeric style={[styles.title_table]}>
           <Text style={[stylesGeneral.text_black]}>
-            {formatUSDT(item?.amountUsd)}
+            {formatUSDT(item?.amount)}
           </Text>
         </DataTable.Cell>
         <DataTable.Cell numeric style={[styles.title_table]}>
           <Text style={[stylesGeneral.text_black]}>
-            {formatVND(item?.amountVnd)}
+            {formatVND(item?.amount_vnd)}
           </Text>
         </DataTable.Cell>
         <DataTable.Cell numeric style={[styles.title_table]}>

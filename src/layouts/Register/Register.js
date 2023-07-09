@@ -11,15 +11,16 @@ import styles from './RegisterCss';
 import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
 import {useState} from 'react';
+import { useToast } from 'native-base';
 
 const Register = ({navigation}) => {
+  const toast = useToast()
   const {state, dispatch} = useAppContext();
   const {
     form: {username, email, password},
   } = state;
   const [isProcess, setIsProcess] = useState(false);
-  const handleRegister = async () => {
-    await 1;
+  const handleRegister = () => {
     setIsProcess(true);
     userRegister({
       username,
@@ -28,6 +29,7 @@ const Register = ({navigation}) => {
       dispatch,
       state,
       navigation,
+      toast,
       setMessage,
       setFormValue,
       setIsProcess,

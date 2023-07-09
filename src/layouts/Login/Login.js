@@ -12,8 +12,10 @@ import {routersMain} from '../../routers/Main';
 import styles from './LoginCss';
 import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
+import {useToast} from 'native-base';
 
 const Login = ({navigation}) => {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     currentUser,
@@ -27,18 +29,18 @@ const Login = ({navigation}) => {
       navigation.navigate(routersMain.MainPage);
     }
   }, [currentUser]);
-  const handleLogin = async () => {
-    await 1;
+  const handleLogin = () => {
     setIsProcess(true);
     userLogin({
       email,
       password,
       dispatch,
       state,
+      toast,
       setFormValue,
       setMessage,
       setIsProcess,
-      redirect: () => navigation.navigate(routersMain.MainPage),
+      navigation,
     });
   };
   return (

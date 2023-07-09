@@ -9,6 +9,7 @@ import {
 import {routersMain} from '../routers/Main';
 import {routers} from '../routers/Routers';
 import {getAllWithdraws} from '../app/payloads/getAll';
+import {toastShow} from '../utils/toast';
 
 // GET ALL WITHDRAW
 export const SVgetAllWithdraw = async (props = {}) => {
@@ -20,28 +21,50 @@ export const SVgetAllWithdraw = async (props = {}) => {
 
 // GET WITHDRAW BY EMAIL/ID USER
 export const SVgetWithdrawByEmailUser = async (props = {}) => {
-  const resGet = await userGet(`/getAllWithdraw/${props?.email}`);
-  props.dispatch(props.getAllWithdraws(resGet?.data));
+  const {email_user, id_user, toast, dispatch, token} = props;
+  try {
+    const resGet = await userGet(`withdraws/${id_user}`, {
+      headers: {token: token},
+    });
+    dispatch(getAllWithdraws(resGet?.metadata));
+  } catch (err) {
+    toastShow(toast, err?.response?.data?.message || 'Something error!');
+  }
+};
+// GET WITHDRAW BY ID
+export const SVgetWithdrawByID = async (props = {}) => {
+  const {id_wr, toast, setWRbyId} = props;
+  try {
+    const resGet = await adminGet(`withdraw/${id_wr}`, {});
+    setWRbyId(resGet?.metadata);
+  } catch (err) {
+    toastShow(toast, err?.response?.data?.message || 'Something error!');
+  }
 };
 
 // CREATE WITHDRAW
 export const SVcreateWithdraw = async (props = {}) => {
   const {
+    id_user,
     amount,
     email,
-    rateWithdraw,
-    token,
+    method,
     setLoading,
-    setisProcess,
+    dispatch,
     navigation,
+    toast,
+    token,
+    setFormWithdraw,
+    setisProcess,
   } = props;
   try {
-    const resPost = await userPost('/withdraw', {
-      amountUsd: parseFloat(amount),
-      user: email,
-      rateWithdraw: rateWithdraw,
+    const resPost = await userPost(`withdraw/${id_user}`, {
+      amount: parseFloat(amount),
+      method: id_user,
       token: token,
+      headers: {token: token},
     });
+
     setLoading(true);
     setisProcess(false);
     setTimeout(() => {
@@ -53,12 +76,12 @@ export const SVcreateWithdraw = async (props = {}) => {
             navigation.navigate({
               name: routersMain.SingleWithdraw,
               params: {
-                data: resPost?.data,
+                data: resPost?.metadata,
               },
             }),
         },
       ]);
-    }, 3000);
+    }, 1000);
   } catch (err) {
     setLoading(true);
     setisProcess(false);
@@ -70,17 +93,26 @@ export const SVcreateWithdraw = async (props = {}) => {
           onPress: () => navigation.navigate(routersMain.CreateWithdraw),
         },
       ]);
-    }, 3000);
+    }, 1000);
   }
 };
 
 // CHECK CODE
 export const SVcheckCode = async (props = {}) => {
-  const {code, token, setLoading, setIsProcess, dispatch, navigation, id} =
-    props;
+  const {
+    code,
+    token,
+    id,
+    email,
+    id_user,
+    dispatch,
+    setLoading,
+    navigation,
+    setIsProcess,
+    toast,
+  } = props;
   try {
-    const resGet = await userGet(`/enterOTPWithdraw/${code}`, {
-      code: code,
+    const resGet = await userPost(`withdraw/otp/${code}/${id}`, {
       token: token,
       headers: {
         token: token,
@@ -94,41 +126,69 @@ export const SVcheckCode = async (props = {}) => {
         {
           text: 'OK',
           onPress: async () => {
-            const res = await userGet(`/getAllWithdraw/${props?.email}`);
-            dispatch(getAllWithdraws(res?.data));
+            const res = await userGet(`withdraws/${id_user}`);
+            dispatch(getAllWithdraws(res?.metadata));
             navigation.navigate(routers.Withdraw);
           },
         },
       ]);
-    }, 3000);
+    }, 1000);
   } catch (err) {
     setLoading(true);
     setIsProcess(false);
-    await userDelete(`/cancelWithdraw/${id}`);
+    // await userGet(`withdraw/${id}`);
     setTimeout(() => {
       setLoading(false);
-      Alert.alert('Error!', err?.response?.data?.message, [
-        {
-          text: 'OK',
-          onPress: () => navigation.navigate(routersMain.CreateWithdraw),
-        },
-      ]);
-    }, 3000);
+      Alert.alert(
+        'Error!',
+        err?.response?.data?.message || 'OTP code is valid!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {},
+          },
+        ],
+      );
+    }, 1000);
   }
 };
 
 // DELETE WITHDRAW
 export const SVdeleteWithdraw = async (props = {}) => {
-  const {id, setLoading, setIsProcessCancel, navigation} = props;
+  const {
+    token,
+    id,
+    email_user,
+    id_user,
+    setLoading,
+    navigation,
+    toast,
+    dispatch,
+    setIsProcessCancel,
+  } = props;
   try {
-    await userDelete(`/cancelWithdraw/${id}`);
+    const resGet = await userGet(
+      `withdraw/${id}`,
+      {
+        token: token,
+        headers: {token: token},
+      },
+      {headers: {token: token}},
+    );
     setLoading(true);
     setIsProcessCancel(false);
     setTimeout(() => {
       setLoading(false);
       navigation.navigate(routers.Withdraw);
-    }, 3000);
+    }, 1000);
+    toastShow(
+      toast,
+      resGet?.metadata || resGet?.message || 'Delete withdraw successfully!',
+    );
+    const res = await userGet(`withdraws/${id_user}`);
+    dispatch(getAllWithdraws(res?.metadata));
   } catch (err) {
+    console.log(err);
     setLoading(true);
     setIsProcessCancel(false);
     setTimeout(() => {
@@ -139,22 +199,21 @@ export const SVdeleteWithdraw = async (props = {}) => {
           onPress: () => {},
         },
       ]);
-    }, 3000);
+    }, 1000);
   }
 };
 
 // RESEND CODE
 export const SVresendCode = async (props = {}) => {
-  const {id, email, token, setLoading} = props;
+  const {token, id, email, setLoading, navigation, toast} = props;
   try {
-    await userPost(`/resendOTPWithdraw/${id}`, {
+    const resPost = await userPost(`withdraw/resetCode/${id}`, {
       email: email,
       token: token,
       headers: {
         token: token,
       },
     });
-    setLoading(true);
     setTimeout(() => {
       setLoading(false);
       Alert.alert(
@@ -167,7 +226,7 @@ export const SVresendCode = async (props = {}) => {
           },
         ],
       );
-    }, 3000);
+    }, 1000);
   } catch (err) {
     setLoading(true);
     setTimeout(() => {
@@ -178,6 +237,6 @@ export const SVresendCode = async (props = {}) => {
           onPress: () => {},
         },
       ]);
-    }, 3000);
+    }, 1000);
   }
 };

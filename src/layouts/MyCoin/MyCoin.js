@@ -16,8 +16,12 @@ import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
 import socketIO from 'socket.io-client';
 import {URL_SERVER} from '@env';
+import {useToast} from 'native-base';
+import requestRefreshToken from '../../utils/axios/refreshToken';
+import {setCurrentUser} from '../../app/payloads/user';
 
 const MyCoin = ({navigation}) => {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     currentUser,
@@ -25,31 +29,51 @@ const MyCoin = ({navigation}) => {
   } = state;
   const [refreshing, setRefreshing] = useState(false);
   const [dataSocket, setDataSocket] = useState([]);
-  const data = dataMyCoin?.coins || [];
-  useEffect(() => {
+  const data = dataMyCoin || [];
+  const getMyCoin = dataToken => {
     SVgetAllMyCoin({
-      id: currentUser?.id,
+      toast,
+      id_user: currentUser?.id,
       dispatch,
-      getAllMyCoin,
+      token: dataToken?.token,
     });
+  };
+  useEffect(() => {
+    requestRefreshToken(
+      currentUser,
+      getMyCoin,
+      state,
+      dispatch,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
   }, []);
   const refreshData = () => {
-    SVgetAllMyCoin({
-      id: currentUser?.id,
+    requestRefreshToken(
+      currentUser,
+      getMyCoin,
+      state,
       dispatch,
-      getAllMyCoin,
-    });
+      setCurrentUser,
+      toast,
+      navigation,
+    );
   };
   const wait = timeout => {
     return new Promise(resolve => setTimeout(resolve, timeout));
   };
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    SVgetAllMyCoin({
-      id: currentUser?.id,
+    requestRefreshToken(
+      currentUser,
+      getMyCoin,
+      state,
       dispatch,
-      getAllMyCoin,
-    });
+      setCurrentUser,
+      toast,
+      navigation,
+    );
     wait(2000).then(() => setRefreshing(false));
   }, []);
   const renderItem = ({item}) => {
@@ -57,11 +81,11 @@ const MyCoin = ({navigation}) => {
       <View style={[styles.coinItem]}>
         <View style={[stylesGeneral.flexRow, stylesGeneral.flexCenter]}>
           <View style={[styles.coinItem_Image]}>
-            <ImageCp uri={item?.coin?.logo} />
+            <ImageCp uri={item?.logo} />
           </View>
           <View style={[styles.coinItem_Info, stylesGeneral.ml12]}>
             <Text style={[styles.coinItem_Info_name, stylesGeneral.text_black]}>
-              {item?.coin?.symbol?.replace('USDT', '')}
+              {item?.symbol?.replace('USDT', '')}
             </Text>
           </View>
         </View>
@@ -76,7 +100,7 @@ const MyCoin = ({navigation}) => {
             <Text
               style={[styles.coinItem_Price_text, stylesGeneral.text_black]}>
               USD: ~{' '}
-              {formatUSDT(item?.amount * item?.coin?.price).replace('USD', '')}
+              {formatUSDT(item?.amount * item?.price).replace('USD', '')}
             </Text>
           </View>
         </View>
@@ -86,9 +110,9 @@ const MyCoin = ({navigation}) => {
             navigation.navigate({
               name: routersMain.SellCoin,
               params: {
-                id: item?.coin?._id,
+                id: item?._id,
                 item: item,
-                symbol: item?.coin?.symbol,
+                symbol: item?.symbol,
               },
             })
           }>

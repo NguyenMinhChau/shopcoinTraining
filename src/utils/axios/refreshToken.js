@@ -3,6 +3,9 @@ import jwt_decode from 'jwt-decode';
 import {Alert} from 'react-native';
 import {refreshToken} from '../../utils/axios/axiosInstance';
 import {getAsyncStore, setAsyncStore} from '../localStore/localStore';
+import {toastShow} from '../toast';
+import {userLogout} from '../../services/userAuthen';
+import {routersMain} from '../../routers/Main';
 
 const requestRefreshToken = async (
   currentUser,
@@ -10,7 +13,8 @@ const requestRefreshToken = async (
   state,
   dispatch,
   setCurrentUser,
-  setMessage,
+  toast,
+  navigation,
   id,
 ) => {
   try {
@@ -20,7 +24,7 @@ const requestRefreshToken = async (
       const date = new Date();
       if (decodedToken.exp < date.getTime() / 1000) {
         const res = await refreshToken(`refreshToken/${currentUser?.id}`);
-        if (res === 'No jwt' || res === 'Invalid token') {
+        if (res.status !== 200) {
           await setAsyncStore(null);
           Alert.alert(
             'Invalid token',
@@ -28,14 +32,16 @@ const requestRefreshToken = async (
             [
               {
                 text: 'OK',
-                onPress: () => {},
+                onPress: () => {
+                  userLogout({navigation, toast, id_user: currentUser?.id});
+                },
               },
             ],
           );
-        } else if (res.code === 0) {
+        } else {
           const refreshUser = {
             ...currentUser,
-            token: res.newtoken.toString(),
+            token: res.metadata.toString(),
           };
           await setAsyncStore(refreshUser);
           dispatch(
@@ -44,21 +50,9 @@ const requestRefreshToken = async (
               currentUser: getAsyncStore(dispatch),
             }),
           );
-          currentUser.token = `${res.newtoken}`;
+          currentUser.token = `${res.metadata}`;
           handleFunc(refreshUser, id ? id : '');
           return refreshUser;
-        } else {
-          await setAsyncStore(null);
-          Alert.alert(
-            'Invalid token',
-            'RefreshToken not found - Please login again',
-            [
-              {
-                text: 'OK',
-                onPress: () => {},
-              },
-            ],
-          );
         }
       } else {
         handleFunc(currentUser, id ? id : '');
@@ -66,7 +60,11 @@ const requestRefreshToken = async (
       }
     }
   } catch (err) {
-    console.log(err);
+    toastShow(
+      toast,
+      err?.response?.data?.message || 'Refresh token is vali, Login again!',
+    );
+    userLogout({navigation, toast, id_user: currentUser?.id});
   }
 };
 export default requestRefreshToken;

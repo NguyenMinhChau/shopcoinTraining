@@ -4,7 +4,6 @@
 import {View, Text, TouchableOpacity} from 'react-native';
 import React, {useEffect} from 'react';
 import {useAppContext} from '../../utils';
-import {getUserById} from '../../app/payloads/getById';
 import {setCurrentUser} from '../../app/payloads/user';
 import styles from './HeaderCss';
 import stylesGeneral from '../../styles/General';
@@ -12,8 +11,10 @@ import stylesStatus from '../../styles/Status';
 import {SVgetUserById} from '../../services/user';
 import {formatUSDT} from '../../utils/format/Money';
 import {getAsyncStore} from '../../utils/localStore/localStore';
+import {useToast} from 'native-base';
 
 export default function Header({refreshData = () => {}}) {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {currentUser, userById} = state;
   const [balance, setBalance] = React.useState(currentUser?.balance || 0);
@@ -22,8 +23,8 @@ export default function Header({refreshData = () => {}}) {
     if (currentUser) {
       SVgetUserById({
         id: currentUser?.id,
+        toast,
         dispatch,
-        getUserById,
       });
     }
   }, []);
@@ -31,14 +32,13 @@ export default function Header({refreshData = () => {}}) {
     refreshData();
     SVgetUserById({
       id: currentUser?.id,
+      toast,
       dispatch,
-      getUserById,
       setBalance,
       currentUser,
       setCurrentUser,
     });
   };
-
   return (
     <View style={[styles.container]}>
       <View style={[stylesGeneral.flexRow, stylesGeneral.flexCenter]}>

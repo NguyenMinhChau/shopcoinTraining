@@ -5,7 +5,7 @@ import {URL_SERVER} from '@env';
 // AUTHENTICATION
 export const authInstance = axios.create({
   baseURL: `${URL_SERVER}authentication/`,
-  withCredentials: true,
+  // withCredentials: true,
 });
 export const authPost = async (path, options = {}) => {
   const res = await authInstance.post(path, options);
@@ -19,7 +19,7 @@ export const refreshToken = async (path, options = {}) => {
 // ADMIN
 export const adminInstance = axios.create({
   baseURL: `${URL_SERVER}admin/`,
-  withCredentials: true,
+  // withCredentials: true,
 });
 export const adminGet = async (path, options = {}) => {
   const res = await adminInstance.get(path, options);
@@ -40,7 +40,7 @@ export const adminDelete = async (path, options = {}) => {
 // USERS
 export const userInstance = axios.create({
   baseURL: `${URL_SERVER}users/`,
-  withCredentials: true,
+  // withCredentials: true,
 });
 export const userGet = async (path, options = {}, others = {}) => {
   const res = await userInstance.get(path, options, others);
@@ -61,7 +61,7 @@ export const userDelete = async (path, options = {}) => {
 // COINS
 export const coinInstance = axios.create({
   baseURL: `${URL_SERVER}coin/`,
-  withCredentials: true,
+  // withCredentials: true,
 });
 export const coinGet = async (path, options = {}) => {
   const res = await coinInstance.get(path, options);
@@ -82,7 +82,7 @@ export const coinDelete = async (path, options = {}, others = {}) => {
 // RATE
 export const rateInstance = axios.create({
   baseURL: `${URL_SERVER}rates/`,
-  withCredentials: true,
+  // withCredentials: true,
 });
 export const rateGet = async (path, options = {}) => {
   const res = await rateInstance.get(path, options);

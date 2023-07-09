@@ -41,7 +41,7 @@ export default function BuySellHistoryDetail({item, style}) {
       <RowDetail
         noneBorderBottom
         title="USDT"
-        text={`~ ${removeUSDT(formatUSDT(item?.amountUsd))}`}
+        text={`~ ${removeUSDT(formatUSDT(item?.amount_usd))}`}
       />
     </View>
   );

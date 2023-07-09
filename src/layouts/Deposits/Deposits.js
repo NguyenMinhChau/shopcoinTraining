@@ -20,30 +20,50 @@ import {routersMain} from '../../routers/Main';
 import styles from './DepositsCss';
 import stylesStatus from '../../styles/Status';
 import stylesGeneral from '../../styles/General';
+import {useToast} from 'native-base';
+import requestRefreshToken from '../../utils/axios/refreshToken';
+import {setCurrentUser} from '../../app/payloads/user';
 
 const Deposits = ({navigation}) => {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     currentUser,
     data: {dataDeposits},
   } = state;
   const [refreshing, setRefreshing] = useState(false);
-  useEffect(() => {
+  const getDP = dataToken => {
     SVgetDepositsByEmailUser({
-      email: currentUser?.email,
+      toast,
+      email_user: currentUser?.email,
       dispatch,
-      getAllDeposits,
-    });
-  }, []);
-  const refreshData = () => {
-    SVgetDepositsByEmailUser({
-      email: currentUser?.email,
-      dispatch,
-      getAllDeposits,
+      token: dataToken?.token,
     });
   };
+  useEffect(() => {
+    requestRefreshToken(
+      currentUser,
+      getDP,
+      state,
+      dispatch,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
+  }, []);
+  const refreshData = () => {
+    requestRefreshToken(
+      currentUser,
+      getDP,
+      state,
+      dispatch,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
+  };
   const data =
-    dataDeposits?.deposits?.sort(
+    (dataDeposits || [])?.sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     ) || [];
   const wait = timeout => {
@@ -51,11 +71,15 @@ const Deposits = ({navigation}) => {
   };
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    SVgetDepositsByEmailUser({
-      email: currentUser?.email,
+    requestRefreshToken(
+      currentUser,
+      getDP,
+      state,
       dispatch,
-      getAllDeposits,
-    });
+      setCurrentUser,
+      toast,
+      navigation,
+    );
     wait(2000).then(() => setRefreshing(false));
   }, []);
   const renderItem = ({item}) => {
@@ -68,7 +92,6 @@ const Deposits = ({navigation}) => {
             name: routersMain.SingleDeposits,
             params: {
               data: item,
-              bankAdmin: item?.bankAdmin,
             },
           })
         }>
@@ -105,7 +128,7 @@ const Deposits = ({navigation}) => {
         />
         <RowDetail
           title="Amount VND"
-          text={formatVND(item?.amountVnd)}
+          text={formatVND(item?.amount_vnd)}
           noneBorderBottom
         />
       </TouchableOpacity>

@@ -17,7 +17,7 @@ export default function ModalLoading({value}) {
                 stylesGeneral.fwbold,
                 stylesGeneral.text_center,
               ]}>
-              Đang xử lý...
+              Processing...
             </Text>
             <ProgressBar height={5} indeterminate backgroundColor="#007aff" />
           </View>

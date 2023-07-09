@@ -24,8 +24,10 @@ import stylesStatus from '../../styles/Status';
 import {setFormProfilePayment} from '../../app/payloads/form';
 import {addBankInfo} from '../../services/payment';
 import dataBank from '../../utils/dataBank';
+import {useToast} from 'native-base';
 
 export default function ProfilePayment({navigation}) {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     currentUser,
@@ -74,24 +76,21 @@ export default function ProfilePayment({navigation}) {
       token: data?.token,
       setLoading,
       navigation,
+      toast,
       setIsProcess,
     });
   };
   const handleSubmit = async () => {
-    try {
-      await 1;
-      setIsProcess(true);
-      requestRefreshToken(
-        currentUser,
-        addBankInfoAPI,
-        state,
-        dispatch,
-        setCurrentUser,
-        setMessage,
-      );
-    } catch (err) {
-      console.log(err);
-    }
+    setIsProcess(true);
+    requestRefreshToken(
+      currentUser,
+      addBankInfoAPI,
+      state,
+      dispatch,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
   };
   return (
     <ScrollView

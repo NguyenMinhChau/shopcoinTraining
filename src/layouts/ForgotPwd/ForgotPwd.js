@@ -12,31 +12,29 @@ import {routersMain} from '../../routers/Main';
 import styles from './ForgotPwdCss';
 import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
+import {useToast} from 'native-base';
 
 const ForgotPwd = ({navigation}) => {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     form: {email},
   } = state;
   const [loading, setLoading] = useState(false);
   const [isProcess, setIsProcess] = useState(false);
-  const handleSubmit = async () => {
-    try {
-      await 1;
-      setIsProcess(true);
-      SVforgotPwd({
-        email,
-        dispatch,
-        setMessage,
-        setFormValue,
-        getTokenForgotPwd,
-        setLoading,
-        navigation,
-        setIsProcess,
-      });
-    } catch (err) {
-      console.log(err);
-    }
+  const handleSubmit = () => {
+    setIsProcess(true);
+    SVforgotPwd({
+      email,
+      dispatch,
+      toast,
+      setMessage,
+      setFormValue,
+      getTokenForgotPwd,
+      setLoading,
+      navigation,
+      setIsProcess,
+    });
   };
   return (
     <>
@@ -81,7 +79,6 @@ const ForgotPwd = ({navigation}) => {
           </TouchableOpacity>
         </View>
       </Form>
-      {loading && <ModalLoading />}
     </>
   );
 };

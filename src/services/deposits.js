@@ -10,6 +10,7 @@ import {routersMain} from '../routers/Main';
 import {routers} from '../routers/Routers';
 import {setFormDeposits} from '../app/payloads/form';
 import {getAllDeposits} from '../app/payloads/getAll';
+import {toastShow} from '../utils/toast';
 
 // GET ALL DEPOSITS
 export const SVgetAllDeposits = async (props = {}) => {
@@ -21,31 +22,45 @@ export const SVgetAllDeposits = async (props = {}) => {
 
 // GET DEPOSITS BY EMAIL/ID USER
 export const SVgetDepositsByEmailUser = async (props = {}) => {
-  const resGet = await userGet(`/getAllDeposits/${props?.email}`);
-  props.dispatch(props.getAllDeposits(resGet?.data));
+  const {email_user, dispatch, toast} = props;
+  try {
+    const resGet = await userGet(`deposit/${email_user}`);
+    dispatch(getAllDeposits(resGet?.metadata));
+  } catch (err) {
+    toastShow(toast, err?.response?.data?.message || 'Something error!');
+  }
+};
+// GET DEPOSITS BY ID
+export const SVgetDepositsById = async (props = {}) => {
+  const {id_dp, toast, setDPbyID} = props;
+  try {
+    const resGet = await adminGet(`deposit/${id_dp}`);
+    setDPbyID(resGet?.metadata);
+  } catch (err) {
+    toastShow(toast, err?.response?.data?.message || 'Something error!');
+  }
 };
 
 // CREATE DEPOSITS
 export const SVcreateDeposits = async (props = {}) => {
   const {
-    amount,
-    email,
-    amountVnd,
+    id_payment_admin,
+    id_user,
     bankAdmin,
-    rateDeposit,
+    amount,
     token,
+    rateDeposit,
     setLoading,
-    setIsProcess,
-    navigation,
     dispatch,
+    toast,
+    navigation,
+    setFormDeposits,
+    setIsProcess,
   } = props;
   try {
-    const resPost = await userPost('/deposit', {
+    const resPost = await userPost(`deposit/${id_user}`, {
       amount: amount,
-      user: email,
-      amountVnd: amountVnd,
-      bankAdmin: bankAdmin,
-      rateDeposit: rateDeposit,
+      method: id_payment_admin,
       token: token,
     });
     setLoading(true);
@@ -59,8 +74,8 @@ export const SVcreateDeposits = async (props = {}) => {
             navigation.navigate({
               name: routersMain.SingleDeposits,
               params: {
-                data: resPost?.data,
-                bankAdmin: props?.bankAdmin,
+                data: resPost?.metadata,
+                bankAdmin: bankAdmin,
               },
             }),
         },
@@ -71,7 +86,7 @@ export const SVcreateDeposits = async (props = {}) => {
           bank: '',
         }),
       );
-    }, 3000);
+    }, 1000);
   } catch (err) {
     setLoading(true);
     setIsProcess(false);
@@ -89,35 +104,35 @@ export const SVcreateDeposits = async (props = {}) => {
           },
         ],
       );
-    }, 3000);
+    }, 1000);
   }
 };
 // UPDATE DEPOSITS
 export const SVupdateDeposits = async (props = {}) => {
   const {
-    image,
     id,
-    bankAdmin,
     token,
-    setLoading,
-    setIsProcess,
+    image,
     dispatch,
+    getAllDeposits,
+    setLoading,
     navigation,
-    email,
+    setIsProcess,
+    toast,
+    email_user,
   } = props;
   const object = {
-    imageDeposit: image,
+    fileName: image?.fileName,
+    imageBase64: image?.image,
   };
   try {
     const resPut = await userPut(
-      `/additionImageDeposit/${id}`,
+      `deposit/image/${id}`,
       {
         ...object,
-        bankAdmin: bankAdmin,
       },
       {
         headers: {
-          // 'Content-Type': 'multipart/form-data',
           token: token,
         },
       },
@@ -133,15 +148,15 @@ export const SVupdateDeposits = async (props = {}) => {
             navigation.navigate({
               name: routers.Deposits,
               params: {
-                data: resPut?.data,
+                data: resPut?.metadata,
               },
             });
-            const resGet = await userGet(`/getAllDeposits/${email}`);
-            dispatch(getAllDeposits(resGet?.data));
+            const resGet = await userGet(`deposit/${email_user}`);
+            dispatch(getAllDeposits(resGet?.metadata));
           },
         },
       ]);
-    }, 3000);
+    }, 1000);
   } catch (err) {
     setLoading(true);
     setIsProcess(false);
@@ -153,6 +168,6 @@ export const SVupdateDeposits = async (props = {}) => {
           onPress: () => {},
         },
       ]);
-    }, 3000);
+    }, 1000);
   }
 };

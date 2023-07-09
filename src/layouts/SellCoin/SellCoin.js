@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
-// import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import {useAppContext} from '../../utils';
 import {URL_SERVER} from '@env';
 import {formatUSDT, precisionRound} from '../../utils/format/Money';
@@ -25,16 +24,14 @@ import stylesStatus from '../../styles/Status';
 import stylesGeneral from '../../styles/General';
 import requestRefreshToken from '../../utils/axios/refreshToken';
 import {setPriceCoinSocket} from '../../app/payloads/socket';
+import {useToast} from 'native-base';
+import {URL_SOCKET} from '@env';
 
 export default function SellCoin({navigation, route}) {
-  const {item, symbol} = route.params;
+  const {item} = route.params;
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
-  const {
-    priceCoinSocket,
-    amountSell,
-    currentUser,
-    data: {dataBySymbol, dataById},
-  } = state;
+  const {priceCoinSocket, amountSell, currentUser} = state;
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = useState(false);
   const [isProcess, setIsProcess] = useState(false);
@@ -51,76 +48,50 @@ export default function SellCoin({navigation, route}) {
     wait(2000).then(() => setRefreshing(false));
   }, []);
   useEffect(() => {
-    SVgetCoinBySymbol({
-      symbol,
-      dispatch,
-      getBySymbol,
-    });
-    SVgetACoin({
-      id: dataBySymbol?._id,
-      dispatch,
-      getById,
-    });
     dispatch(setAmountSell(''));
-    // const socket = socketIO(`${URL_SERVER}`, {
-    //   jsonp: false,
-    // });
-    // socket.on(`send-data-${dataById?.symbol}`, data => {
-    //   dispatch(setPriceCoinSocket(data));
-    // });
-    // return () => {
-    //   socket.disconnect();
-    //   socket.close();
-    // };
   }, []);
   useEffect(() => {
-    const socket = socketIO(`${URL_SERVER}`, {
+    const socket = socketIO(`${URL_SOCKET}`, {
       jsonp: false,
     });
-    socket.on(`send-data-${item?.coin?.symbol}`, data => {
+    socket.on(`send-data-${item?.symbol}`, data => {
       dispatch(setPriceCoinSocket(data));
     });
     return () => {
       socket.disconnect();
       socket.close();
     };
-  }, [item?.coin?.symbol]);
+  }, [item?.symbol]);
   const sellCoinAPI = data => {
     SVsellCoin({
-      gmailUser: currentUser?.email,
+      id_user: currentUser?.id,
       amount: amountSell ? amountSell : item?.amount,
-      // amountUsd: item?.coin?.price * (amountSell ? amountSell : item?.amount),
-      amountUsd:
-        priceCoinSocket?.price * (amountSell ? amountSell : item?.amount),
-      symbol: item?.coin?.symbol,
-      price: priceCoinSocket?.price,
+      toast,
+      symbol: item?.symbol,
+      price: priceCoinSocket,
       token: data?.token,
-      setLoading,
       navigation,
+      setLoading,
       setIsProcess,
       setIsProcessSellAll,
     });
   };
   const handleSubmit = async () => {
-    try {
-      await 1;
-      if (amountSell) {
-        setIsProcess(true);
-      } else {
-        setIsProcessSellAll(true);
-      }
-      requestRefreshToken(
-        currentUser,
-        sellCoinAPI,
-        state,
-        dispatch,
-        setCurrentUser,
-        setMessage,
-      );
-      dispatch(setAmountSell(''));
-    } catch (err) {
-      console.log(err);
+    if (amountSell) {
+      setIsProcess(true);
+    } else {
+      setIsProcessSellAll(true);
     }
+    requestRefreshToken(
+      currentUser,
+      sellCoinAPI,
+      state,
+      dispatch,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
+    dispatch(setAmountSell(''));
   };
   const isDisabled =
     parseFloat(amountSell) < 0.01 ||
@@ -143,11 +114,11 @@ export default function SellCoin({navigation, route}) {
         <ImageCp uri={item?.coin?.logo} />
         <View style={[styles.nameCoin, stylesGeneral.ml12]}>
           <Text style={[styles.name, stylesGeneral.text_black]}>
-            {item?.coin?.symbol?.replace('USDT', '')}
+            {item?.symbol?.replace('USDT', '')}
           </Text>
           <Text
             style={[styles.desc, stylesGeneral.fz16, stylesGeneral.text_black]}>
-            {dataBySymbol?.fullName}
+            {item?.fullName}
           </Text>
         </View>
       </View>
@@ -155,13 +126,13 @@ export default function SellCoin({navigation, route}) {
         <RowDetail title="Quantity" text={item?.amount} />
         <RowDetail
           title="USD"
-          text={`~ ${formatUSDT(item?.amount * priceCoinSocket?.price)}`}
+          text={`~ ${formatUSDT(item?.amount * priceCoinSocket)}`}
         />
         <RowDetail
           title="Average buy price"
           text={priceCoinSocket?.weightedAvgPrice || 'unknown'}
         />
-        <RowDetail title="Coin price" text={priceCoinSocket?.price} />
+        <RowDetail title="Coin price" text={priceCoinSocket} />
         <View style={[styles.row_single]}>
           <FormInput
             label="Amount Sell"
@@ -181,19 +152,17 @@ export default function SellCoin({navigation, route}) {
               <Text style={[stylesStatus.cancel]}>Max: {suggestMax}</Text>
             </View>
           )}
-          {parseFloat(amountSell * priceCoinSocket?.price) >= 0 &&
-            amountSell && (
-              <Text
-                style={[
-                  stylesGeneral.mb10,
-                  stylesGeneral.fz16,
-                  stylesGeneral.fwbold,
-                  stylesStatus.complete,
-                ]}>
-                Receive:{' '}
-                {formatUSDT(parseFloat(amountSell * priceCoinSocket?.price))}
-              </Text>
-            )}
+          {parseFloat(amountSell * priceCoinSocket) >= 0 && amountSell && (
+            <Text
+              style={[
+                stylesGeneral.mb10,
+                stylesGeneral.fz16,
+                stylesGeneral.fwbold,
+                stylesStatus.complete,
+              ]}>
+              Receive: {formatUSDT(parseFloat(amountSell * priceCoinSocket))}
+            </Text>
+          )}
         </View>
       </View>
       <View style={[styles.btn_container]}>

@@ -18,19 +18,26 @@ import styles from './SingleWithdrawCss';
 import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
 import {dateFormat} from '../../utils/format/Date';
-import {SVcheckCode, SVresendCode} from '../../services/withdraw';
+import {
+  SVcheckCode,
+  SVdeleteWithdraw,
+  SVgetWithdrawByID,
+  SVresendCode,
+} from '../../services/withdraw';
 import {setCurrentUser} from '../../app/payloads/user';
 import {setMessage} from '../../app/payloads/message';
 import requestRefreshToken from '../../utils/axios/refreshToken';
 import {textLower} from '../../utils/format/textLowercase';
 import {useToast} from 'native-base';
+import {SVgetUserById} from '../../services/user';
 
 export default function SingleWithdraw({navigation, route}) {
   const toast = useToast();
   const {data} = route.params;
   const {state, dispatch} = useAppContext();
-  const {currentUser, codeVerify} = state;
+  const {currentUser, codeVerify, userById} = state;
   const [refreshing, setRefreshing] = React.useState(false);
+  const [WRbyId, setWRbyId] = React.useState(null);
   const [timer, setTimer] = useState(300);
   const [loading, setLoading] = useState(false);
   const [isProcess, setIsProcess] = useState(false);
@@ -38,6 +45,18 @@ export default function SingleWithdraw({navigation, route}) {
   const wait = timeout => {
     return new Promise(resolve => setTimeout(resolve, timeout));
   };
+  useEffect(() => {
+    SVgetUserById({
+      id: currentUser?.id,
+      dispatch,
+      toast,
+    });
+    SVgetWithdrawByID({
+      id_wr: data?._id,
+      toast,
+      setWRbyId,
+    });
+  }, []);
   useEffect(() => {
     if (timer > 0) {
       setTimeout(() => setTimer(timer - 1), 1000);
@@ -52,47 +71,46 @@ export default function SingleWithdraw({navigation, route}) {
   const handleChangeInput = (name, val) => {
     dispatch(setCodeValue(val));
   };
-  // console.log(data);
   const createWithdrawAPI = dataAPI => {
     SVcheckCode({
       code: codeVerify,
       token: dataAPI?.token,
       id: data?.withdraw?._id || data?._id,
       email: currentUser.email,
+      id_user: currentUser.id,
       dispatch,
-      getAllWithdraws,
       setLoading,
       navigation,
       setIsProcess,
+      toast,
     });
   };
   const handleSubmit = async () => {
-    try {
-      await 1;
-      setIsProcess(true);
-      requestRefreshToken(
-        currentUser,
-        createWithdrawAPI,
-        state,
-        dispatch,
-        setCurrentUser,
-        setMessage,
-      );
-    } catch (err) {
-      console.log(err);
-    }
+    setIsProcess(true);
+    requestRefreshToken(
+      currentUser,
+      createWithdrawAPI,
+      state,
+      dispatch,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
   };
-  const cancelWithdrawAPI = (dataAPI, id) => {
-    SVcheckCode({
+  const cancelWithdrawAPI = dataAPI => {
+    SVdeleteWithdraw({
       token: dataAPI?.token,
-      id: id,
+      id: data?.withdraw?._id || data?._id,
+      email_user: currentUser?.email,
+      id_user: currentUser?.id,
       setLoading,
       navigation,
+      dispatch,
+      toast,
       setIsProcessCancel,
     });
   };
-  const handleCancel = async id => {
-    await 1;
+  const handleCancel = () => {
     setIsProcessCancel(true);
     requestRefreshToken(
       currentUser,
@@ -100,45 +118,31 @@ export default function SingleWithdraw({navigation, route}) {
       state,
       dispatch,
       setCurrentUser,
-      setMessage,
-      id,
+      toast,
+      navigation,
     );
-    // SVdeleteWithdraw({
-    //   id: id,
-    //   setLoading,
-    //   navigation,
-    //   setIsProcessCancel,
-    // });
   };
-  const resendCodeWithdrawAPI = (dataAPI, id) => {
+  const resendCodeWithdrawAPI = dataAPI => {
     SVresendCode({
       token: dataAPI?.token,
-      id: data?.withdraw?._id || data?._id,
+      id: WRbyId?._id || data?._id,
       email: currentUser?.email,
       setLoading,
       navigation,
+      toast,
     });
   };
   const handleResendCode = async () => {
-    try {
-      requestRefreshToken(
-        currentUser,
-        resendCodeWithdrawAPI,
-        state,
-        dispatch,
-        setCurrentUser,
-        setMessage,
-      );
-      // SVresendCode({
-      //   id: data?.withdraw?._id || data?._id,
-      //   email: currentUser?.email,
-      //   setLoading,
-      //   navigation,
-      // });
-      setTimer(300);
-    } catch (err) {
-      console.log(err);
-    }
+    requestRefreshToken(
+      currentUser,
+      resendCodeWithdrawAPI,
+      state,
+      dispatch,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
+    setTimer(300);
   };
   const copyToClipboard = value => {
     Clipboard.setString(value);
@@ -161,41 +165,35 @@ export default function SingleWithdraw({navigation, route}) {
       <View style={[styles.info_withdraw, stylesGeneral.mb10]}>
         <RowDetail
           title="Status"
-          text={data?.withdraw?.status || data?.status}
+          text={WRbyId?.status || data?.status}
           styleDesc={[
             stylesStatus.status,
-            textLower(data?.withdraw?.status || data?.status) === 'onhold' ||
-            textLower(data?.withdraw?.status || data?.status) === 'on hold'
+            textLower(WRbyId?.status || data?.status) === 'onhold' ||
+            textLower(WRbyId?.status || data?.status) === 'on hold'
               ? stylesStatus.vipbgc
-              : textLower(data?.withdraw?.status || data?.status) ===
-                  'completed' ||
-                textLower(data?.withdraw?.status || data?.status) === 'complete'
+              : textLower(WRbyId?.status || data?.status) === 'completed' ||
+                textLower(WRbyId?.status || data?.status) === 'complete'
               ? stylesStatus.completebgc
-              : textLower(data?.withdraw?.status || data?.status) ===
-                  'canceled' ||
-                textLower(data?.withdraw?.status || data?.status) === 'cancel'
+              : textLower(WRbyId?.status || data?.status) === 'canceled' ||
+                textLower(WRbyId?.status || data?.status) === 'cancel'
               ? stylesStatus.cancelbgc
-              : textLower(data?.withdraw?.status || data?.status) ===
-                  'confirmed' ||
-                textLower(data?.withdraw?.status || data?.status) === 'confirm'
+              : textLower(WRbyId?.status || data?.status) === 'confirmed' ||
+                textLower(WRbyId?.status || data?.status) === 'confirm'
               ? stylesStatus.confirmbgc
               : stylesStatus.demobgc,
           ]}
         />
         <RowDetail
           title="Created At"
-          text={dateFormat(
-            data?.withdraw?.createdAt || data?.createdAt,
-            'DD/MM/YYYY',
-          )}
+          text={dateFormat(WRbyId?.createdAt || data?.createdAt, 'DD/MM/YYYY')}
         />
         <RowDetail
           title="Amount USD"
-          text={formatUSDT(data?.withdraw?.amount || data?.amount)}
+          text={formatUSDT(WRbyId?.amount || data?.amount)}
         />
         <RowDetail
           title="Amount VND"
-          text={formatVND(data?.withdraw?.amountVnd || data?.amountVnd)}
+          text={formatVND(WRbyId?.amount_vnd || data?.amount_vnd)}
         />
         <View style={[styles.info_item, stylesGeneral.flexRow]}>
           <Text style={[styles.info_item_text, stylesGeneral.text_black]}>
@@ -203,18 +201,19 @@ export default function SingleWithdraw({navigation, route}) {
           </Text>
           <View style={[stylesGeneral.flexEnd]}>
             <Text style={[styles.info_item_desc, stylesGeneral.text_black]}>
-              {data?.withdraw?.method?.methodName || data?.method?.methodName}
+              {userById?.payment?.bank?.method_name}
             </Text>
             <Text style={[styles.info_item_desc, stylesGeneral.text_black]}>
-              {data?.withdraw?.method?.accountName || data?.method?.accountName}
+              {userById?.payment?.bank?.account_name}
             </Text>
             <Text style={[styles.info_item_desc, stylesGeneral.text_black]}>
-              {data?.withdraw?.method?.accountNumber ||
-                data?.method?.accountNumber}
+              {userById?.payment?.bank?.number}
               {' | '}
               <Text
                 style={[styles.text_copy, stylesStatus.confirm]}
-                onPress={() => copyToClipboard(data?.method?.accountNumber)}>
+                onPress={() =>
+                  copyToClipboard(userById?.payment?.bank?.number)
+                }>
                 Copy
               </Text>
             </Text>
@@ -270,7 +269,7 @@ export default function SingleWithdraw({navigation, route}) {
               stylesStatus.cancelbgcbold,
               isProcessCancel && stylesGeneral.op6,
             ]}
-            onPress={() => handleCancel(data?.withdraw?._id)}>
+            onPress={() => handleCancel(WRbyId?._id)}>
             <Text style={[styles.btn_text, stylesStatus.white]}>
               {isProcessCancel ? <ActivityIndicator color="white" /> : 'Cancel'}
             </Text>

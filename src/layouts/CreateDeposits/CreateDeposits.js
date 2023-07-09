@@ -35,8 +35,10 @@ import {
 } from '../../services/payment';
 import {getAllPaymentAdmin} from '../../app/payloads/getAll';
 import {SVgetRateDepositWithdraw} from '../../services/rate';
+import {useToast} from 'native-base';
 
 export default function CreateDeposits({navigation}) {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     currentUser,
@@ -49,15 +51,26 @@ export default function CreateDeposits({navigation}) {
   const [loading, setLoading] = useState(false);
   const [isProcess, setIsProcess] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  useEffect(() => {
+  const getAllPA = dataToken => {
     SVgetAllPaymentAdmin({
       dispatch,
-      getAllPaymentAdmin,
+      toast,
+      token: dataToken?.token,
     });
-    SVgetRateDepositWithdraw({
-      // numberBank: userById?.payment?.bank?.account,
+  };
+  useEffect(() => {
+    requestRefreshToken(
+      currentUser,
+      getAllPA,
+      state,
       dispatch,
-      getRateDepositWithdraw,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
+    SVgetAllPaymentAdmin({
+      toast,
+      dispatch,
     });
     dispatch(
       setFormDeposits({
@@ -67,14 +80,11 @@ export default function CreateDeposits({navigation}) {
     );
   }, []);
   useEffect(() => {
-    if (bank) {
-      SVgetPaymentAdminById({
-        id: bank?.id,
-        dispatch,
-        getPaymentAdminById,
-      });
-    }
-  }, [bank]);
+    SVgetRateDepositWithdraw({
+      dispatch,
+      toast,
+    });
+  }, [amountUSDT]);
   const wait = timeout => {
     return new Promise(resolve => setTimeout(resolve, timeout));
   };
@@ -98,23 +108,23 @@ export default function CreateDeposits({navigation}) {
   const dataBank = dataPaymentAdmin?.reduce((acc, item) => {
     acc.push({
       id: item?._id,
-      name: item?.methodName,
-      user: item?.accountName,
-      accountNumber: item?.accountNumber,
+      name: item?.method_name,
+      user: item?.account_name,
+      accountNumber: item?.number,
     });
     return acc;
   }, []);
-  // const rateDeposit = paymentAdminById ? paymentAdminById?.rateDeposit : 0;
   const createDepositsAPI = data => {
     SVcreateDeposits({
+      id_payment_admin: bank?.id,
+      id_user: currentUser?.id,
+      bankAdmin: bank,
       amount: amountUSDT,
-      email: currentUser.email,
-      amountVnd: parseFloat(amountUSDT * rateDepositWithdraw?.rateDeposit),
       token: data?.token,
-      bankAdmin: paymentAdminById,
-      rateDeposit: rateDepositWithdraw?.rateDeposit,
+      rateDeposit: rateDepositWithdraw[0]?.rate_deposit,
       setLoading,
       dispatch,
+      toast,
       navigation,
       setFormDeposits,
       setIsProcess,
@@ -130,7 +140,8 @@ export default function CreateDeposits({navigation}) {
         state,
         dispatch,
         setCurrentUser,
-        setMessage,
+        toast,
+        navigation,
       );
     } catch (err) {
       console.log(err);
@@ -148,27 +159,28 @@ export default function CreateDeposits({navigation}) {
       <FormInput
         label="Amount USD"
         placeholder="0.00"
-        // keyboardType="number-pad"
         onChangeText={val => handleChange('amountUSDT', val)}
       />
       <SelectAlert
         label="Choose Payment Method"
         onTouchStart={handleModalBank}
-        value={bank?.name}
+        value={bank?.name || 'Please choose method'}
       />
-      {amountUSDT && bank && amountUSDT * rateDepositWithdraw?.rateDeposit > 0 && (
-        <View style={[styles.deposits_VND]}>
-          <Text
-            style={[
-              styles.deposits_money,
-              stylesGeneral.fwbold,
-              stylesStatus.confirm,
-            ]}>
-            Deposits (VND):{' '}
-            {formatVND(amountUSDT * rateDepositWithdraw?.rateDeposit)}
-          </Text>
-        </View>
-      )}
+      {amountUSDT &&
+        bank &&
+        amountUSDT * rateDepositWithdraw[0]?.rate_deposit > 0 && (
+          <View style={[styles.deposits_VND]}>
+            <Text
+              style={[
+                styles.deposits_money,
+                stylesGeneral.fwbold,
+                stylesStatus.confirm,
+              ]}>
+              Deposits (VND):{' '}
+              {formatVND(amountUSDT * rateDepositWithdraw[0]?.rate_deposit)}
+            </Text>
+          </View>
+        )}
       <TouchableOpacity
         disabled={
           !amountUSDT ||

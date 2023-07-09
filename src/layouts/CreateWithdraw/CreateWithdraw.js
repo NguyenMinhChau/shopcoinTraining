@@ -25,8 +25,10 @@ import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
 import {SVcreateWithdraw} from '../../services/withdraw';
 import {SVgetRateDepositWithdraw} from '../../services/rate';
+import {useToast} from 'native-base';
 
 export default function CreateWithdraw({navigation}) {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const [error, setError] = useState('');
   const {
@@ -55,7 +57,7 @@ export default function CreateWithdraw({navigation}) {
     SVgetUserById({
       id: currentUser?.id,
       dispatch,
-      getUserById,
+      toast,
     });
     dispatch(
       setFormWithdraw({
@@ -66,9 +68,8 @@ export default function CreateWithdraw({navigation}) {
   }, []);
   useEffect(() => {
     SVgetRateDepositWithdraw({
-      // numberBank: userById?.payment?.bank?.account,
       dispatch,
-      getRateDepositWithdraw,
+      toast,
     });
   }, [amountUSDT]);
   const handleChange = (name, val) => {
@@ -80,32 +81,30 @@ export default function CreateWithdraw({navigation}) {
   };
   const createWithdrawAPI = data => {
     SVcreateWithdraw({
-      amount: amountUSDT,
+      id_user: currentUser?.id,
+      amount: parseFloat(amountUSDT),
       email: currentUser?.email,
-      rateWithdraw: rateDepositWithdraw?.rateWithdraw,
+      method: currentUser?.id,
       setLoading,
       dispatch,
       navigation,
+      toast,
       token: data?.token,
       setFormWithdraw,
       setisProcess,
     });
   };
-  const handleSubmit = async () => {
-    try {
-      await 1;
-      setisProcess(true);
-      requestRefreshToken(
-        currentUser,
-        createWithdrawAPI,
-        state,
-        dispatch,
-        setCurrentUser,
-        setMessage,
-      );
-    } catch (err) {
-      console.log(err);
-    }
+  const handleSubmit = () => {
+    setisProcess(true);
+    requestRefreshToken(
+      currentUser,
+      createWithdrawAPI,
+      state,
+      dispatch,
+      setCurrentUser,
+      toast,
+      navigation,
+    );
   };
   return (
     <ScrollView
@@ -114,9 +113,7 @@ export default function CreateWithdraw({navigation}) {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
       <View style={[styles.container]}>
-        {!userById?.payment?.username ||
-        !userById?.payment?.bank?.bankName ||
-        !userById?.payment?.bank?.account ? (
+        {!userById?.payment?.bank?._id ? (
           <>
             <Text style={[stylesGeneral.text_black]}>
               You must create your bank account first.
@@ -190,9 +187,9 @@ export default function CreateWithdraw({navigation}) {
                   Your bank account
                 </Text>
                 <Text style={[styles.info_item_text, stylesGeneral.text_black]}>
-                  {userById?.payment?.bank?.bankName || 'No'} -{' '}
-                  {userById?.payment?.username || 'No'} -{' '}
-                  {userById?.payment?.bank?.account || 'No'}
+                  {userById?.payment?.bank?.method_name || 'No'} -{' '}
+                  {userById?.payment?.bank?.account_name || 'No'} -{' '}
+                  {userById?.payment?.bank?.number || 'No'}
                 </Text>
               </View>
             </View>
@@ -215,20 +212,23 @@ export default function CreateWithdraw({navigation}) {
                 </Text>
               </View>
             )}
-            {amountUSDT && amountUSDT * rateDepositWithdraw?.rateWithdraw > 0 && (
-              <View style={[styles.info_detail, stylesGeneral.mb10]}>
-                <Text
-                  style={[
-                    styles.receive,
-                    stylesGeneral.fwbold,
-                    stylesStatus.complete,
-                    stylesGeneral.fz16,
-                  ]}>
-                  Receive (VND):{' '}
-                  {formatVND(amountUSDT * rateDepositWithdraw?.rateWithdraw)}
-                </Text>
-              </View>
-            )}
+            {amountUSDT &&
+              amountUSDT * rateDepositWithdraw[0]?.rate_withdraw > 0 && (
+                <View style={[styles.info_detail, stylesGeneral.mb10]}>
+                  <Text
+                    style={[
+                      styles.receive,
+                      stylesGeneral.fwbold,
+                      stylesStatus.complete,
+                      stylesGeneral.fz16,
+                    ]}>
+                    Receive (VND):{' '}
+                    {formatVND(
+                      amountUSDT * rateDepositWithdraw[0]?.rate_withdraw,
+                    )}
+                  </Text>
+                </View>
+              )}
             <TouchableOpacity
               activeOpacity={0.6}
               style={[

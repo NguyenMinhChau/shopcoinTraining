@@ -9,8 +9,10 @@ import styles from './ResetPwdCss';
 import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
 import {SVresetPassword} from '../../services/user';
+import {useToast} from 'native-base';
 
 const ResetPwd = ({navigation}) => {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     tokenForgot,
@@ -18,30 +20,26 @@ const ResetPwd = ({navigation}) => {
   } = state;
   const [loading, setLoading] = useState(false);
   const [isProcess, setIsProcess] = useState(false);
-  const handleSubmit = async () => {
-    try {
-      await 1;
-      setIsProcess(true);
-      SVresetPassword({
-        token: tokenForgot,
-        otp: otpCode,
-        pwd: password,
-        setLoading,
-        dispatch,
-        navigation,
-        setIsProcess,
-      });
-    } catch (err) {
-      console.log(err);
-    }
+  const handleSubmit = () => {
+    setIsProcess(true);
+    SVresetPassword({
+      token: tokenForgot,
+      otp: otpCode,
+      pwd: password,
+      setLoading,
+      toast,
+      dispatch,
+      navigation,
+      setIsProcess,
+    });
   };
   return (
     <>
       <Form
-        titleForm="Change Password"
-        textBtn="Change"
+        titleForm="Verify OTP"
+        textBtn="Send"
         bolOTP
-        bolPwd
+        // bolPwd
         isProcess={isProcess}
         onPress={handleSubmit}>
         <View style={[styles.desc, stylesGeneral.flexRow]}>
@@ -79,7 +77,6 @@ const ResetPwd = ({navigation}) => {
           </TouchableOpacity>
         </View>
       </Form>
-      {loading && <ModalLoading />}
     </>
   );
 };

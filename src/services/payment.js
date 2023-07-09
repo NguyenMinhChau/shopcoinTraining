@@ -1,7 +1,10 @@
 /* eslint-disable prettier/prettier */
 import {Alert} from 'react-native';
-import {adminGet, userPut} from '../utils/axios/axiosInstance';
+import {adminGet, adminPost, userPut} from '../utils/axios/axiosInstance';
 import {routersMain} from '../routers/Main';
+import {toastShow} from '../utils/toast';
+import {getAllPaymentAdmin} from '../app/payloads/getAll';
+import {routers} from '../routers/Routers';
 
 // ADD BANK INFO
 export const addBankInfo = async (props = {}) => {
@@ -14,12 +17,13 @@ export const addBankInfo = async (props = {}) => {
     setLoading,
     setIsProcess,
     navigation,
+    toast,
   } = props;
   try {
-    await userPut(`/additionBankInfo/${id}`, {
+    await userPut(`payment/${id}`, {
       bankName: bank,
-      nameAccount: accountName,
-      accountNumber: accountNumber,
+      name: accountName,
+      account: accountNumber,
       token: token,
     });
     setLoading(true);
@@ -29,11 +33,12 @@ export const addBankInfo = async (props = {}) => {
       Alert.alert('Success!', 'Your payment has been updated!', [
         {
           text: 'OK',
-          onPress: () => navigation.navigate(routersMain.CreateWithdraw),
+          onPress: () => navigation.navigate(routers.Profile),
         },
       ]);
-    }, 3000);
+    }, 1000);
   } catch (err) {
+    console.log(err);
     setLoading(true);
     setIsProcess(false);
     setTimeout(() => {
@@ -48,13 +53,18 @@ export const addBankInfo = async (props = {}) => {
           },
         ],
       );
-    }, 3000);
+    }, 1000);
   }
 };
 // GET ALL PAYMENT ADMIN
 export const SVgetAllPaymentAdmin = async (props = {}) => {
-  const resGet = await adminGet('/getAllPaymentAdmin', {});
-  props.dispatch(props.getAllPaymentAdmin(resGet.data));
+  const {dispatch, toast} = props;
+  try {
+    const resGet = await adminPost('payment/admin', {});
+    dispatch(getAllPaymentAdmin(resGet.metadata));
+  } catch (err) {
+    toastShow(toast, err?.response?.data?.message || 'Something error!');
+  }
 };
 // GET PAYMENT ADMIN BY ID
 export const SVgetPaymentAdminById = async (props = {}) => {

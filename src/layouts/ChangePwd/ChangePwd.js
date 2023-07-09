@@ -18,9 +18,10 @@ import {SVchangePassword} from '../../services/user';
 import styles from './ChangePwdCss';
 import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
-import {ScrollView} from 'native-base';
+import {ScrollView, useToast} from 'native-base';
 
 export default function ChangePwd({navigation}) {
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     currentUser,
@@ -54,31 +55,28 @@ export default function ChangePwd({navigation}) {
       navigation,
       token: data?.token,
       dispatch,
+      toast,
       setMessage,
       setFormValue,
       setIsProcess,
     });
   };
   const handleSubmit = async () => {
-    try {
-      if (!oldPwd || !password || !confirmPwd) {
-        Alert.alert('Error', 'Please fill all fields');
-      } else if (password !== confirmPwd) {
-        Alert.alert('Error', 'Password not match');
-      } else {
-        await 1;
-        setIsProcess(true);
-        requestRefreshToken(
-          currentUser,
-          changePwdAPI,
-          state,
-          dispatch,
-          setCurrentUser,
-          currentUser?.id,
-        );
-      }
-    } catch (err) {
-      console.log(err);
+    if (!password || !confirmPwd) {
+      Alert.alert('Error', 'Please fill all fields');
+    } else if (password !== confirmPwd) {
+      Alert.alert('Error', 'Password not match');
+    } else {
+      setIsProcess(true);
+      requestRefreshToken(
+        currentUser,
+        changePwdAPI,
+        state,
+        dispatch,
+        setCurrentUser,
+        toast,
+        navigation,
+      );
     }
   };
   return (
@@ -93,7 +91,7 @@ export default function ChangePwd({navigation}) {
           <Text style={[stylesStatus.cancel, stylesGeneral.fz16]}>{error}</Text>
         </View>
       )}
-      <FormInput
+      {/* <FormInput
         label="Current Password"
         placeholder="Enter your current password"
         showPwd
@@ -101,7 +99,7 @@ export default function ChangePwd({navigation}) {
         secureTextEntry
         onChangeText={val => handleChangeInput('oldPwd', val)}
         nameSymbol="lock"
-      />
+      /> */}
       <FormInput
         label="New Password"
         placeholder="Enter your new password"
@@ -123,11 +121,10 @@ export default function ChangePwd({navigation}) {
       <TouchableOpacity
         activeOpacity={0.6}
         onPress={handleSubmit}
-        disabled={!password || !oldPwd || !confirmPwd || isProcess}
+        disabled={!password || !confirmPwd || isProcess}
         style={[
           styles.btn,
-          (!password || !oldPwd || !confirmPwd || isProcess) &&
-            stylesGeneral.op6,
+          (!password || !confirmPwd || isProcess) && stylesGeneral.op6,
           stylesGeneral.flexCenter,
           stylesGeneral.mt10,
           stylesStatus.confirmbgcbold,

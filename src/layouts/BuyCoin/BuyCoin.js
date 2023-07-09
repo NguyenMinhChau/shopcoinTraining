@@ -28,9 +28,12 @@ import {FormInput, ImageCp, ModalLoading} from '../../components';
 import stylesGeneral from '../../styles/General';
 import styles from './BuyCoinCss';
 import stylesStatus from '../../styles/Status';
+import {useToast} from 'native-base';
+import {URL_SOCKET} from '@env';
 
 export default function BuyCoin({navigation, route}) {
   const {id} = route.params;
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     priceCoinSocket,
@@ -43,20 +46,20 @@ export default function BuyCoin({navigation, route}) {
   const [isProcess, setIsProcess] = useState(false);
   useEffect(() => {
     SVgetACoin({
-      id,
-      getById,
+      id_coin: id,
+      toast,
       dispatch,
     });
     getIdUserJWT(currentUser, dispatch);
     SVgetDepositsByEmailUser({
-      email: currentUser.email,
+      email_user: currentUser.email,
+      toast,
       dispatch,
-      getAllDeposits,
     });
     dispatch(setAmountCoin(''));
   }, []);
   useEffect(() => {
-    const socket = socketIO(`${URL_SERVER}`, {
+    const socket = socketIO(`${URL_SOCKET}`, {
       jsonp: false,
     });
     socket.on(`send-data-${dataById?.symbol}`, data => {
@@ -80,19 +83,18 @@ export default function BuyCoin({navigation, route}) {
   };
   const handleBuyAPI = data => {
     SVbuyCoin({
-      gmailUser: currentUser?.email,
+      id_user: currentUser?.id,
       amount: parseFloat(amountCoin),
-      amountUsd: parseFloat(amountCoin) * parseFloat(priceCoinSocket?.price),
       symbol: dataById?.symbol,
-      price: parseFloat(priceCoinSocket?.price),
+      price: parseFloat(priceCoinSocket),
       token: data?.token,
       setLoading,
       navigation,
       setIsProcess,
+      toast,
     });
   };
-  const handleSubmit = async () => {
-    await 1;
+  const handleSubmit = () => {
     setIsProcess(true);
     requestRefreshToken(
       currentUser,
@@ -100,22 +102,22 @@ export default function BuyCoin({navigation, route}) {
       state,
       dispatch,
       setCurrentUser,
-      setMessage,
+      toast,
+      navigation,
     );
   };
-  // console.log(priceCoinSocket);
   const yourWallet = formatUSDT(currentUser?.balance);
   const isDisabled =
     amountCoin &&
-    (amountCoin < parseFloat(10 / priceCoinSocket?.price) ||
-      amountCoin > parseFloat(currentUser?.balance / priceCoinSocket?.price) ||
+    (amountCoin < parseFloat(10 / priceCoinSocket) ||
+      amountCoin > parseFloat(currentUser?.balance / priceCoinSocket) ||
       (amountCoin && !Number(amountCoin)));
-  const suggestMin = precisionRound(parseFloat(10 / priceCoinSocket?.price));
+  const suggestMin = precisionRound(parseFloat(10 / priceCoinSocket));
   const suggestMax = precisionRound(
-    parseFloat(currentUser?.balance / priceCoinSocket?.price),
+    parseFloat(currentUser?.balance / priceCoinSocket),
   );
   const amountUsd = formatUSDT(
-    precisionRound(amountCoin * priceCoinSocket?.price),
+    precisionRound(amountCoin * priceCoinSocket),
   ).replace('USD', '');
   return (
     <ScrollView
@@ -147,7 +149,7 @@ export default function BuyCoin({navigation, route}) {
             stylesGeneral.fz16,
             stylesGeneral.fw500,
           ]}>
-          = {priceCoinSocket?.price}
+          = {priceCoinSocket || 'Processing price...'}
         </Text>
       </View>
       <Text

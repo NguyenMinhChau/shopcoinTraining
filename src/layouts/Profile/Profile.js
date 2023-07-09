@@ -16,8 +16,10 @@ import {routersMain} from '../../routers/Main';
 import styles from './ProfileCss';
 import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
+import {useToast} from 'native-base';
 
 const Profile = ({navigation}) => {
+  const toast = useToast();
   const [refreshing, setRefreshing] = useState(false);
   const {state} = useAppContext();
   const {currentUser} = state;
@@ -28,9 +30,8 @@ const Profile = ({navigation}) => {
     setRefreshing(true);
     wait(2000).then(() => setRefreshing(false));
   }, []);
-  const handleLogout = async () => {
-    await userLogout({});
-    navigation.navigate(routersMain.Login);
+  const handleLogout = () => {
+    userLogout({toast, navigation, id_user: currentUser?.id});
   };
   return (
     <ScrollView

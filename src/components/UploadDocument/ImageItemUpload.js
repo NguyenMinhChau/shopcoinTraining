@@ -28,15 +28,6 @@ export default function ImageItemUpload({
         {/* fileResponse?.uri */}
         {!fileResponse && !userById?.[field] ? (
           <>
-            {/* <Text style={[styles.typeUpload, stylesGeneral.text_black]}>
-              {textUpload}
-            </Text>
-            <Image
-              style={[styles.imageUploadIcons]}
-              resizeMethod="resize"
-              resizeMode="contain"
-              source={require('../../assets/images/upload.png')}
-            /> */}
             <View style={[styles.frameContainer]}>
               <View style={[styles.frameCamera]}>
                 <View style={[stylesGeneral.flexCenter]}>
@@ -46,10 +37,6 @@ export default function ImageItemUpload({
                   </Text>
                 </View>
               </View>
-              {/* <View style={[styles.frame1]}></View>
-              <View style={[styles.frame2]}></View>
-              <View style={[styles.frame3]}></View>
-              <View style={[styles.frame4]}></View> */}
               <View style={[styles.frame5]}></View>
             </View>
           </>

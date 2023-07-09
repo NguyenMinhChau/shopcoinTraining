@@ -1,19 +1,18 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useEffect, useState} from 'react';
-import {View, RefreshControl, FlatList, Platform, Text} from 'react-native';
+import React, {useEffect} from 'react';
+import {View, RefreshControl, FlatList, Platform} from 'react-native';
 import {useAppContext} from '../../utils';
 import {getAllCoins} from '../../app/payloads/getAll';
 import {setSearchValue} from '../../app/payloads/search';
 import {Search, Header, CoinDetail, NodataText} from '../../components';
 import {SVgetAllCoins} from '../../services/coin';
 import styles from './HomeCss';
-import DeviceInfo from 'react-native-device-info';
+import {useToast} from 'native-base';
 
 const Home = ({navigation}) => {
-  // const VERSION_NUMBER_OLD = DeviceInfo.getVersion();
-  // const VERSION_CODE_OLD = DeviceInfo.getBuildNumber();
+  const toast = useToast();
   const {state, dispatch} = useAppContext();
   const {
     currentUser,
@@ -21,69 +20,43 @@ const Home = ({navigation}) => {
     data: {dataCoins},
   } = state;
   const [refreshing, setRefreshing] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
-  const [page, setPage] = useState(1);
-  const [show, setShow] = useState(dataCoins?.data?.total || 10);
-  // get version build on PlayStore of app
   useEffect(() => {
+    SVgetAllCoins({
+      dispatch,
+      toast,
+      id_user: currentUser?.id,
+    });
     dispatch(setSearchValue(''));
   }, []);
-  useEffect(() => {
-    SVgetAllCoins({
-      page,
-      show: dataCoins?.data?.total,
-      dispatch,
-      getAllCoins,
-      email: currentUser?.email,
-    });
-  }, [page, show]);
   const refreshData = () => {
     SVgetAllCoins({
-      page,
-      show: dataCoins?.data?.total,
       dispatch,
-      getAllCoins,
+      toast,
+      id_user: currentUser?.id,
     });
     dispatch(setSearchValue(''));
   };
-  let data = dataCoins?.data?.coins || [];
+  let data = dataCoins || [];
   if (search) {
     data = data.filter(item => {
       return item?.symbol?.toLowerCase().includes(search?.toLowerCase());
     });
   }
-  let stopLoadingData = true;
   const wait = timeout => {
     return new Promise(resolve => setTimeout(resolve, timeout));
   };
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
     SVgetAllCoins({
-      page,
-      show: dataCoins?.total,
       dispatch,
-      getAllCoins,
+      toast,
+      id_user: currentUser?.id,
     });
     dispatch(setSearchValue(''));
     wait(2000).then(() => {
       setRefreshing(false);
     });
   }, []);
-  const handleEndReached = async () => {
-    setLoading(true);
-    if (!stopLoadingData) {
-      await 1;
-      setShow(dataCoins?.total);
-      SVgetAllCoins({
-        page,
-        show: dataCoins?.total,
-        dispatch,
-        getAllCoins,
-      });
-      stopLoadingData = true;
-    }
-    setLoading(false);
-  };
   const renderItem = ({item}) => {
     return <CoinDetail item={item} navigation={navigation} />;
   };
@@ -106,11 +79,7 @@ const Home = ({navigation}) => {
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
-            onEndReached={handleEndReached}
-            onScroll={handleEndReached}
             onEndReachedThreshold={0.5}
-            onScrollBeginDrag={() => (stopLoadingData = false)}
-            // contentContainerStyle={{flex: 1}}
             data={data}
             keyExtractor={(item, index) => index.toString()}
             renderItem={renderItem}

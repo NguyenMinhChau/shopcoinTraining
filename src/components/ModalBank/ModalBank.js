@@ -31,13 +31,16 @@ export default function ModalBank({
                     onPress={() =>
                       handleChange('bank', {
                         name: item.name,
+                        account_name: item.user,
+                        number: item.accountNumber,
                         id: item?.id || null,
                       })
                     }
                     activeOpacity={0.7}
                     style={[styles.bankItem]}>
                     <Text style={[stylesGeneral.fwbold, styles.lineHeight]}>
-                      {item.name} {item.user ? ' - ' + item.user + ' - ' : ''}{' '}
+                      {item.name ? item.name : ''}{' '}
+                      {item.user ? ' - ' + item.user + ' - ' : ''}{' '}
                       {item.accountNumber && item.accountNumber}
                     </Text>
                   </TouchableOpacity>
