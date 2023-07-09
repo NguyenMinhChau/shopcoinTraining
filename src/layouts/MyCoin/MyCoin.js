@@ -19,6 +19,7 @@ import {URL_SERVER} from '@env';
 import {useToast} from 'native-base';
 import requestRefreshToken from '../../utils/axios/refreshToken';
 import {setCurrentUser} from '../../app/payloads/user';
+import {setPriceCoinSocket} from '../../app/payloads/socket';
 
 const MyCoin = ({navigation}) => {
   const toast = useToast();
@@ -99,14 +100,14 @@ const MyCoin = ({navigation}) => {
           <View>
             <Text
               style={[styles.coinItem_Price_text, stylesGeneral.text_black]}>
-              USD: ~{' '}
-              {formatUSDT(item?.amount * item?.price).replace('USD', '')}
+              USD: ~ {formatUSDT(item?.amount * item?.price).replace('USD', '')}
             </Text>
           </View>
         </View>
         <View
           style={[styles.coinItem_Btn]}
-          onTouchStart={() =>
+          onTouchStart={() => {
+            dispatch(setPriceCoinSocket(null));
             navigation.navigate({
               name: routersMain.SellCoin,
               params: {
@@ -114,8 +115,8 @@ const MyCoin = ({navigation}) => {
                 item: item,
                 symbol: item?.symbol,
               },
-            })
-          }>
+            });
+          }}>
           <Text style={[stylesStatus.cancelbgcbold, styles.btn]}>Sell</Text>
         </View>
       </View>

@@ -170,23 +170,27 @@ export default function BuyCoin({navigation, route}) {
         color={isDisabled ? 'red' : ''}
         name="exclamation-triangle"
       />
-      {amountCoin && (
-        <View style={[stylesGeneral.mb5]}>
-          <Text style={[stylesGeneral.text_black]}>Suggest amount</Text>
-          <Text style={[stylesStatus.cancel]}>Min: {suggestMin}</Text>
-          <Text style={[stylesStatus.cancel]}>Max: {suggestMax}</Text>
-        </View>
+      {priceCoinSocket && (
+        <>
+          {amountCoin && (
+            <View style={[stylesGeneral.mb5]}>
+              <Text style={[stylesGeneral.text_black]}>Suggest amount</Text>
+              <Text style={[stylesStatus.cancel]}>Min: {suggestMin}</Text>
+              <Text style={[stylesStatus.cancel]}>Max: {suggestMax}</Text>
+            </View>
+          )}
+          <View style={[styles.amountUsdt, stylesStatus.completebgc]}>
+            <Text
+              style={[
+                stylesGeneral.fz16,
+                stylesGeneral.fwbold,
+                stylesStatus.complete,
+              ]}>
+              Amount USD: {amountUsd}
+            </Text>
+          </View>
+        </>
       )}
-      <View style={[styles.amountUsdt, stylesStatus.completebgc]}>
-        <Text
-          style={[
-            stylesGeneral.fz16,
-            stylesGeneral.fwbold,
-            stylesStatus.complete,
-          ]}>
-          Amount USD: {amountUsd}
-        </Text>
-      </View>
       <TouchableOpacity
         activeOpacity={0.6}
         style={[

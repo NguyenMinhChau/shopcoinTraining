@@ -10,14 +10,11 @@ import {
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {useAppContext} from '../../utils';
-import {URL_SERVER} from '@env';
 import {formatUSDT, precisionRound} from '../../utils/format/Money';
-import {getBySymbol, getById} from '../../app/payloads/getById';
 import {setAmountSell} from '../../app/payloads/form';
 import {setCurrentUser} from '../../app/payloads/user';
-import {setMessage} from '../../app/payloads/message';
 import socketIO from 'socket.io-client';
-import {SVgetACoin, SVgetCoinBySymbol, SVsellCoin} from '../../services/coin';
+import {SVsellCoin} from '../../services/coin';
 import {FormInput, ImageCp, ModalLoading, RowDetail} from '../../components';
 import styles from './SellCoinCss';
 import stylesStatus from '../../styles/Status';
@@ -25,7 +22,8 @@ import stylesGeneral from '../../styles/General';
 import requestRefreshToken from '../../utils/axios/refreshToken';
 import {setPriceCoinSocket} from '../../app/payloads/socket';
 import {useToast} from 'native-base';
-import {URL_SOCKET} from '@env';
+import {URL_SOCKET, URL_SERVER} from '@env';
+import {coinGet, userGet} from '../../utils/axios/axiosInstance';
 
 export default function SellCoin({navigation, route}) {
   const {item} = route.params;
@@ -36,6 +34,8 @@ export default function SellCoin({navigation, route}) {
   const [loading, setLoading] = useState(false);
   const [isProcess, setIsProcess] = useState(false);
   const [isProcessSellAll, setIsProcessSellAll] = useState(false);
+  const [coin, setCoin] = useState([]);
+  const [coinById, setCoinById] = useState(null);
   const handleChangeInput = (name, val) => {
     dispatch(setAmountSell(val));
   };
@@ -47,8 +47,18 @@ export default function SellCoin({navigation, route}) {
     dispatch(setAmountSell(''));
     wait(2000).then(() => setRefreshing(false));
   }, []);
+  const getCoinBySymbol = async () => {
+    const resGet = await coinGet(`${item._id}`);
+    setCoin(resGet.metadata);
+    const resGetAllCoin = await userGet(`coin/own/${currentUser?.id}`);
+    const coinById = resGetAllCoin?.metadata?.find(
+      item => item?._id === resGet.metadata._id,
+    );
+    setCoinById(coinById);
+  };
   useEffect(() => {
     dispatch(setAmountSell(''));
+    // getCoinBySymbol();
   }, []);
   useEffect(() => {
     const socket = socketIO(`${URL_SOCKET}`, {
@@ -111,7 +121,7 @@ export default function SellCoin({navigation, route}) {
           stylesGeneral.flexRow,
           stylesGeneral.flexCenter,
         ]}>
-        <ImageCp uri={item?.coin?.logo} />
+        <ImageCp uri={item?.logo} />
         <View style={[styles.nameCoin, stylesGeneral.ml12]}>
           <Text style={[styles.name, stylesGeneral.text_black]}>
             {item?.symbol?.replace('USDT', '')}
@@ -126,13 +136,20 @@ export default function SellCoin({navigation, route}) {
         <RowDetail title="Quantity" text={item?.amount} />
         <RowDetail
           title="USD"
-          text={`~ ${formatUSDT(item?.amount * priceCoinSocket)}`}
+          text={
+            priceCoinSocket
+              ? `~ ${formatUSDT(item?.amount * priceCoinSocket)}`
+              : 'Processing USD...'
+          }
         />
         <RowDetail
           title="Average buy price"
           text={priceCoinSocket?.weightedAvgPrice || 'unknown'}
         />
-        <RowDetail title="Coin price" text={priceCoinSocket} />
+        <RowDetail
+          title="Coin price"
+          text={priceCoinSocket ? priceCoinSocket : 'Processing price...'}
+        />
         <View style={[styles.row_single]}>
           <FormInput
             label="Amount Sell"
@@ -145,33 +162,39 @@ export default function SellCoin({navigation, route}) {
             color={isDisabled ? 'red' : ''}
             name="exclamation-triangle"
           />
-          {amountSell && (
-            <View style={[stylesGeneral.mb5]}>
-              <Text style={[stylesGeneral.text_black]}>Suggest amount</Text>
-              <Text style={[stylesStatus.cancel]}>Min: 0.01</Text>
-              <Text style={[stylesStatus.cancel]}>Max: {suggestMax}</Text>
-            </View>
-          )}
-          {parseFloat(amountSell * priceCoinSocket) >= 0 && amountSell && (
-            <Text
-              style={[
-                stylesGeneral.mb10,
-                stylesGeneral.fz16,
-                stylesGeneral.fwbold,
-                stylesStatus.complete,
-              ]}>
-              Receive: {formatUSDT(parseFloat(amountSell * priceCoinSocket))}
-            </Text>
+          {priceCoinSocket && (
+            <>
+              {amountSell && (
+                <View style={[stylesGeneral.mb5]}>
+                  <Text style={[stylesGeneral.text_black]}>Suggest amount</Text>
+                  <Text style={[stylesStatus.cancel]}>Min: 0.01</Text>
+                  <Text style={[stylesStatus.cancel]}>Max: {suggestMax}</Text>
+                </View>
+              )}
+              {parseFloat(amountSell * priceCoinSocket) >= 0 && amountSell && (
+                <Text
+                  style={[
+                    stylesGeneral.mb10,
+                    stylesGeneral.fz16,
+                    stylesGeneral.fwbold,
+                    stylesStatus.complete,
+                  ]}>
+                  Receive:{' '}
+                  {formatUSDT(parseFloat(amountSell * priceCoinSocket))}
+                </Text>
+              )}
+            </>
           )}
         </View>
       </View>
       <View style={[styles.btn_container]}>
         <TouchableOpacity
           activeOpacity={0.6}
-          disabled={!amountSell || isDisabled || isProcess}
+          disabled={!amountSell || isDisabled || isProcess || !priceCoinSocket}
           style={[
             styles.btn,
-            (!amountSell || isDisabled || isProcess) && stylesGeneral.op6,
+            (!amountSell || isDisabled || isProcess || !priceCoinSocket) &&
+              stylesGeneral.op6,
             stylesStatus.confirmbgcbold,
             stylesGeneral.mr10,
           ]}
@@ -186,9 +209,9 @@ export default function SellCoin({navigation, route}) {
           style={[
             styles.btn,
             stylesStatus.vipbgcbold,
-            isProcessSellAll && stylesGeneral.op6,
+            (isProcessSellAll || !priceCoinSocket) && stylesGeneral.op6,
           ]}
-          disabled={isProcessSellAll}>
+          disabled={isProcessSellAll || !priceCoinSocket}>
           <Text style={[styles.btn_text, stylesStatus.white]}>
             {isProcessSellAll ? (
               <ActivityIndicator color="white" />

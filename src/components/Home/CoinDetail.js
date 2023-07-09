@@ -7,8 +7,11 @@ import {removeUSDT} from '../../utils/format/removeUSDT';
 import styles from './CoinDetailCss';
 import stylesGeneral from '../../styles/General';
 import stylesStatus from '../../styles/Status';
+import {setPriceCoinSocket} from '../../app/payloads/socket';
+import {useAppContext} from '../../utils';
 
 export default function CoinDetail({item, navigation}) {
+  const {dispatch} = useAppContext();
   return (
     <View style={[styles.coinItem]}>
       <View style={[stylesGeneral.flexRow]}>
@@ -62,14 +65,15 @@ export default function CoinDetail({item, navigation}) {
       </View>
       <View
         style={[styles.coinItem_Btn]}
-        onTouchStart={() =>
+        onTouchStart={() => {
+          dispatch(setPriceCoinSocket(null));
           navigation.navigate({
             name: 'Buy Coin',
             params: {
               id: item?._id,
             },
-          })
-        }>
+          });
+        }}>
         <Text style={[stylesStatus.completebgcbold, styles.btn]}>Buy</Text>
       </View>
     </View>
