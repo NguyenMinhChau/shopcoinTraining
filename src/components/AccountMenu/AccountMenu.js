@@ -13,12 +13,15 @@ import {
 	Box,
 } from '@mui/material';
 import { Logout, Settings } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import SupervisedUserCircleIcon from '@mui/icons-material/SupervisedUserCircle';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext, axiosUtils, numberUtils } from '../../utils';
 import { SnackbarCp } from '../';
 import { actions } from '../../app/';
 import styles from './AccountMenu.module.css';
 import { LogoutSV } from '../../services/authen';
+import routers from '../../routers/routers';
 
 const cx = className.bind(styles);
 
@@ -144,12 +147,26 @@ function AccountMenu({ className }) {
 					Your Wallet:{' '}
 					{numberUtils.coinUSD(user?.Wallet?.balance || 0)}
 				</MenuItem>
-				<MenuItem>
-					<ListItemIcon>
-						<Settings fontSize="small" />
-					</ListItemIcon>
-					Settings
-				</MenuItem>
+				{/* {currentUser?.rule === 'admin' && (
+					<>
+						<MenuItem>
+							<Link to={routers.profileUser}>
+								<ListItemIcon>
+									<SupervisedUserCircleIcon fontSize="small" />
+								</ListItemIcon>
+								<span>My Coin Account</span>
+							</Link>
+						</MenuItem>
+						<MenuItem>
+							<Link to={routers.dashboard}>
+								<ListItemIcon>
+									<AdminPanelSettingsIcon fontSize="small" />
+								</ListItemIcon>
+								<span>Adminitration</span>
+							</Link>
+						</MenuItem>
+					</>
+				)} */}
 				<MenuItem onClick={handleLogout}>
 					<ListItemIcon>
 						<Logout fontSize="small" />

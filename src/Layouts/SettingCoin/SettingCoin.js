@@ -76,8 +76,7 @@ function SettingCoin() {
 			setSnackbar,
 		});
 	}, [page, show, useDebounceCoin]);
-	const dataSettingFlag =
-		dataSettingCoin?.data?.coins || dataSettingCoin?.data;
+	let dataSettingFlag = dataSettingCoin?.data || [];
 	// Modal Delete
 	const modalDeleteTrue = (e, id) => {
 		return deleteUtils.deleteTrue(e, id, dispatch, state, actions);
@@ -128,7 +127,7 @@ function SettingCoin() {
 		});
 	};
 	const onClickBlock = async (item) => {
-		const check = dataCoinInactive?.data?.find(
+		const check = dataCoinInactive?.find(
 			(itemCoin) => itemCoin.symbol === item.symbol,
 		);
 		if (check) {
@@ -201,9 +200,7 @@ function SettingCoin() {
 				linkCreate={`${routers.settingCoin}/${routers.newcoin}`}
 				dataFlag={dataSettingFlag}
 				dataHeaders={DataCoins().headers}
-				totalData={
-					dataSettingCoin?.total || dataSettingCoin?.data?.totalSearch
-				}
+				totalData={dataSettingCoin?.total}
 				classNameButton="completebgc"
 				handleCloseSnackbar={handleCloseSnackbar}
 				openSnackbar={snackbar.open}

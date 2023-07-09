@@ -18,7 +18,27 @@ export const getUsers = async (props = {}) => {
 			actions.setData({
 				data: {
 					...state.set.data,
-					dataUser: processUsers,
+					dataUser: processUsers?.metadata,
+				},
+			}),
+		);
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
+};
+export const getUsersAll = async (props = {}) => {
+	const { dispatch, state, page, show, search, setSnackbar } = props;
+	try {
+		const processUsers = await axiosUtils.adminGet(`user`);
+		dispatch(
+			actions.setData({
+				data: {
+					...state.set.data,
+					dataUser: processUsers?.metadata,
 				},
 			}),
 		);
@@ -37,19 +57,40 @@ export const getUserById = async (props = {}) => {
 		if (idUser) {
 			const process = await axiosUtils.adminGet(`user/${idUser}`);
 			const processCoins = await axiosUtils.coinGet('/');
-			const resGet = await axiosUtils.adminGet('/getAllPaymentAdmin', {});
-			const { data } = process;
+			const resGet = await axiosUtils.adminPost('payment/admin', {});
+			const { metadata } = process;
 			dispatch(
 				actions.setData({
 					edit: {
 						...state.set.edit,
-						itemData: data,
+						itemData: metadata,
 					},
 					data: {
 						...state.set.data,
-						dataSettingCoin: processCoins,
-						dataPaymentAdmin: resGet.data,
+						dataSettingCoin: processCoins?.metadata,
+						dataPaymentAdmin: resGet.metadata,
 					},
+				}),
+			);
+		}
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
+};
+
+export const getUserByIdNoCoin = async (props = {}) => {
+	const { idUser, dispatch, setSnackbar } = props;
+	try {
+		if (idUser) {
+			const process = await axiosUtils.adminGet(`user/${idUser}`);
+			const { metadata } = process;
+			dispatch(
+				actions.setData({
+					userById: metadata,
 				}),
 			);
 		}
@@ -111,27 +152,44 @@ export const handleUpdateRankFeeUser = async (props = {}) => {
 		setIsProcess && setIsProcess(false);
 		setIsProcessFee && setIsProcessFee(false);
 		setFeeValue && setFeeValue('');
-		const res = await axiosUtils.adminGet(
-			`users/paging?page=${page}&show=${show}&search=${search}`,
-		);
-		dispatchEdit(
-			dispatch,
-			state,
-			setSnackbar,
-			actions,
-			res,
-			'dataUser',
-			resPut.message,
-		);
-		dispatch(
-			actions.setData({
-				data: {
-					...state.set.data,
-					dataUser: res,
-				},
-			}),
-		);
-		return data;
+		if (!setIsProcessFee) {
+			const res = await axiosUtils.adminGet(
+				`users/paging?page=${page}&show=${show}&search=${search}`,
+			);
+			dispatch(
+				actions.setData({
+					data: {
+						...state.set.data,
+						dataUser: res?.metadata,
+					},
+				}),
+			);
+			dispatchEdit(
+				dispatch,
+				state,
+				setSnackbar,
+				actions,
+				res,
+				'dataUser',
+				resPut.message,
+			);
+		} else {
+			const process = await axiosUtils.adminGet(`user/${id}`);
+			dispatch(
+				actions.setData({
+					edit: {
+						...state.set.edit,
+						itemData: process?.metadata,
+					},
+				}),
+			);
+		}
+		setSnackbar({
+			open: true,
+			message: resPut?.message || 'Successfully!',
+			type: 'success',
+		});
+		// return data;
 	} catch (err) {
 		setIsProcess && setIsProcess(false);
 		setIsProcessFee && setIsProcessFee(false);
@@ -160,13 +218,14 @@ export const handleUpdateRuleUser = async (props = {}) => {
 	} = props;
 	try {
 		const resPut = await axiosUtils.adminPut(`user/permission/${id}`, {
-			rule: statusUpdate.toLowerCase() || statusCurrent.toLowerCase(),
+			permission:
+				statusUpdate.toLowerCase() || statusCurrent.toLowerCase(),
 			token: data?.token,
 		});
 		setIsProcess && setIsProcess(false);
 		setModalChangeRule && setModalChangeRule(false);
 		const res = await axiosUtils.adminGet(
-			`/getAllUser?page=${page}&show=${show}&search=${search}`,
+			`users/paging?page=${page}&show=${show}&search=${search}`,
 		);
 		dispatchEdit(
 			dispatch,
@@ -181,7 +240,7 @@ export const handleUpdateRuleUser = async (props = {}) => {
 			actions.setData({
 				data: {
 					...state.set.data,
-					dataUser: res,
+					dataUser: res?.metadata,
 				},
 			}),
 		);
@@ -199,13 +258,13 @@ export const handleUpdateRuleUser = async (props = {}) => {
 export const handleDelete = async (props = {}) => {
 	const { data, id, dispatch, state, page, show, search, setSnackbar } =
 		props;
-	const resDel = await axiosUtils.adminDelete(`/deleteUser/${id}`, {
+	const resDel = await axiosUtils.adminGet(`resetUser/${id}`, {
 		headers: {
 			token: data?.token,
 		},
 	});
 	const res = await axiosUtils.adminGet(
-		`/getAllUser?page=${page}&show=${show}&search=${search}`,
+		`/users/paging/?page=${page}&show=${show}&search=${search}`,
 	);
 	dispatchDelete(
 		dispatch,
@@ -282,12 +341,12 @@ export const updateCoinGift = async (props = {}) => {
 		});
 		setIsProcessCoin && setIsProcessCoin(false);
 		const process = await axiosUtils.adminGet(`user/${id}`);
-		const { data } = process;
+		const { metadata } = process;
 		dispatch(
 			actions.setData({
 				edit: {
 					...state.set.edit,
-					itemData: data,
+					itemData: metadata,
 				},
 				changeCoin: '',
 				quantityCoin: '',
@@ -358,12 +417,12 @@ export const changePasswordUser = async (props = {}) => {
 		});
 		setIsProcessChangePwd(false);
 		const process = await axiosUtils.adminGet(`user/${id}`);
-		const { data } = process;
+		const { metadata } = process;
 		dispatch(
 			actions.setData({
 				edit: {
 					...state.set.edit,
-					itemData: data,
+					itemData: metadata,
 				},
 			}),
 		);
@@ -398,12 +457,12 @@ export const refreshPasswordUser = async (props = {}) => {
 		});
 		setIsProcessRefreshPwd(false);
 		const process = await axiosUtils.adminGet(`user/${id}`);
-		const { data } = process;
+		const { metadata } = process;
 		dispatch(
 			actions.setData({
 				edit: {
 					...state.set.edit,
-					itemData: data,
+					itemData: metadata,
 				},
 			}),
 		);
@@ -429,7 +488,7 @@ export const refreshPasswordUser = async (props = {}) => {
 	}
 };
 // BLOCK/UNBLOCK USER
-export const blockUser = async (props = {}) => {
+export const blockAndUnblockUser = async (props = {}) => {
 	const {
 		token,
 		id,
@@ -441,65 +500,17 @@ export const blockUser = async (props = {}) => {
 	} = props;
 	try {
 		const resPut = await axiosUtils.adminPut(`user/lock/${id}`, {
-			blockUser: blockUser,
+			lock: blockUser,
 			token: token,
 		});
 		setIsProcessBlockUser(false);
 		const process = await axiosUtils.adminGet(`user/${id}`);
-		const { data } = process;
+		const { metadata } = process;
 		dispatch(
 			actions.setData({
 				edit: {
 					...state.set.edit,
-					itemData: data,
-				},
-			}),
-		);
-		dispatch(
-			actions.toggleModal({
-				...state.toggle,
-				modalDelete: false,
-				modalStatus: false,
-			}),
-		);
-		setSnackbar({
-			open: true,
-			message: resPut.message,
-			type: 'success',
-		});
-	} catch (err) {
-		setIsProcessBlockUser(false);
-		setSnackbar({
-			open: true,
-			message: err?.response?.data?.message || 'Something error!',
-			type: 'error',
-		});
-	}
-};
-// UNBLOCK USER
-export const unblockUser = async (props = {}) => {
-	const {
-		token,
-		id,
-		dispatch,
-		state,
-		blockUser,
-		setIsProcessBlockUser,
-		setSnackbar,
-	} = props;
-	try {
-		const resPut = await axiosUtils.adminPut(`user/lock/${id}`, {
-			blockUser: blockUser,
-			token: token,
-		});
-		setIsProcessBlockUser(false);
-		const process = await axiosUtils.adminGet(`user/${id}`);
-		const { data } = process;
-		dispatch(
-			actions.setData({
-				edit: {
-					...state.set.edit,
-					itemData: data,
+					itemData: metadata,
 				},
 			}),
 		);
@@ -536,9 +547,9 @@ export const changePassword = async (props = {}) => {
 		setSnackbar,
 	} = props;
 	try {
-		const resPut = await axiosUtils.userPut(`/changePWD/${id}`, {
-			oldPWD: oldPWD,
-			newPWD: newPWD,
+		const resPut = await axiosUtils.userPut(`password/${id}`, {
+			// oldPWD: oldPWD,
+			password: newPWD,
 			token: token,
 		});
 		setIsProcess(false);
@@ -575,10 +586,10 @@ export const createProfilePayment = async (props = {}) => {
 		setStateModalProfilePayment,
 	} = props;
 	try {
-		const resPut = await axiosUtils.userPut(`/additionBankInfo/${id}`, {
+		const resPut = await axiosUtils.userPut(`payment/${id}`, {
 			bankName: bank,
-			nameAccount: accountName,
-			accountNumber: accountNumber,
+			name: accountName,
+			account: accountNumber,
 			token: token,
 		});
 		setIsProcess(false);
@@ -616,12 +627,13 @@ export const uploadDocument = async (props = {}) => {
 	} = props;
 	try {
 		const resPut = await axiosUtils.userPut(
-			`/uploadImage/${id}`,
+			`image/${id}`,
 			{
 				cccdFont: cccdFont,
 				cccdBeside: cccdBeside,
 				licenseFont: licenseFont,
 				licenseBeside: licenseBeside,
+				token: token,
 			},
 			{
 				headers: {
@@ -644,7 +656,9 @@ export const uploadDocument = async (props = {}) => {
 		setStateModalUpload(false);
 		setSnackbar({
 			open: true,
-			message: err?.response?.data?.message || 'Upload document failed',
+			message:
+				err?.response?.data?.message ||
+				'Upload document failed. Image size is too large. Please upload images that are less than or equal to 450x300 pixels',
 			type: 'error',
 		});
 	}

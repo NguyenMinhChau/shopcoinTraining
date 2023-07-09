@@ -21,8 +21,8 @@ export const getDeposits = async (props = {}) => {
 			actions.setData({
 				data: {
 					...state.set.data,
-					dataDeposits: processDeposits,
-					dataUser: processUser,
+					dataDeposits: processDeposits?.metadata,
+					dataUser: processUser?.metadata,
 				},
 			}),
 		);
@@ -43,16 +43,16 @@ export const getDepositsWithdrawById = async (props = {}) => {
 			const process = await axiosUtils.adminGet(
 				idDeposits ? `deposit/${idDeposits}` : `withdraw/${idWithdraw}`,
 			);
-			const { data } = process;
+			const { metadata } = process;
 			dispatch(
 				actions.setData({
 					edit: {
 						...state.set.edit,
-						itemData: data,
+						itemData: metadata,
 					},
 					data: {
 						...state.set.data,
-						dataUser: processUser,
+						dataUser: processUser?.metadata,
 					},
 				}),
 			);
@@ -101,14 +101,19 @@ export const handleEdit = async (props = {}) => {
 		setIsProcess,
 	} = props;
 	try {
-		const resPut = await axiosUtils.adminPut(`handle/deposit/${id}`, {
-			status: statusUpdate || statusCurrent,
-			note: note,
-			token: data?.token,
-		});
+		const resPut = await axiosUtils.adminPut(
+			`handle/deposit/${id}`,
+			{
+				status: statusUpdate || statusCurrent,
+				note: note,
+				token: data?.token,
+				headers: { token: data?.token },
+			},
+			{ headers: { token: data?.token } },
+		);
 		setIsProcess(false);
 		const res = await axiosUtils.adminGet(
-			`/getAllDeposit?page=${page}&show=${show}&search=${search}`,
+			`deposit/paging?page=${page}&show=${show}&search=${search}`,
 		);
 		dispatchEdit(
 			dispatch,
@@ -122,6 +127,11 @@ export const handleEdit = async (props = {}) => {
 		return data;
 	} catch (err) {
 		setIsProcess(false);
+		dispatch(
+			actions.toggleModal({
+				modalStatus: false,
+			}),
+		);
 		setSnackbar({
 			open: true,
 			message: err?.response?.data?.message || 'Something error!',
@@ -135,6 +145,7 @@ export const handleDelete = async (props = {}) => {
 		props;
 	try {
 		const resDel = await axiosUtils.adminDelete(`deposit/${id}`, {
+			token: data?.token,
 			headers: {
 				token: data?.token,
 			},
@@ -152,6 +163,11 @@ export const handleDelete = async (props = {}) => {
 			resDel.message,
 		);
 	} catch (err) {
+		dispatch(
+			actions.toggleModal({
+				modalDelete: false,
+			}),
+		);
 		setSnackbar({
 			open: true,
 			message: err?.response?.data?.message || 'Something error!',
@@ -163,28 +179,24 @@ export const handleDelete = async (props = {}) => {
 export const handleCreate = async (props = {}) => {
 	const {
 		amount,
-		email,
-		amountVnd,
+		id_user,
+		email_user,
 		token,
 		bankAdmin,
-		rateDeposit,
 		setIsProcess,
 		setData,
 		setSnackbar,
 		dispatch,
 	} = props;
 	try {
-		const resPost = await axiosUtils.userPost('/deposit', {
+		const resPost = await axiosUtils.userPost(`deposit/${id_user}`, {
 			amount: amount,
-			user: email,
-			amountVnd: amountVnd,
-			bankAdmin: bankAdmin,
-			rateDeposit: rateDeposit,
+			method: bankAdmin?._id,
 			token: token,
 		});
 		setIsProcess(false);
-		const resGet = await axiosUtils.userGet(`/getAllDeposits/${email}`);
-		setData(resGet.data);
+		const resGet = await axiosUtils.userGet(`deposit/${email_user}`);
+		setData(resGet.metadata);
 		setSnackbar({
 			open: true,
 			message: resPost?.message
@@ -217,7 +229,7 @@ export const handleUpdateBillDeposit = async (props = {}) => {
 	const { token, id, logo, setIsProcess, history, setSnackbar } = props;
 	try {
 		const resPut = await axiosUtils.userPut(
-			`/updateImageDeposit/${id}`,
+			`deposit/image/${id}`,
 			{
 				statement: logo[0],
 			},

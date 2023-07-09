@@ -11,14 +11,12 @@ import {
 export const getPayments = async (props = {}) => {
 	const { page, show, search, dispatch, state, setSnackbar } = props;
 	try {
-		const processPayment = await axiosUtils.adminGet(
-			`/getAllPayments?page=${page}&show=${show}&search=${search}`,
-		);
+		const processPayment = await axiosUtils.adminGet(`payments`);
 		dispatch(
 			actions.setData({
 				data: {
 					...state.set.data,
-					dataPayment: processPayment,
+					dataPayment: processPayment?.metadata,
 				},
 			}),
 		);
@@ -111,18 +109,14 @@ export const handleCreate = async (props = {}) => {
 		setIsProcess,
 	} = props;
 	try {
-		const resPost = await axiosUtils.adminPost('/payment', {
-			methodName: bankName,
-			accountName: accountName,
-			accountNumber: accountNumber,
-			rateDeposit: rateDeposit || 0,
-			rateWithdraw: rateWithdraw || 0,
+		const resPost = await axiosUtils.adminPost('payment', {
+			method_name: bankName,
+			account_name: accountName,
+			number: accountNumber,
 			token: data?.token,
 		});
 		setIsProcess(false);
-		const res = await axiosUtils.adminGet(
-			`/getAllPayments?page=${page}&show=${show}`,
-		);
+		const res = await axiosUtils.adminGet(`payments`);
 		dispatchCreate(
 			dispatch,
 			state,
@@ -161,18 +155,17 @@ export const handleUpdate = async (props = {}) => {
 		setSnackbar,
 	} = props;
 	try {
-		const resPut = await axiosUtils.adminPut(`/updatePayment/${id}`, {
-			methodName: bankName,
-			accountName: accountName,
-			accountNumber: accountNumber,
-			rateDeposit: rateDeposit,
-			rateWithdraw: rateWithdraw,
+		const resPut = await axiosUtils.adminPut(`payment/${id}`, {
+			method_name: bankName,
+			account_name: accountName,
+			number: accountNumber,
 			token: data?.token,
+			headers: {
+				token: data?.token,
+			},
 		});
 		setIsProcess(false);
-		const res = await axiosUtils.adminGet(
-			`/getAllPayments?page=${page}&show=${show}&search=${search}`,
-		);
+		const res = await axiosUtils.adminGet(`payments`);
 		dispatchEdit(
 			dispatch,
 			state,
@@ -207,14 +200,12 @@ export const handleUpdateType = async (props = {}) => {
 		setSnackbar,
 	} = props;
 	try {
-		const resPut = await axiosUtils.adminPut(`/updatePayment/${id}`, {
+		const resPut = await axiosUtils.adminPut(`payment/${id}`, {
 			type: statusUpdate.toLowerCase() || statusCurrent.toLowerCase(),
 			token: data?.token,
 		});
 		setIsProcess(false);
-		const res = await axiosUtils.adminGet(
-			`/getAllPayments?page=${page}&show=${show}`,
-		);
+		const res = await axiosUtils.adminGet(`payments`);
 		dispatchEdit(
 			dispatch,
 			state,
@@ -239,14 +230,12 @@ export const handleDelete = async (props = {}) => {
 	const { id, data, page, show, search, dispatch, state, setSnackbar } =
 		props;
 	try {
-		const resDel = await axiosUtils.adminDelete(`/deletePayment/${id}`, {
+		const resDel = await axiosUtils.adminDelete(`payment/${id}`, {
 			headers: {
 				token: data.token,
 			},
 		});
-		const resPayment = await axiosUtils.adminGet(
-			`/getAllPayments?page=${page}&show=${show}&search=${search}`,
-		);
+		const resPayment = await axiosUtils.adminGet(`payments`);
 		dispatchDelete(
 			dispatch,
 			state,

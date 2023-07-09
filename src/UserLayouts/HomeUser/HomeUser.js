@@ -35,11 +35,11 @@ function RenderBodyTable({ data }) {
 						<td>{handleUtils.indexTable(page, show, index)}</td>
 						<td>
 							<TrObjectImage
-								// item={`${URL_SERVER}${item.logo?.replace(
-								// 	'uploads/',
-								// 	'',
-								// )}`}
-								item="https://avatars.githubusercontent.com/u/81848005?v=4"
+								item={`${URL_SERVER}${item.logo?.replace(
+									'uploads/',
+									'',
+								)}`}
+								// item="https://avatars.githubusercontent.com/u/81848005?v=4"
 							/>
 						</td>
 						<td className="item-w150">

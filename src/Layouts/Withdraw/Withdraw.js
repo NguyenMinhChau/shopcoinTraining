@@ -83,13 +83,18 @@ function Withdraw() {
 			setSnackbar,
 		});
 	}, [page, show, useBebounceWithdraw]);
-	let dataWithdrawFlag = dataWithdraw?.data?.withdraws || dataWithdraw?.data;
+	let dataWithdrawFlag = dataWithdraw?.data || [];
 	// Modal
 	const toggleEditTrue = async (e, status, id) => {
 		await localStoreUtils.setStore({
 			...currentUser,
 			idUpdate: id,
 		});
+		await dispatch(
+			actions.setData({
+				currentUser: localStoreUtils.getStore(),
+			}),
+		);
 		deleteUtils.statusTrue(e, status, id, dispatch, state, actions);
 	};
 	const toggleEditFalse = (e) => {
@@ -167,15 +172,15 @@ function Withdraw() {
 						send: {
 							icon: <Icons.SendIcon />,
 							title: 'Send',
-							number: numberUtils.formatUSD(item?.amountUsd),
+							number: numberUtils.formatUSD(item?.amount_usd),
 						},
 						received: {
 							icon: <Icons.ReceivedIcon />,
 							title: 'Received',
-							number: numberUtils.formatVND(item?.amountVnd),
+							number: numberUtils.formatVND(item?.amount_vnd),
 						},
 					};
-					const username = dataUser.dataUser.find(
+					const username = dataUser.find(
 						(x) => x?.payment.email === item.user,
 					)?.payment.username;
 					const infoUser = {
@@ -186,7 +191,7 @@ function Withdraw() {
 					return (
 						<tr key={index}>
 							<td>{handleUtils.indexTable(page, show, index)}</td>
-							<td className="item-w100">{item.code}</td>
+							<td className="item-w100">{item._id}</td>
 							<td>
 								<TrObjectIcon item={sendReceived} />
 							</td>
@@ -199,8 +204,8 @@ function Withdraw() {
 								)}
 							</td>
 							<td className="item-w150">
-								{item?.createBy ? (
-									item?.createBy
+								{item?.create_by ? (
+									item?.create_by
 								) : (
 									<Skeleton width={50} />
 								)}
@@ -238,9 +243,7 @@ function Withdraw() {
 				nameSearch="withdraw"
 				dataFlag={dataWithdrawFlag}
 				dataHeaders={DataWithdraws(Icons).headers}
-				totalData={
-					dataWithdraw?.total || dataWithdraw?.data?.totalSearch
-				}
+				totalData={dataWithdraw?.total}
 				handleCloseSnackbar={handleCloseSnackbar}
 				openSnackbar={snackbar.open}
 				typeSnackbar={snackbar.type}

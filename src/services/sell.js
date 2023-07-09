@@ -18,8 +18,8 @@ export const getSells = async (props = {}) => {
 			actions.setData({
 				data: {
 					...state.set.data,
-					dataSell: processSells,
-					dataUser: processUser,
+					dataSell: processSells?.metadata,
+					dataUser: processUser?.metadata,
 				},
 			}),
 		);
@@ -83,7 +83,7 @@ export const handleUpdateStatusFeeSell = async (props = {}) => {
 		const resPut = await axiosUtils.adminPut(`handle/sell/${id}`, object);
 		setIsProcess && setIsProcess(false);
 		const res = await axiosUtils.adminGet(
-			`/getAllSell?page=${page}&show=${show}&search=${search}`,
+			`bill/sellCoin/paging?page=${page}&show=${show}&search=${search}`,
 		);
 		dispatchEdit(
 			dispatch,
@@ -109,13 +109,22 @@ export const handleDelete = async (props = {}) => {
 	const { data, id, dispatch, state, page, show, search, setSnackbar } =
 		props;
 	try {
-		const resDel = await axiosUtils.adminDelete(`/deleteSell/${id}`, {
-			headers: {
+		const resDel = await axiosUtils.adminDelete(
+			`sell/${id}`,
+			{
+				headers: {
+					token: data?.token,
+				},
 				token: data?.token,
 			},
-		});
+			{
+				headers: {
+					token: data?.token,
+				},
+			},
+		);
 		const res = await axiosUtils.adminGet(
-			`/getAllSell?page=${page}&show=${show}&search=${search}`,
+			`/bill/sellCoin/paging?page=${page}&show=${show}&search=${search}`,
 		);
 		dispatchDelete(
 			dispatch,

@@ -137,6 +137,7 @@ function NewCoinInactive() {
 			data,
 			dispatch,
 			state,
+			token: data?.token,
 			nameCoin,
 			symbolCoin,
 			fullName,
@@ -250,7 +251,7 @@ function NewCoinInactive() {
 						disabled={
 							isProcess ||
 							!fullName ||
-							!logo ||
+							// !logo ||
 							!symbolCoin ||
 							!nameCoin
 						}

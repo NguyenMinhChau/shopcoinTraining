@@ -12,17 +12,19 @@ import { actions } from '../app/';
 export const getCoins = async (props = {}) => {
 	const { page, show, search, dispatch, state, setSnackbar } = props;
 	try {
-		const processCoins = await axiosUtils.coinGet(
+		const processCoins = await axiosUtils.adminGet(
 			`coins/paging?page=${page}&show=${show}&search=${search}`,
 		);
-		const processCoinsInactive = await axiosUtils.coinNAGet(`/getList`);
+		const processCoinsInactive = await axiosUtils.adminGet(
+			`/coin/inactive/all`,
+		);
 		dispatch(
 			actions.setData({
 				data: {
 					...state.set.data,
-					dataSettingCoin: processCoins,
-					dataDashboard: processCoins,
-					dataCoinInactive: processCoinsInactive,
+					dataSettingCoin: processCoins?.metadata,
+					dataDashboard: processCoins?.metadata,
+					dataCoinInactive: processCoinsInactive?.metadata,
 				},
 			}),
 		);
@@ -62,14 +64,12 @@ export const getCoinsUser = async (props = {}) => {
 export const getCoinsInactive = async (props = {}) => {
 	const { dispatch, state, page, show, search, setSnackbar } = props;
 	try {
-		const processCoins = await axiosUtils.adminGet(
-			`coin/inactive?page=${page}&show=${show}&search=${search}`,
-		);
+		const processCoins = await axiosUtils.adminGet(`coin/inactive/all`);
 		dispatch(
 			actions.setData({
 				data: {
 					...state.set.data,
-					dataCoinInactive: processCoins,
+					dataCoinInactive: processCoins?.metadata,
 				},
 			}),
 		);
@@ -96,33 +96,33 @@ export const getCoinsUserBuy = async (props = {}) => {
 		}),
 	);
 };
-// GET COIN BY ID
-export const getCoinById = async (props = {}) => {
+// GET COIN INACTIVE BY ID
+export const getCoinInactiveById = async (props = {}) => {
 	const { idCoin, dispatch, state, setDataUserFake, setSnackbar } = props;
 	try {
 		if (idCoin) {
-			const res = await axiosUtils.coinGet(`${idCoin}`);
+			const res = await axiosUtils.adminGet(`coin/inactive/${idCoin}`);
 			const processUser = await axiosUtils.adminGet('user');
-			const { data } = res;
+			const { metadata } = res;
 			const unShowList =
-				data?.unshow?.length > 1
-					? data?.unshow
-					: data?.unshow.length === 1
-					? data?.unshow[0]?.split(',')?.filter((x) => x)
+				metadata?.unshow?.length > 1
+					? metadata?.unshow
+					: metadata?.unshow.length === 1
+					? metadata?.unshow[0]?.split(',')?.filter((x) => x)
 					: [];
 			dispatch(
 				actions.setData({
 					form: {
 						...state.set.form,
-						nameCoin: data.name,
-						symbolCoin: data.symbol,
-						logo: [data.logo],
-						fullName: data.fullName,
+						nameCoin: metadata.name,
+						symbolCoin: metadata.symbol,
+						logo: [metadata.logo],
+						fullName: metadata.fullName,
 					},
 					data: {
 						...state.set.data,
 						dataBlacklistUser: unShowList?.reduce((acc, item) => {
-							processUser?.dataUser?.map((user) => {
+							processUser?.metadata?.map((user) => {
 								if (user?.payment?.email === item) {
 									acc.push(user);
 								}
@@ -130,12 +130,60 @@ export const getCoinById = async (props = {}) => {
 							setDataUserFake(acc);
 							return acc;
 						}, []),
-						dataUser: processUser,
+						dataUser: processUser?.metadata,
 					},
 					edit: {
 						...state.set.edit,
-						id: data._id,
-						itemData: data,
+						id: metadata._id,
+						itemData: metadata,
+					},
+				}),
+			);
+		}
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Something error!',
+			type: 'error',
+		});
+	}
+};
+// GET COIN BY ID
+export const getCoinById = async (props = {}) => {
+	const { idCoin, dispatch, state, setDataUserFake, setSnackbar } = props;
+	try {
+		if (idCoin) {
+			const res = await axiosUtils.adminGet(`coin/${idCoin}`);
+			const processUser = await axiosUtils.adminGet('user');
+			const { metadata } = res;
+			const unShowList =
+				metadata?.unshow?.split(',')?.filter((x) => x) || [];
+			dispatch(
+				actions.setData({
+					form: {
+						...state.set.form,
+						nameCoin: metadata.name,
+						symbolCoin: metadata.symbol,
+						logo: [metadata.logo],
+						fullName: metadata.fullName,
+					},
+					data: {
+						...state.set.data,
+						dataBlacklistUser: unShowList?.reduce((acc, item) => {
+							processUser?.metadata?.map((user) => {
+								if (user?.payment?.email === item) {
+									acc.push(user);
+								}
+							});
+							setDataUserFake([...new Set(acc)]);
+							return [...new Set(acc)];
+						}, []),
+						dataUser: processUser?.metadata,
+					},
+					edit: {
+						...state.set.edit,
+						id: metadata._id,
+						itemData: metadata,
 					},
 				}),
 			);
@@ -327,21 +375,22 @@ export const handleCreate = async (props = {}) => {
 		fullName: fullName,
 		logo: logo,
 		hideAllUser: hideAllUser,
-		dataBlacklistUser: hideAllUser ? dataUser.dataUser : dataBlacklistUser,
+		dataBlacklistUser: hideAllUser ? dataUser : dataBlacklistUser,
 	};
 	const unShowList = form?.dataBlacklistUser?.reduce((acc, item) => {
 		acc += `${item.payment.email},`;
 		return acc;
 	}, '');
 	try {
-		const resPost = await axiosUtils.coinPost(
-			'/add',
+		const resPost = await axiosUtils.adminPost(
+			'coin',
 			{
-				logo: form.logo[0],
+				statement: form.logo[0],
 				name: form.nameCoin,
 				symbol: form.symbolCoin,
-				fullname: form.fullName,
+				fullName: form.fullName,
 				unshow: unShowList,
+				token: data?.token,
 			},
 			{
 				headers: {
@@ -351,8 +400,8 @@ export const handleCreate = async (props = {}) => {
 			},
 		);
 		setIsProcess(false);
-		const res = await axiosUtils.coinGet(
-			`/getAllCoin?page=${page}&show=${show}`,
+		const res = await axiosUtils.adminGet(
+			`coins/paging?page=${page}&show=${show}`,
 		);
 		dispatchCreate(
 			dispatch,
@@ -392,16 +441,18 @@ export const handleCreateCoinInactive = async (props = {}) => {
 	} = props;
 	const objectBody = logo_sub
 		? {
-				logo_sub: logo_sub,
+				statement_sub: logo_sub,
 				name: nameCoin,
 				symbol: symbolCoin,
 				fullName: fullName,
+				token: data?.token,
 		  }
 		: {
-				logo: logo[0],
+				statement: logo[0],
 				name: nameCoin,
 				symbol: symbolCoin,
 				fullName: fullName,
+				token: data?.token,
 		  };
 	try {
 		const resPost = await axiosUtils.adminPost(
@@ -415,9 +466,7 @@ export const handleCreateCoinInactive = async (props = {}) => {
 			},
 		);
 		setIsProcess && setIsProcess(false);
-		const res = await axiosUtils.adminGet(
-			`coin/inactive?page=${page}&show=${show}`,
-		);
+		const res = await axiosUtils.adminGet(`coin/inactive/all`);
 		dispatchCreate(
 			dispatch,
 			state,
@@ -467,21 +516,22 @@ export const handleUpdate = async (props = {}) => {
 		fullName: fullName,
 		logo: logo,
 		hideAllUser: hideAllUser,
-		dataBlacklistUser: hideAllUser ? dataUser.dataUser : dataBlacklistUser,
+		dataBlacklistUser: hideAllUser ? dataUser : dataBlacklistUser,
 	};
 	const unshowList = form.dataBlacklistUser.reduce((acc, item) => {
 		acc += `${item.payment.email},`;
 		return acc;
 	}, '');
 	try {
-		const resPut = await axiosUtils.coinPut(
-			`/updateCoin/${id}`,
+		const resPut = await axiosUtils.adminPut(
+			`coin/${id}`,
 			{
-				logo: form.logo[0],
+				statement: form.logo[0],
 				name: form.nameCoin,
 				symbol: form.symbolCoin,
 				fullName: form.fullName,
-				unshow: [unshowList],
+				unshow: unshowList,
+				token: data?.token,
 			},
 			{
 				headers: {
@@ -491,8 +541,8 @@ export const handleUpdate = async (props = {}) => {
 			},
 		);
 		setIsProcess(false);
-		const res = await axiosUtils.coinGet(
-			`/getAllCoin?page=${page}&show=${show}&search=${search}`,
+		const res = await axiosUtils.adminGet(
+			`coins/paging?page=${page}&show=${show}&search=${search}`,
 		);
 		dispatchEdit(
 			dispatch,
@@ -503,6 +553,11 @@ export const handleUpdate = async (props = {}) => {
 			'dataSettingCoin',
 			resPut.message,
 		);
+		setSnackbar({
+			open: true,
+			message: resPut?.message || 'Successfully!',
+			type: 'success',
+		});
 		history(`${routers.settingCoin}`);
 	} catch (err) {
 		setIsProcess(false);
@@ -526,6 +581,7 @@ export const handleUpdateInactive = async (props = {}) => {
 		page,
 		show,
 		id,
+		token,
 		search,
 		history,
 		setIsProcess,
@@ -541,10 +597,11 @@ export const handleUpdateInactive = async (props = {}) => {
 		const resPut = await axiosUtils.adminPut(
 			`coin/inactive/${id}`,
 			{
-				logo: form.logo[0],
+				statement: form.logo[0],
 				name: form.nameCoin,
 				symbol: form.symbolCoin,
 				fullName: form.fullName,
+				token: token,
 			},
 			{
 				headers: {
@@ -554,9 +611,7 @@ export const handleUpdateInactive = async (props = {}) => {
 			},
 		);
 		setIsProcess(false);
-		const res = await axiosUtils.adminGet(
-			`coin/inactive?page=${page}&show=${show}&search=${search}`,
-		);
+		const res = await axiosUtils.adminGet(`coin/inactive/all`);
 		dispatchEdit(
 			dispatch,
 			state,
@@ -584,13 +639,13 @@ export const handleDelete = async (props = {}) => {
 	const { id, data, page, show, search, dispatch, state, setSnackbar } =
 		props;
 	try {
-		const resDel = await axiosUtils.coinDelete(`/deleteCoin/${id}`, {
+		const resDel = await axiosUtils.adminDelete(`coin/${id}`, {
 			headers: {
 				token: data.token,
 			},
 		});
-		const res = await axiosUtils.coinGet(
-			`/getAllCoin?page=${page}&show=${show}&search=${search}`,
+		const res = await axiosUtils.adminGet(
+			`/coins/paging?page=${page}&show=${show}&search=${search}`,
 		);
 		dispatchDelete(
 			dispatch,
@@ -629,9 +684,7 @@ export const handleDeleteInactive = async (props = {}) => {
 				token: data.token,
 			},
 		});
-		const res = await axiosUtils.coinNAGet(
-			`coin/inactive?page=${page}&show=${show}&search=${search}`,
-		);
+		const res = await axiosUtils.adminGet(`coin/inactive/all`);
 		dispatchDelete(
 			dispatch,
 			state,
@@ -653,15 +706,12 @@ export const handleDeleteInactive = async (props = {}) => {
 // ONCLICK EDIT COINS
 export const onClickEdit = async (props = {}) => {
 	const { item, dispatch, state } = props;
-	const dataUser = await axiosUtils.adminGet('/getAllUser');
-	const data =
-		item?.unshow?.length > 1
-			? item?.unshow
-			: item?.unshow?.length === 1
-			? item?.unshow[0]?.split(',')?.filter((x) => x)
-			: [];
+	console.log(item);
+	const dataUser = await axiosUtils.adminGet('user');
+	// const data = item?.unshow.split(',').filter((x) => x) || [];
 	dispatch(
 		actions.setData({
+			...state?.set,
 			form: {
 				...state.set.form,
 				nameCoin: item.name,
@@ -670,17 +720,17 @@ export const onClickEdit = async (props = {}) => {
 				logo: [item.logo],
 				fullName: item.fullName,
 			},
-			data: {
-				...state.set.data,
-				dataBlacklistUser: data?.reduce((acc, item) => {
-					dataUser?.dataUser?.map((user) => {
-						if (user?.payment?.email === item) {
-							acc.push(user);
-						}
-					});
-					return acc;
-				}, []),
-			},
+			// data: {
+			// 	...state.set.data,
+			// 	dataBlacklistUser: data?.reduce((acc, item) => {
+			// 		dataUser?.metadata?.map((user) => {
+			// 			if (user?.payment?.email === item) {
+			// 				acc.push(user);
+			// 			}
+			// 		});
+			// 		return acc;
+			// 	}, []),
+			// },
 			edit: {
 				id: item?._id || item?.id,
 				itemData: item,
@@ -766,7 +816,7 @@ export const handleBuyCoin = async (props = {}) => {
 // HANDLE SELL COIN USER
 export const handleSellCoin = async (props = {}) => {
 	const {
-		gmailUser,
+		id_user,
 		amount,
 		amountUsd,
 		symbol,
@@ -779,12 +829,10 @@ export const handleSellCoin = async (props = {}) => {
 		dispatch,
 	} = props;
 	try {
-		const resPost = await axiosUtils.userPost('/SellCoin', {
-			gmailUser: gmailUser,
-			amount: amount,
-			amountUsd: amountUsd, //amount * price
+		const resPost = await axiosUtils.userPost(`sell/${id_user}`, {
+			quantity: amount,
 			symbol: symbol,
-			price: price, // api
+			price: price,
 			type: 'SellCoin',
 			token: token,
 		});

@@ -79,13 +79,18 @@ function Deposits() {
 			setSnackbar,
 		});
 	}, [page, show, useDebounceDeposit]);
-	let dataDepositsFlag = dataDeposits?.data?.deposits || dataDeposits?.data;
+	let dataDepositsFlag = dataDeposits?.data || [];
 	// Modal
 	const toggleEditTrue = async (e, status, id) => {
 		await localStoreUtils.setStore({
 			...currentUser,
 			idUpdate: id,
 		});
+		await dispatch(
+			actions.setData({
+				currentUser: localStoreUtils.getStore(),
+			}),
+		);
 		deleteUtils.statusTrue(e, status, id, dispatch, state, actions);
 	};
 	const toggleEditFalse = (e) => {
@@ -166,7 +171,7 @@ function Deposits() {
 						send: {
 							icon: <Icons.SendIcon />,
 							title: 'Send',
-							number: numberUtils.formatVND(item?.amountVnd),
+							number: numberUtils.formatVND(item?.amount_vnd),
 						},
 						received: {
 							icon: <Icons.ReceivedIcon />,
@@ -174,7 +179,7 @@ function Deposits() {
 							number: numberUtils.formatUSD(item?.amount),
 						},
 					};
-					const username = dataUser.dataUser.find(
+					const username = dataUser.find(
 						(x) => x?.payment.email === item.user,
 					)?.payment.username;
 					const infoUser = {
@@ -185,7 +190,7 @@ function Deposits() {
 					return (
 						<tr key={index}>
 							<td>{handleUtils.indexTable(page, show, index)}</td>
-							<td className="item-w100">{item.code}</td>
+							<td className="item-w100">{item._id}</td>
 							<td>
 								<TrObjectIcon item={sendReceived} />
 							</td>
@@ -198,8 +203,8 @@ function Deposits() {
 								)}
 							</td>
 							<td className="item-w150">
-								{item?.createBy ? (
-									item?.createBy
+								{item?.create_by ? (
+									item?.create_by
 								) : (
 									<Skeleton width={50} />
 								)}
@@ -237,9 +242,7 @@ function Deposits() {
 				nameSearch="deposits"
 				dataFlag={dataDepositsFlag}
 				dataHeaders={DataDeposits(Icons).headers}
-				totalData={
-					dataDeposits?.total || dataDeposits?.data?.totalSearch
-				}
+				totalData={dataDeposits?.total}
 				handleCloseSnackbar={handleCloseSnackbar}
 				openSnackbar={snackbar.open}
 				typeSnackbar={snackbar.type}

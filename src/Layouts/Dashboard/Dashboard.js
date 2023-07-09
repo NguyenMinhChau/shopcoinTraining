@@ -22,6 +22,7 @@ import {
 	handleUtils,
 	numberUtils,
 	refreshPage,
+	requestRefreshToken,
 	searchUtils,
 	useAppContext,
 	useDebounce,
@@ -38,6 +39,7 @@ const cx = className.bind(styles);
 function Dashboard() {
 	const { state, dispatch } = useAppContext();
 	const {
+		currentUser,
 		totalDeposit,
 		totalWithdraw,
 		totalBalance,
@@ -52,6 +54,7 @@ function Dashboard() {
 	const [isModalDate, setIsModalDate] = React.useState(false);
 	const [isPeriod, setIsPeriod] = React.useState(false);
 	const [period, setPeriod] = React.useState(null);
+	const [dataSymbol, setDataSymbol] = React.useState(null);
 	const [date, setDate] = React.useState({
 		from: null,
 		to: null,
@@ -61,6 +64,9 @@ function Dashboard() {
 		type: '',
 		message: '',
 	});
+	let showPage = 10;
+	const start = (page - 1) * showPage + 1;
+	const end = start + showPage - 1;
 	const handleCloseSnackbar = (event, reason) => {
 		if (reason === 'clickaway') {
 			return;
@@ -70,9 +76,19 @@ function Dashboard() {
 			open: false,
 		});
 	};
-	useEffect(() => {
-		document.title = `Dashboard | ${process.env.REACT_APP_TITLE_WEB}`;
+	const getCoin = (dataToken) => {
+		getCoinsUserBuy({
+			token: dataToken?.token,
+			page,
+			show: dashboard ? dataDashboard?.data?.total : show,
+			dispatch,
+			state,
+			actions,
+		});
+	};
+	const getTotal = (dataToken) => {
 		SVtotal({
+			token: dataToken?.token,
 			state,
 			dispatch,
 			actions,
@@ -81,7 +97,12 @@ function Dashboard() {
 			search: userBalance,
 			setIsLoad,
 			setIsProcess,
+			setDataSymbol,
 		});
+	};
+	useEffect(() => {
+		document.title = `Dashboard | ${process.env.REACT_APP_TITLE_WEB}`;
+		requestRefreshToken(currentUser, getTotal, state, dispatch, actions);
 	}, []);
 	const useDebounceDashboard = useDebounce(dashboard, 500);
 	const useDebounceUserBalance = useDebounce(userBalance, 500);
@@ -97,34 +118,42 @@ function Dashboard() {
 		}
 	}, [useDebounceDashboard, useDebounceUserBalance]);
 	useEffect(() => {
-		getCoinsUserBuy({
-			page,
-			show: dashboard ? dataDashboard?.data?.total : show,
-			dispatch,
-			state,
-			actions,
-		});
-		SVtotal({
-			state,
-			dispatch,
-			page,
-			show,
-			search: useDebounceUserBalance,
-			setIsLoad,
-			setIsProcess,
-			setSnackbar,
-		});
+		requestRefreshToken(currentUser, getCoin, state, dispatch, actions);
+		requestRefreshToken(currentUser, getTotal, state, dispatch, actions);
 	}, [page, show, useDebounceDashboard, useDebounceUserBalance]);
-	let data = dataDashboard?.data?.coins || [];
-	if (dashboard) {
+	let data = dataSymbol || [];
+	if (useDebounceDashboard) {
 		data = data.filter((item) => {
 			return (
-				searchUtils.searchInput(dashboard, item.symbol) ||
-				searchUtils.searchInput(dashboard, item.total)
+				searchUtils.searchInput(useDebounceDashboard, item.symbol) ||
+				searchUtils.searchInput(useDebounceDashboard, item.total)
 			);
 		});
 	}
-	let dataUser = dataUserBalance?.users || [];
+	let dataUser = dataUserBalance || [];
+	if (useDebounceUserBalance) {
+		dataUser = dataUser.filter((item) => {
+			return (
+				searchUtils.searchInput(useDebounceUserBalance, item.rank) ||
+				searchUtils.searchInput(
+					useDebounceUserBalance,
+					item.Wallet.balance,
+				) ||
+				searchUtils.searchInput(
+					useDebounceUserBalance,
+					item.payment.email,
+				) ||
+				searchUtils.searchInput(
+					useDebounceUserBalance,
+					item.payment.username,
+				) ||
+				searchUtils.searchInput(
+					useDebounceUserBalance,
+					item.payment.rule,
+				)
+			);
+		});
+	}
 	const openModalDate = (e) => {
 		e.stopPropagation();
 		setIsModalDate(true);
@@ -404,15 +433,24 @@ function Dashboard() {
 					className={`${cx('search-coin')}`}
 				/>
 				<TableData
-					data={data}
-					totalData={
-						dashboard ? data?.length : dataDashboard?.data?.total
-					}
+					// data={data}
+					totalData={data?.length}
 					headers={DataDashboard().headers}
 					search=""
 					noActions
+					PaginationCus={true}
+					startPagiCus={start}
+					endPagiCus={end}
+					dataPagiCus={data?.filter((row, index) => {
+						if (index + 1 >= start && index + 1 <= end) return true;
+					})}
 				>
-					<RenderBodyTable data={data} />
+					<RenderBodyTable
+						data={data?.filter((row, index) => {
+							if (index + 1 >= start && index + 1 <= end)
+								return true;
+						})}
+					/>
 				</TableData>
 			</div>
 			<div className={`${cx('general-table-container')}`}>
@@ -426,13 +464,24 @@ function Dashboard() {
 					className={`${cx('search-coin')}`}
 				/>
 				<TableData
-					data={dataUser}
-					totalData={dataUserBalance?.totalUser}
+					// data={dataUser}
+					totalData={dataUser?.length}
 					headers={DataUserBalance().headers}
 					search=""
 					noActions
+					PaginationCus={true}
+					startPagiCus={start}
+					endPagiCus={end}
+					dataPagiCus={dataUser?.filter((row, index) => {
+						if (index + 1 >= start && index + 1 <= end) return true;
+					})}
 				>
-					<RenderBodyTableUser data={dataUser} />
+					<RenderBodyTableUser
+						data={dataUser?.filter((row, index) => {
+							if (index + 1 >= start && index + 1 <= end)
+								return true;
+						})}
+					/>
 				</TableData>
 			</div>
 			{isModalDate && (

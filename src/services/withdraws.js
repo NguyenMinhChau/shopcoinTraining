@@ -19,8 +19,8 @@ export const getWithdraws = async (props = {}) => {
 			actions.setData({
 				data: {
 					...state.set.data,
-					dataWithdraw: processWithdraws,
-					dataUser: processUser,
+					dataWithdraw: processWithdraws?.metadata,
+					dataUser: processUser?.metadata,
 				},
 			}),
 		);
@@ -76,7 +76,7 @@ export const handleEdit = async (props = {}) => {
 		});
 		setIsProcess(false);
 		const res = await axiosUtils.adminGet(
-			`/getAllWithdraw?page=${page}&show=${show}&search=${search}`,
+			`withdraw/paging?page=${page}&show=${show}&search=${search}`,
 		);
 		dispatchEdit(
 			dispatch,
@@ -103,6 +103,7 @@ export const handleDelete = async (props = {}) => {
 		props;
 	try {
 		const resDel = await axiosUtils.adminDelete(`withdraw/${id}`, {
+			token: data?.token,
 			headers: {
 				token: data?.token,
 			},
@@ -131,34 +132,31 @@ export const handleDelete = async (props = {}) => {
 export const handleCreate = async (props = {}) => {
 	const {
 		amount,
-		email,
-		rateWithdraw,
+		email_user,
+		id_user,
 		dispatch,
 		token,
 		setIsProcess,
 		setData,
 		setSnackbar,
+		history,
 	} = props;
 	try {
-		const resPost = await axiosUtils.userPost('/withdraw', {
-			amountUsd: parseFloat(amount),
-			user: email,
-			rateWithdraw: rateWithdraw,
+		const resPost = await axiosUtils.userPost(`withdraw/${id_user}`, {
+			amount: parseFloat(amount),
+			method: id_user,
 			token: token,
 		});
-		const resGet = await axiosUtils.userGet(`/getAllWithdraw/${email}`);
-		setData(resGet.data);
+		const resGet = await axiosUtils.userGet(`withdraws/${id_user}`);
+		setData(resGet.metadata);
 		setIsProcess(false);
-		setSnackbar({
-			open: true,
-			message: resPost?.message || 'Create Withdraw successfully',
-			type: 'success',
-		});
+		alert(resPost?.message || 'Create Withdraw successfully');
 		dispatch(
 			actions.toggleModal({
 				selectBank: false,
 			}),
 		);
+		history(`${routers.withdrawUser}/${resPost.metadata?._id}`);
 	} catch (err) {
 		setIsProcess(false);
 		setSnackbar({
@@ -175,26 +173,65 @@ export const handleCreate = async (props = {}) => {
 };
 // HANDLE RESEND CODE
 export const handleResendCode = async (props = {}) => {
-	const { id, email, dispatch, token, setSnackbar } = props;
+	const { id, email, token, setSnackbar, setIsProcessResend } = props;
 	try {
-		const resPost = await axiosUtils.userPost(`/resendOTPWithdraw/${id}`, {
+		const resPost = await axiosUtils.userPost(`withdraw/resetCode/${id}`, {
 			email: email,
 			token: token,
+			headers: { token: token },
 		});
 		setSnackbar({
 			open: true,
 			message: resPost?.message || 'Resend code successfully',
 			type: 'success',
 		});
+		setIsProcessResend(false);
+	} catch (err) {
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Resend code failed',
+			type: 'error',
+		});
+		setIsProcessResend(false);
+	}
+};
+// HANDLE CHECK CODE WITHDRAW USER
+export const handleCheckCodeWithdraw = async (props = {}) => {
+	const {
+		code,
+		id_wr,
+		token,
+		dispatch,
+		setIsProcess,
+		setIsProcessCancel,
+		history,
+		setSnackbar,
+	} = props;
+	try {
+		const resGet = await axiosUtils.userPost(
+			`withdraw/otp/${code}/${id_wr}`,
+			{
+				token: token,
+				headers: {
+					token: token,
+				},
+			},
+		);
+		setIsProcess(false);
+		setIsProcessCancel(false);
+		alert(resGet?.message || 'Verify code successfully');
 		dispatch(
 			actions.toggleModal({
 				selectBank: false,
 			}),
 		);
+		history(routers.withdrawUser);
 	} catch (err) {
+		setIsProcess(false);
+		setIsProcessCancel(false);
 		setSnackbar({
 			open: true,
-			message: err?.response?.data?.message || 'Resend code failed',
+			message: err?.response?.data?.message || 'Verify code failed',
 			type: 'error',
 		});
 		dispatch(
@@ -204,45 +241,11 @@ export const handleResendCode = async (props = {}) => {
 		);
 	}
 };
-// HANDLE CHECK CODE WITHDRAW USER
-export const handleCheckCodeWithdraw = async (props = {}) => {
-	const { code, token, dispatch, setIsProcess, setIsProcessCancel, history } =
-		props;
-	try {
-		const resGet = await axiosUtils.userGet(
-			`/enterOTPWithdraw/${props?.code}`,
-			{
-				code: code,
-				headers: {
-					token: token,
-				},
-			},
-		);
-		setIsProcess(false);
-		setIsProcessCancel(false);
-		alert(resGet?.message ? resGet?.message : 'Verify code successfully');
-		dispatch(
-			actions.toggleModal({
-				selectBank: false,
-			}),
-		);
-		history(routers.withdrawUser);
-	} catch (err) {
-		setIsProcess(false);
-		setIsProcessCancel(false);
-		alert(err?.response?.data?.message || 'Verify code failed');
-		dispatch(
-			actions.toggleModal({
-				selectBank: false,
-			}),
-		);
-	}
-};
 // HANDLE CANCEL WITHDRAW
 export const handleCancelWithdraw = async (props = {}) => {
-	const { token, id, dispatch, actions, setIsProcessCancel, history } = props;
+	const { token, id, setIsProcessCancel, history, setSnackbar } = props;
 	try {
-		const resDel = await axiosUtils.userDelete(`/cancelWithdraw/${id}`, {
+		const resDel = await axiosUtils.userGet(`withdraw/${id}`, {
 			token: token,
 			headers: {
 				token: token,
@@ -250,19 +253,13 @@ export const handleCancelWithdraw = async (props = {}) => {
 		});
 		setIsProcessCancel(false);
 		alert(resDel?.message || 'Cancel withdraw successfully');
-		dispatch(
-			actions.toggleModal({
-				selectBank: false,
-			}),
-		);
 		history(routers.withdrawUser);
 	} catch (err) {
 		setIsProcessCancel(false);
-		alert(err?.response?.data?.message || 'Cancel withdraw failed');
-		dispatch(
-			actions.toggleModal({
-				selectBank: false,
-			}),
-		);
+		setSnackbar({
+			open: true,
+			message: err?.response?.data?.message || 'Cancel withdraw failed',
+			type: 'error',
+		});
 	}
 };

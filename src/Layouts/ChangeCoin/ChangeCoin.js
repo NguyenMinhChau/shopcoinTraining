@@ -22,6 +22,7 @@ import {
 	changeCoinGiftsSUB,
 	deleteChangeCoin,
 	getChangeCoin,
+	getChangeCoinById,
 } from '../../services/changeCoin';
 import { changeCoinGifts, searchCoinGift } from '../../services/users';
 import { FirstUpc } from '../../utils/format/LetterFirstUpc';
@@ -42,12 +43,16 @@ function ChangeCoin() {
 	const [isProcess, setIsProcess] = useState(false);
 	const [modalDelete1, setModalDelete1] = useState(false);
 	const [id, setId] = useState('');
+	const [changeCoinById, setChangeCoinById] = useState(null);
 	const [email, setEmail] = useState('');
 	const [snackbar, setSnackbar] = useState({
 		open: false,
 		type: '',
 		message: '',
 	});
+	let showPage = 10;
+	const start = (page - 1) * showPage + 1;
+	const end = start + showPage - 1;
 	useEffect(() => {
 		document.title = `Change Coin | ${process.env.REACT_APP_TITLE_WEB}`;
 	}, []);
@@ -83,13 +88,25 @@ function ChangeCoin() {
 			setSnackbar,
 		});
 	}, [page, show, useDebounceCoin]);
-	let dataCoinFlag =
-		dataChangeCoins?.data?.bills ||
-		dataChangeCoins?.data?.billSearch ||
-		dataChangeCoins?.data;
+	let dataCoinFlag = dataChangeCoins || [];
+	if (useDebounceCoin) {
+		dataCoinFlag = dataCoinFlag.filter((item) => {
+			return (
+				searchUtils.searchInput(useDebounceCoin, item.status) ||
+				searchUtils.searchInput(useDebounceCoin, item.type) ||
+				searchUtils.searchInput(useDebounceCoin, item.createdAt) ||
+				searchUtils.searchInput(useDebounceCoin, item.amount)
+			);
+		});
+	}
 	// Modal
 	const modalDeleteTrue = (e, id) => {
 		deleteUtils.deleteTrue(e, id, dispatch, state, actions);
+		getChangeCoinById({
+			id_coin: id,
+			setSnackbar,
+			setChangeCoinById,
+		});
 	};
 	const modalDeleteFalse = async (e) => {
 		deleteUtils.deleteFalse(e, dispatch, state, actions);
@@ -148,8 +165,8 @@ function ChangeCoin() {
 		changeCoinGiftsSUB({
 			data,
 			email: email,
-			coin: changeCoin,
-			quantityCoin: parseFloat(quantityCoin),
+			coin: changeCoin || changeCoinById?.symbol,
+			quantityCoin: parseFloat(quantityCoin || changeCoinById?.amount),
 			createBy: `web_${currentUser?.email}`,
 			time: moment(new Date()).format('YYYY-MM-DD HH:mm:ss'),
 			dispatch,
@@ -199,7 +216,7 @@ function ChangeCoin() {
 		return (
 			<>
 				{data.map((item, index) => {
-					const username = dataUser.dataUser.find(
+					const username = dataUser.find(
 						(x) => x?.payment.email === item.user,
 					)?.payment.username;
 					const infoUser = {
@@ -225,8 +242,8 @@ function ChangeCoin() {
 								)}
 							</td>
 							<td className="item-w100">
-								{item?.createBy ? (
-									item?.createBy
+								{item?.create_by ? (
+									item?.create_by
 								) : (
 									<Skeleton width={50} />
 								)}
@@ -244,11 +261,11 @@ function ChangeCoin() {
 
 							<td>
 								<ActionsTable
-									edit
-									onClickEdit={(e) => {
-										modalDeleteTrue(e, item?._id);
-										setEmail(item.user);
-									}}
+									// edit
+									// onClickEdit={(e) => {
+									// 	modalDeleteTrue(e, item?._id);
+									// 	setEmail(item.user);
+									// }}
 									onClickDel={(e) => {
 										modalDeleteTrue1(e, item?._id);
 										setId(item._id);
@@ -281,19 +298,25 @@ function ChangeCoin() {
 				className={cx('changeCoin')}
 				valueSearch={changeCoinSearch}
 				nameSearch="changeCoinSearch"
-				dataFlag={dataCoinFlag}
+				// dataFlag={dataCoinFlag}
 				dataHeaders={DataChangeCoins(Icons).headers}
-				totalData={
-					dataChangeCoins?.total ||
-					dataChangeCoins?.data?.totalSearch ||
-					dataChangeCoins?.data?.total
-				}
+				totalData={dataCoinFlag?.length}
 				handleCloseSnackbar={handleCloseSnackbar}
 				openSnackbar={snackbar.open}
 				typeSnackbar={snackbar.type}
 				messageSnackbar={snackbar.message}
+				PaginationCus={true}
+				startPagiCus={start}
+				endPagiCus={end}
+				dataPagiCus={dataCoinFlag?.filter((row, index) => {
+					if (index + 1 >= start && index + 1 <= end) return true;
+				})}
 			>
-				<RenderBodyTable data={dataCoinFlag} />
+				<RenderBodyTable
+					data={dataCoinFlag?.filter((row, index) => {
+						if (index + 1 >= start && index + 1 <= end) return true;
+					})}
+				/>
 			</General>
 			{modalDelete && (
 				<Modal
@@ -312,11 +335,13 @@ function ChangeCoin() {
 							nameSearch="coin"
 							toggleModal={toggleListCoin}
 							stateModal={selectStatus}
-							valueSelect={changeCoin}
+							valueSelect={changeCoin || changeCoinById?.symbol}
 							onChangeSearch={searchSelect}
 							dataFlag={DataCoinModalFlag}
 							onClick={handleChangeCoinModal}
-							valueFormInput={quantityCoin}
+							valueFormInput={
+								quantityCoin || changeCoinById?.amount
+							}
 							onChangeFormInput={changeQuantity}
 						/>
 					</div>

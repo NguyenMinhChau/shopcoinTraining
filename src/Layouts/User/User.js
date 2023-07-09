@@ -84,12 +84,17 @@ function User() {
 		});
 	}, [page, show, useDebounceUser]);
 	//Search Data Users
-	let dataUserFlag = dataUser?.dataUser || dataUser?.data;
+	let dataUserFlag = dataUser?.data || [];
 	const toggleEditTrue = async (e, status, id) => {
 		await localStoreUtils.setStore({
 			...currentUser,
 			idUpdate: id,
 		});
+		await dispatch(
+			actions.setData({
+				currentUser: localStoreUtils.getStore(),
+			}),
+		);
 		deleteUtils.statusTrue(e, status, id, dispatch, state, actions);
 	};
 	const toggleEditFalse = (e) => {
@@ -263,7 +268,9 @@ function User() {
 								view
 								linkView={`${routers.user}/${item._id}`}
 								onClickView={() => handleViewUser(item)}
-								onClickDel={(e) => modalDeleteTrue(e, item._id)}
+								onClickDel={(e) =>
+									modalDeleteTrue(e, item.payment.email)
+								}
 							></ActionsTable>
 						</td>
 					</tr>
@@ -279,11 +286,7 @@ function User() {
 				nameSearch="user"
 				dataFlag={dataUserFlag}
 				dataHeaders={headers}
-				totalData={
-					dataUser?.total ||
-					dataUser?.data?.totalSearch ||
-					dataUser?.totalSearch
-				}
+				totalData={dataUser?.total}
 				handleCloseSnackbar={handleCloseSnackbar}
 				openSnackbar={snackbar.open}
 				typeSnackbar={snackbar.type}

@@ -26,6 +26,7 @@ import {
 	refreshPasswordUser,
 	blockUser,
 	unblockUser,
+	blockAndUnblockUser,
 } from '../../services/users';
 import {
 	useAppContext,
@@ -75,10 +76,10 @@ function UserDetail() {
 	});
 	const x = edit?.itemData;
 	const getAllCoin = async () => {
-		const res = await axiosUtils.coinGet(
-			`/getAllCoin?page=${page}&show=${dataSettingCoin?.total || 10}`,
+		const res = await axiosUtils.adminGet(
+			`coins/paging?page=${page}&show=${dataCoin?.total || 10}`,
 		);
-		setDataCoin(res.data);
+		setDataCoin(res.metadata);
 	};
 	useEffect(() => {
 		document.title = `Detail | ${process.env.REACT_APP_TITLE_WEB}`;
@@ -120,7 +121,7 @@ function UserDetail() {
 				pagination: {
 					...state.set.pagination,
 					page: 1,
-					show: dataSettingCoin?.total,
+					show: dataCoin?.total,
 				},
 			}),
 		);
@@ -163,6 +164,7 @@ function UserDetail() {
 			fee: parseFloat(feeValue),
 			setIsProcessFee,
 			setFeeValue,
+			setSnackbar,
 		});
 	};
 	const updateFee = (id) => {
@@ -187,6 +189,7 @@ function UserDetail() {
 			dispatch,
 			state,
 			setIsProcessCoin,
+			setSnackbar,
 			setSnackbar,
 		});
 	};
@@ -244,52 +247,29 @@ function UserDetail() {
 			id,
 		);
 	};
-	const handleBlockUser = (data, id) => {
-		blockUser({
+	const handleBlockAndUnblockUser = (data) => {
+		blockAndUnblockUser({
 			token: data?.token,
-			id,
+			id: x?._id,
 			dispatch,
 			state,
-			blockUser: true,
+			blockUser: !x?.lock,
 			setIsProcessBlockUser,
 			setSnackbar,
 		});
 	};
-	const onBlockUser = (id) => {
+	const onBlockAndUnblockUser = () => {
 		setIsProcessBlockUser(true);
 		requestRefreshToken(
 			currentUser,
-			handleBlockUser,
+			handleBlockAndUnblockUser,
 			state,
 			dispatch,
 			actions,
-			id,
-		);
-	};
-	const handleUnBlockUser = (data, id) => {
-		unblockUser({
-			token: data?.token,
-			id,
-			dispatch,
-			state,
-			blockUser: false,
-			setIsProcessBlockUser,
-			setSnackbar,
-		});
-	};
-	const onUnblockUser = (id) => {
-		setIsProcessBlockUser(true);
-		requestRefreshToken(
-			currentUser,
-			handleUnBlockUser,
-			state,
-			dispatch,
-			actions,
-			id,
 		);
 	};
 	const DATA_COINS =
-		dataCoin?.map((coin) => {
+		dataCoin?.data?.map((coin) => {
 			return {
 				name: coin.symbol,
 			};
@@ -454,9 +434,9 @@ function UserDetail() {
 					<ItemRender
 						bankInfo
 						title="Bank Name"
-						methodBank={x && x.payment.bank.bankName}
-						nameAccount={x && x.payment.bank.name}
-						numberAccount={x && x.payment.bank.account}
+						methodBank={x && x.payment.bank.method_name}
+						nameAccount={x && x.payment.bank.account_name}
+						numberAccount={x && x.payment.bank.number}
 					/>
 					<ItemRender feeCustom title="Fee" info={x && x.fee} />
 					<ItemRender
@@ -563,22 +543,18 @@ function UserDetail() {
 					</Button>
 					<Button
 						className={`${cx('btn')} cancelbgc`}
-						onClick={
-							x?.blockUser
-								? () => onUnblockUser(idUser)
-								: () => onBlockUser(idUser)
-						}
+						onClick={onBlockAndUnblockUser}
 						isProcess={isProcessBlockUser}
 						disabled={isProcessBlockUser}
 					>
 						<div className="flex-center">
-							{!x?.blockUser ? (
+							{!x?.lock ? (
 								<Icons.BlockUserIcon />
 							) : (
 								<Icons.UnBlockUserIcon />
 							)}{' '}
 							<span className="ml8">
-								{!x?.blockUser ? 'Block User' : 'Unblock User'}
+								{!x?.lock ? 'Block User' : 'Unblock User'}
 							</span>
 						</div>
 					</Button>

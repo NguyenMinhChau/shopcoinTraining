@@ -15,6 +15,7 @@ import {
 	numberUtils,
 } from '../../utils';
 import styles from './DepositsWithdrawDetail.module.css';
+import { getUserByIdNoCoin } from '../../services/users';
 
 const cx = className.bind(styles);
 
@@ -22,7 +23,11 @@ function DepositsWithdrawDetail() {
 	const { idDeposits, idWithdraw } = useParams();
 	const { state, dispatch } = useAppContext();
 	const location = useLocation();
-	const { edit } = state.set;
+	const {
+		edit,
+		userById,
+		data: { dataUser },
+	} = state.set;
 	const [snackbar, setSnackbar] = useState({
 		open: false,
 		type: '',
@@ -37,16 +42,6 @@ function DepositsWithdrawDetail() {
 			open: false,
 		});
 	};
-	useEffect(() => {
-		document.title = `Detail | ${process.env.REACT_APP_TITLE_WEB}`;
-		getDepositsWithdrawById({
-			idDeposits,
-			idWithdraw,
-			dispatch,
-			state,
-			setSnackbar,
-		});
-	}, []);
 	function ItemRender({
 		title,
 		info,
@@ -103,6 +98,25 @@ function DepositsWithdrawDetail() {
 		);
 	}
 	const x = edit?.itemData;
+	useEffect(() => {
+		document.title = `Detail | ${process.env.REACT_APP_TITLE_WEB}`;
+		getDepositsWithdrawById({
+			idDeposits,
+			idWithdraw,
+			dispatch,
+			state,
+			setSnackbar,
+		});
+		if (x?.method && typeof x?.method === 'string') {
+			getUserByIdNoCoin({
+				idUser: x?.method,
+				dispatch,
+				setSnackbar,
+			});
+		}
+	}, [x?.method]);
+	const username = dataUser.find((item) => item?.payment.email === x.user)
+		?.payment.username;
 	const URL_SERVER =
 		process.env.REACT_APP_TYPE === 'development'
 			? process.env.REACT_APP_URL_SERVER
@@ -148,12 +162,9 @@ function DepositsWithdrawDetail() {
 							)}
 						</div>
 					</div>
-					<ItemRender
-						title="Username"
-						info={x && x.method.accountName}
-					/>
+					<ItemRender title="Username" info={username} />
 					<ItemRender title="Email" info={x && x.user} />
-					<ItemRender title="Code" info={x && x.code} />
+					<ItemRender title="Code" info={x && x._id} />
 					<ItemRender
 						title="Created"
 						info={
@@ -167,7 +178,7 @@ function DepositsWithdrawDetail() {
 					/>
 					<ItemRender
 						title="Amount VND"
-						info={x && numberUtils.formatVND(x.amountVnd)}
+						info={x && numberUtils.formatVND(x.amount_vnd)}
 					/>
 					<ItemRender title="Symbol" info={x && x.symbol} />
 					<ItemRender
@@ -175,18 +186,20 @@ function DepositsWithdrawDetail() {
 						bankInfo
 						methodBank={
 							x && location.pathname.includes('withdraw')
-								? x?.method?.methodName
-								: x?.bankAdmin?.methodName
+								? x?.method &&
+								  userById?.payment?.bank?.method_name
+								: x?.method?.method_name
 						}
 						nameAccount={
 							x && location.pathname.includes('withdraw')
-								? x?.method?.accountName
-								: x?.bankAdmin?.accountName
+								? x?.method &&
+								  userById?.payment?.bank.account_name
+								: x?.method?.account_name
 						}
 						numberAccount={
 							x && location.pathname.includes('withdraw')
-								? x?.method?.accountNumber
-								: x?.bankAdmin?.accountNumber
+								? x?.method && userById?.payment?.bank?.number
+								: x?.method?.number
 						}
 					/>
 					{idDeposits && (

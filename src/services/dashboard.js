@@ -13,6 +13,7 @@ export const SVtotal = async (props = {}) => {
 		search,
 		dispatch,
 		setSnackbar,
+		setDataSymbol,
 	} = props;
 	try {
 		const objectBody =
@@ -22,29 +23,32 @@ export const SVtotal = async (props = {}) => {
 						to: toDate,
 				  }
 				: {};
-		const resPostDeposit = await axiosUtils.adminPost(
-			'/totalDeposit',
+		const resPostDeposit = await axiosUtils.adminGet(
+			'total/deposit',
 			objectBody,
 		);
-		const resPostWithdraw = await axiosUtils.adminPost(
-			'/totalWithdraw',
+		const resPostWithdraw = await axiosUtils.adminGet(
+			'total/withdraw',
 			objectBody,
 		);
-		const resPostBalance = await axiosUtils.adminGet(
-			`user/balance/normal`,
-			{},
-		);
-		const resPostCommission = await axiosUtils.adminGet(
+		const resPostBalance = await axiosUtils.adminGet(`total/balance`, {});
+		const resPostCommission = await axiosUtils.adminPost(
 			'total/commission',
 			{},
 		);
+		const resUserBalance = await axiosUtils.adminGet(
+			'user/balance/normal',
+			{},
+		);
+		const resSymbol = await axiosUtils.coinGet('total/sold', {});
+		setDataSymbol(resSymbol?.metadata);
 		dispatch(
 			actions.setData({
 				totalDeposit: resPostDeposit?.metadata,
 				totalWithdraw: resPostWithdraw?.metadata,
-				totalBalance: resPostBalance?.metadata?.total,
-				totalCommission: resPostCommission?.metadata?.commission,
-				dataUserBalance: resPostBalance?.metadata,
+				totalBalance: resPostBalance?.metadata,
+				totalCommission: resPostCommission?.metadata,
+				dataUserBalance: resUserBalance?.metadata,
 			}),
 		);
 		setIsProcess(false);

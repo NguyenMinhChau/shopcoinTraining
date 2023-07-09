@@ -149,7 +149,7 @@ export default function BuyCoinUser() {
 								placeholder="Enter amount buy"
 								onChange={handleChange}
 							/>
-							{amountBuy && (
+							{amountBuy && priceSocket ? (
 								<>
 									<div>Suggest Amount</div>
 									<div className="vip">Min: {suggestMin}</div>
@@ -164,6 +164,10 @@ export default function BuyCoinUser() {
 										Amount USD: {amountUsd}
 									</div>{' '}
 								</>
+							) : (
+								!priceSocket && (
+									<div>Please wait for pricing...</div>
+								)
 							)}
 						</div>
 						<Button

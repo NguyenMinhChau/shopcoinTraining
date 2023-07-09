@@ -17,6 +17,7 @@ import {
 	requestRefreshToken,
 	handleUtils,
 	useDebounce,
+	searchUtils,
 } from '../../utils';
 import { ActionsTable, Modal } from '../../components';
 import styles from './CoinInactive.module.css';
@@ -33,6 +34,9 @@ function CoinInactive() {
 		pagination: { page, show },
 		data: { dataCoinInactive },
 	} = state.set;
+	let showPage = 10;
+	const start = (page - 1) * showPage + 1;
+	const end = start + showPage - 1;
 	const { modalDelete } = state.toggle;
 	const [snackbar, setSnackbar] = useState({
 		open: false,
@@ -73,8 +77,15 @@ function CoinInactive() {
 			setSnackbar,
 		});
 	}, [page, show, useDebounceCoin]);
-	const dataSettingFlag =
-		dataCoinInactive?.data?.coins || dataCoinInactive?.data;
+	let dataCoinActiveFlag = dataCoinInactive || [];
+	if (useDebounceCoin) {
+		dataCoinActiveFlag = dataCoinActiveFlag.filter((item) => {
+			return (
+				searchUtils.searchInput(useDebounceCoin, item?.name) ||
+				searchUtils.searchInput(useDebounceCoin, item?.createdAt)
+			);
+		});
+	}
 	// Modal Delete
 	const modalDeleteTrue = (e, id) => {
 		return deleteUtils.deleteTrue(e, id, dispatch, state, actions);
@@ -106,7 +117,7 @@ function CoinInactive() {
 			id,
 		);
 	};
-	const editSetting = async (item) => {
+	const editSetting = (item) => {
 		onClickEdit({ dispatch, state, item });
 	};
 	const URL_SERVER =
@@ -136,12 +147,12 @@ function CoinInactive() {
 							</td>
 							<td>
 								<ActionsTable
-									edit
+									// edit
+									// onClickEdit={() => editSetting(item)}
 									linkView={`${routers.coinInactive}/${item._id}`}
 									onClickDel={(e) =>
 										modalDeleteTrue(e, item?._id)
 									}
-									onClickEdit={() => editSetting(item)}
 								></ActionsTable>
 							</td>
 						</tr>
@@ -156,21 +167,28 @@ function CoinInactive() {
 				className={cx('setting-coin')}
 				valueSearch={settingCoin}
 				nameSearch="settingCoin"
-				textBtnNew="New Coin Inactive"
-				linkCreate={`${routers.coinInactive}/${routers.newcoinInactive}`}
-				dataFlag={dataSettingFlag}
+				// textBtnNew="New Coin Inactive"
+				// linkCreate={`${routers.coinInactive}/${routers.newcoinInactive}`}
+				// dataFlag={dataCoinActiveFlag}
 				dataHeaders={DataCoins().headers}
-				totalData={
-					dataCoinInactive?.total ||
-					dataCoinInactive?.data?.totalSearch
-				}
+				totalData={dataCoinActiveFlag?.length}
 				classNameButton="completebgc"
 				handleCloseSnackbar={handleCloseSnackbar}
 				openSnackbar={snackbar.open}
 				typeSnackbar={snackbar.type}
 				messageSnackbar={snackbar.message}
+				PaginationCus={true}
+				startPagiCus={start}
+				endPagiCus={end}
+				dataPagiCus={dataCoinActiveFlag?.filter((row, index) => {
+					if (index + 1 >= start && index + 1 <= end) return true;
+				})}
 			>
-				<RenderBodyTable data={dataSettingFlag} />
+				<RenderBodyTable
+					data={dataCoinActiveFlag?.filter((row, index) => {
+						if (index + 1 >= start && index + 1 <= end) return true;
+					})}
+				/>
 			</General>
 			{modalDelete && (
 				<Modal

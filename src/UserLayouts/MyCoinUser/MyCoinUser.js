@@ -63,19 +63,19 @@ export default function MyCoinUser() {
 							<td>{handleUtils.indexTable(page, show, index)}</td>
 							<td>
 								<TrObjectImage
-									// item={`${URL_SERVER}${item?.coin?.logo?.replace(
-									// 	'uploads/',
-									// 	'',
-									// )}`}
-									item="https://avatars.githubusercontent.com/u/81848005?v=4"
+									item={`${URL_SERVER}${item?.coin?.logo?.replace(
+										'uploads/',
+										'',
+									)}`}
+									// item="https://avatars.githubusercontent.com/u/81848005?v=4"
 								/>
 							</td>
-							<td className="item-w150">{item?.coin?.name}</td>
+							<td className="item-w150">{item?.name}</td>
 							<td className="vip item-w150">{item?.amount}</td>
 							<td className="confirm item-w150">
 								~{' '}
 								{numberUtils
-									.coinUSD(item?.amount * item?.coin?.price)
+									.coinUSD(item?.amount * item?.price)
 									.replace('USD', '')}
 							</td>
 							<td className="item-w100">
@@ -85,7 +85,7 @@ export default function MyCoinUser() {
 							</td>
 							<td>
 								<Link
-									to={`${routers.sellCoinUser}/${item?.coin?.symbol}`}
+									to={`${routers.sellCoinUser}/${item?._id}`}
 									className={`${cx(
 										'actions-item',
 									)} cancelbgcbold fwb`}

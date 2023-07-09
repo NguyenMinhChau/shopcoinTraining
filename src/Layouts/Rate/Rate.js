@@ -53,15 +53,18 @@ function Rate() {
 			open: false,
 		});
 	};
+	const getRateSV = (dataToken) => {
+		getRates({ dispatch, token: dataToken?.token, state, setSnackbar });
+	};
 	useEffect(() => {
-		getRates({ dispatch, state, setSnackbar });
+		requestRefreshToken(currentUser, getRateSV, state, dispatch, actions);
 	}, [page, show]);
 	const modalRateTrue = (e, item) => {
 		e.stopPropagation();
 		setModalRate(true);
 		setRateUpdate({
-			rateDeposit: item?.rateDeposit,
-			rateWithdraw: item?.rateWithdraw,
+			rateDeposit: item?.rate_deposit,
+			rateWithdraw: item?.rate_withdraw,
 		});
 	};
 	const modalRateFalse = (e) => {
@@ -108,12 +111,12 @@ function Rate() {
 								{handleUtils.indexTable(page, show, index)}
 							</td>
 							<td>
-								{formatVND(item?.rateDeposit) || (
+								{formatVND(item?.rate_deposit) || (
 									<Skeleton width={50} />
 								)}
 							</td>
 							<td>
-								{formatVND(item?.rateWithdraw) || (
+								{formatVND(item?.rate_withdraw) || (
 									<Skeleton width={50} />
 								)}
 							</td>
@@ -131,6 +134,12 @@ function Rate() {
 											...currentUser,
 											idUpdate: item?._id,
 										});
+										await dispatch(
+											actions.setData({
+												currentUser:
+													localStoreUtils.getStore(),
+											}),
+										);
 										modalRateTrue(e, item);
 									}}
 								></ActionsTable>
@@ -145,9 +154,9 @@ function Rate() {
 		<>
 			<General
 				noSearch
-				dataFlag={[dataRate?.data]}
+				dataFlag={dataRate}
 				dataHeaders={DataRates().headers}
-				totalData={[dataRate?.data]?.length}
+				totalData={dataRate?.length}
 				classNameButton="completebgc"
 				classNameButtonUpdateAllFields="vipbgc"
 				handleCloseSnackbar={handleCloseSnackbar}
@@ -155,7 +164,7 @@ function Rate() {
 				typeSnackbar={snackbar.type}
 				messageSnackbar={snackbar.message}
 			>
-				<RenderBodyTable data={[dataRate?.data]} />
+				<RenderBodyTable data={dataRate} />
 			</General>
 			{modalRate && (
 				<Modal

@@ -14,6 +14,7 @@ import {
 	numberUtils,
 } from '../../utils';
 import styles from './BuySellDetail.module.css';
+import { getUserByIdNoCoin } from '../../services/users';
 
 const cx = className.bind(styles);
 
@@ -21,7 +22,7 @@ function BuySellDetail() {
 	const { idBuy, idSell } = useParams();
 	const { pathname } = useLocation();
 	const { state, dispatch } = useAppContext();
-	const { edit } = state.set;
+	const { edit, userById } = state.set;
 	const [snackbar, setSnackbar] = useState({
 		open: false,
 		type: '',
@@ -36,10 +37,6 @@ function BuySellDetail() {
 			open: false,
 		});
 	};
-	useEffect(() => {
-		document.title = `Detail | ${process.env.REACT_APP_TITLE_WEB}`;
-		getBuySellById({ idBuy, idSell, dispatch, state, setSnackbar });
-	}, []);
 	function ItemRender({ title, info, feeCustom }) {
 		return (
 			<div className="detail-item">
@@ -53,6 +50,15 @@ function BuySellDetail() {
 		);
 	}
 	const x = edit?.itemData;
+	useEffect(() => {
+		document.title = `Detail | ${process.env.REACT_APP_TITLE_WEB}`;
+		getBuySellById({ idBuy, idSell, dispatch, state, setSnackbar });
+		getUserByIdNoCoin({
+			idUser: x?.buyer,
+			dispatch,
+			setSnackbar,
+		});
+	}, [x?.buyer]);
 	return (
 		<>
 			<SnackbarCp
@@ -93,7 +99,10 @@ function BuySellDetail() {
 						)}
 					</div>
 				</div>
-				<ItemRender title="Email" info={x && x.buyer.gmailUSer} />
+				<ItemRender
+					title="Email"
+					info={userById && userById.payment?.email}
+				/>
 				<ItemRender
 					title="Created"
 					info={
@@ -106,7 +115,7 @@ function BuySellDetail() {
 					info={
 						x && pathname.includes('sell')
 							? x?.amount
-							: numberUtils.formatUSD(x?.amountUsd)
+							: numberUtils.formatUSD(x?.amount_usd)
 					}
 				/>
 				<ItemRender
@@ -120,7 +129,7 @@ function BuySellDetail() {
 					info={
 						x && pathname.includes('buy')
 							? x?.amount
-							: numberUtils.formatUSD(x?.amountUsd)
+							: numberUtils.formatUSD(x?.amount_usd)
 					}
 				/>
 				<ItemRender title="Fee" info={x && x.fee} feeCustom />

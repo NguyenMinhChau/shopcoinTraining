@@ -18,8 +18,8 @@ export const getBuys = async (props = {}) => {
 			actions.setData({
 				data: {
 					...state.set.data,
-					dataBuy: processBuys,
-					dataUser: processUser,
+					dataBuy: processBuys?.metadata,
+					dataUser: processUser?.metadata,
 				},
 			}),
 		);
@@ -40,16 +40,16 @@ export const getBuySellById = async (props = {}) => {
 			const process = await axiosUtils.adminGet(
 				`bill/${idBuy || idSell}`,
 			);
-			const { data } = process;
+			const { metadata } = process;
 			dispatch(
 				actions.setData({
 					edit: {
 						...state.set.edit,
-						itemData: data,
+						itemData: metadata,
 					},
 					data: {
 						...state.set.data,
-						dataUser: processUser,
+						dataUser: processUser?.metadata,
 					},
 				}),
 			);
@@ -140,11 +140,20 @@ export const handleDelete = async (props = {}) => {
 	const { data, id, dispatch, state, page, show, search, setSnackbar } =
 		props;
 	try {
-		const resDel = await axiosUtils.adminDelete(`bill/${id}`, {
-			headers: {
+		const resDel = await axiosUtils.adminDelete(
+			`buy/${id}`,
+			{
+				headers: {
+					token: data?.token,
+				},
 				token: data?.token,
 			},
-		});
+			{
+				headers: {
+					token: data?.token,
+				},
+			},
+		);
 		const res = await axiosUtils.adminGet(
 			`bill/buyCoin/paging?page=${page}&show=${show}&search=${search}`,
 		);

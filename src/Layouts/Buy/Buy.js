@@ -84,12 +84,17 @@ function Buy() {
 			setSnackbar,
 		});
 	}, [page, show, useDebounceBuy]);
-	let dataBuyFlag = dataBuy?.data?.buys || dataBuy?.data;
+	let dataBuyFlag = dataBuy?.data || [];
 	const toggleEditStatusTrue = async (e, status, id) => {
 		await localStoreUtils.setStore({
 			...currentUser,
 			idUpdate: id,
 		});
+		await dispatch(
+			actions.setData({
+				currentUser: localStoreUtils.getStore(),
+			}),
+		);
 		deleteUtils.statusTrue(e, status, id, dispatch, state, actions);
 	};
 	const toggleEditStatusFalse = (e) => {
@@ -119,8 +124,7 @@ function Buy() {
 			setIsProcess,
 		});
 	};
-	const editStatusBuy = async (id) => {
-		await 1;
+	const editStatusBuy = (id) => {
 		setIsProcess(true);
 		requestRefreshToken(
 			currentUser,
@@ -154,8 +158,7 @@ function Buy() {
 			setSnackbar,
 		});
 	};
-	const deleteBuy = async (id) => {
-		await 1;
+	const deleteBuy = (id) => {
 		requestRefreshToken(
 			currentUser,
 			handleDeleteBuy,
@@ -185,7 +188,7 @@ function Buy() {
 						send: {
 							icon: <Icons.SendIcon />,
 							title: 'Send',
-							number: numberUtils.formatUSD(item?.amountUsd),
+							number: numberUtils.formatUSD(item?.amount_usd),
 						},
 						received: {
 							icon: <Icons.ReceivedIcon />,
@@ -193,12 +196,13 @@ function Buy() {
 							number: item?.amount,
 						},
 					};
-					const username = dataUser?.dataUser?.find(
-						(x) => x?.payment?.email === item?.buyer?.gmailUSer,
+					const username = dataUser?.find(
+						(x) =>
+							x?.payment?.email === item?.buyer?.payment?.email,
 					)?.payment?.username;
 					const infoUser = {
 						name: username,
-						email: item.buyer.gmailUSer,
+						email: item.buyer.payment?.email,
 						path: `@${username?.replace(' ', '-')}`,
 					};
 					return (
@@ -223,7 +227,7 @@ function Buy() {
 								)}
 							</td>
 							<td className="item-w100">
-								{item?.createBy || <Skeleton width={50} />}
+								{item?.create_by || <Skeleton width={50} />}
 							</td>
 							<td>
 								<TrStatus
@@ -261,11 +265,7 @@ function Buy() {
 				nameSearch="buy"
 				dataFlag={dataBuyFlag}
 				dataHeaders={DataBuys(Icons).headers}
-				totalData={
-					dataBuy?.total ||
-					dataBuy?.data?.totalSearch ||
-					dataBuy?.totalSearch
-				}
+				totalData={dataBuy?.total}
 				handleCloseSnackbar={handleCloseSnackbar}
 				openSnackbar={snackbar.open}
 				typeSnackbar={snackbar.type}

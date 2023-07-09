@@ -3,14 +3,14 @@ import { axiosUtils, dispatchEdit } from '../utils';
 
 // GET DATA RATE
 export const getRates = async (props = {}) => {
-	const { state, dispatch, setSnackbar } = props;
+	const { state, dispatch, setSnackbar, token } = props;
 	try {
-		const processRate = await axiosUtils.adminGet('rate');
+		const processRate = await axiosUtils.adminGet('rate', { token: token });
 		dispatch(
 			actions.setData({
 				data: {
 					...state.set.data,
-					dataRate: processRate,
+					dataRate: processRate?.metadata,
 				},
 			}),
 		);
@@ -39,14 +39,14 @@ export const SVupdateRate = async (props = {}) => {
 	} = props;
 	try {
 		const resPut = await axiosUtils.adminPut(`rate/${idRate}`, {
-			rateDeposit: rateDeposit,
-			rateWithdraw: rateWithdraw,
-			token: token,
+			rate_deposit: rateDeposit,
+			rate_withdraw: rateWithdraw,
+			headers: { token: token },
 		});
 		setIsProcess(false);
 		setModalRate(false);
 		setRateUpdate({ rateDeposit: null, rateWithdraw: null });
-		const res = await axiosUtils.adminGet('/getRates');
+		const res = await axiosUtils.adminGet('rate', { token: token });
 		dispatchEdit(
 			dispatch,
 			state,

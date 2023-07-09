@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import className from 'classnames/bind';
 import { useParams, useNavigate } from 'react-router-dom';
 // import Alert from '@mui/material/Alert';
-import { getUsers } from '../../services/users';
+import { getUsersAll } from '../../services/users';
 import {
 	searchBlacklistUsers,
 	getCoinById,
@@ -86,7 +86,7 @@ function NewCoin() {
 	};
 	const useDebounceUser = useDebounce(userBlacklist, 500);
 	useEffect(() => {
-		getUsers({
+		getUsersAll({
 			dispatch,
 			state,
 			page,
@@ -97,10 +97,10 @@ function NewCoin() {
 	}, [page, show, useDebounceUser]);
 	useEffect(() => {
 		getCoinById({ idCoin, dispatch, state, setDataUserFake, setSnackbar });
-	}, [page, show]);
+	}, []);
 	let searchDataFlag = searchBlacklistUsers({
 		userBlacklist,
-		dataUser: dataUser?.dataUser || dataUser?.data,
+		dataUser: dataUser,
 	});
 	// Modal + Input Form + File Upload
 	const toggleDeleteTrue = (e, id) => {

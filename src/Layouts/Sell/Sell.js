@@ -92,6 +92,11 @@ function Sell() {
 			...currentUser,
 			idUpdate: id,
 		});
+		await dispatch(
+			actions.setData({
+				currentUser: localStoreUtils.getStore(),
+			}),
+		);
 		deleteUtils.statusTrue(e, status, id, dispatch, state, actions);
 	};
 	const toggleEditFalse = (e) => {
@@ -121,8 +126,7 @@ function Sell() {
 			setIsProcess,
 		});
 	};
-	const editStatusSell = async (id) => {
-		await 1;
+	const editStatusSell = (id) => {
 		setIsProcess(true);
 		requestRefreshToken(
 			currentUser,
@@ -156,8 +160,7 @@ function Sell() {
 			setSnackbar,
 		});
 	};
-	const deleteSell = async (id) => {
-		await 1;
+	const deleteSell = (id) => {
 		requestRefreshToken(
 			currentUser,
 			handleDeleteSell,
@@ -192,15 +195,16 @@ function Sell() {
 						received: {
 							icon: <Icons.ReceivedIcon />,
 							title: 'Received',
-							number: numberUtils.formatUSD(item?.amountUsd),
+							number: numberUtils.formatUSD(item?.amount_usd),
 						},
 					};
-					const username = dataUser?.dataUser?.find(
-						(x) => x?.payment?.email === item?.buyer?.gmailUSer,
+					const username = dataUser?.find(
+						(x) =>
+							x?.payment?.email === item?.buyer?.payment?.email,
 					)?.payment?.username;
 					const infoUser = {
 						name: username,
-						email: item.buyer.gmailUSer,
+						email: item.buyer.payment?.email,
 						path: `@${username?.replace(' ', '-')}`,
 					};
 					return (
@@ -225,7 +229,7 @@ function Sell() {
 								)}
 							</td>
 							<td className="item-w100">
-								{item?.createBy || <Skeleton width={50} />}
+								{item?.create_by || <Skeleton width={50} />}
 							</td>
 							<td>
 								<TrStatus
@@ -263,11 +267,7 @@ function Sell() {
 				textDelModal="Are you sure to delete this sell?"
 				typeDataDel={dataSell}
 				nameTypeDataDel="dataSell"
-				totalData={
-					dataSell?.total ||
-					dataSell?.data?.total ||
-					dataSell?.totalSearch
-				}
+				totalData={dataSell?.total}
 				handleCloseSnackbar={handleCloseSnackbar}
 				openSnackbar={snackbar.open}
 				typeSnackbar={snackbar.type}
