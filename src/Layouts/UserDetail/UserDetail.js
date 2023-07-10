@@ -412,12 +412,12 @@ function UserDetail() {
 								<>
 									<span
 										className={`status fwb ${
-											x.rank
+											x?.rank
 												.toLowerCase()
 												.replace(' ', '') + 'bgc'
 										}`}
 									>
-										{textUtils.FirstUpc(x.rank)}
+										{textUtils.FirstUpc(x?.rank)}
 									</span>
 								</>
 							) : (
@@ -427,41 +427,49 @@ function UserDetail() {
 					</div>
 					<ItemRender
 						title="Username"
-						info={x && x.payment.username}
+						info={x && x.payment?.username}
 					/>
-					<ItemRender title="Email" info={x && x.payment.email} />
-					<ItemRender title="Rule" info={x && x.payment.rule} />
+					<ItemRender title="Email" info={x && x.payment?.email} />
+					<ItemRender title="Rule" info={x && x.payment?.rule} />
+					{console.log(x)}
 					<ItemRender
 						bankInfo
 						title="Bank Name"
-						methodBank={x && x.payment.bank.method_name}
-						nameAccount={x && x.payment.bank.account_name}
-						numberAccount={x && x.payment.bank.number}
+						methodBank={x && x.payment.bank?.method_name}
+						nameAccount={x && x.payment.bank?.account_name}
+						numberAccount={x && x.payment.bank?.number}
 					/>
-					<ItemRender feeCustom title="Fee" info={x && x.fee} />
+					<ItemRender feeCustom title="Fee" info={x && x?.fee} />
 					<ItemRender
 						title="Deposits"
-						info={x && numberUtils.formatUSD(x.Wallet.deposit)}
+						info={
+							x && numberUtils.formatUSD(x?.Wallet?.deposit || 0)
+						}
 					/>
 					<ItemRender
 						title="Withdraw"
-						info={x && numberUtils.formatUSD(x.Wallet.withdraw)}
+						info={
+							x && numberUtils.formatUSD(x?.Wallet?.withdraw || 0)
+						}
 					/>
 					<ItemRender
 						title="Balance"
-						info={x && numberUtils.formatUSD(x.Wallet.balance)}
+						info={
+							x && numberUtils.formatUSD(x?.Wallet?.balance || 0)
+						}
 					/>
 					<ItemRender
 						title="Commision"
 						info={
-							x && numberUtils.formatUSD(x.Wallet.commission || 0)
+							x &&
+							numberUtils.formatUSD(x?.Wallet?.commission || 0)
 						}
 					/>
 					<ItemRender
 						title="Created At"
 						info={
 							x &&
-							moment(x.createdAt).format('DD/MM/YYYY HH:mm:ss')
+							moment(x?.createdAt).format('DD/MM/YYYY HH:mm:ss')
 						}
 					/>
 				</div>

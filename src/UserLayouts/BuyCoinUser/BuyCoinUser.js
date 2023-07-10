@@ -116,11 +116,10 @@ export default function BuyCoinUser() {
 			<div className={`${cx('info-container')}`}>
 				<div className={`${cx('detail-container')}`}>
 					<Image
-						// src={`${URL_SERVER}${coin?.logo?.replace(
-						// 	'uploads/',
-						// 	'',
-						// )}`}
-						src="https://avatars.githubusercontent.com/u/81848005?v=4"
+						src={`${URL_SERVER}${coin?.logo?.replace(
+							'uploads/',
+							'',
+						)}`}
 						alt=""
 						className={`${cx('image-coin')}`}
 					/>

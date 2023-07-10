@@ -1,83 +1,83 @@
 .buySellDetail-container {
-    --cols: 2;
-    --spacing: 8px;
-    display: flex;
-    flex-wrap: wrap;
+	--cols: 2;
+	--spacing: 8px;
+	display: flex;
+	flex-wrap: wrap;
 }
 
 .detail-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 32px;
-    width: calc((100% / var(--cols)) - (var(--spacing) * 2));
-    margin: var(--spacing);
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	border: 1px solid #eee;
+	border-radius: 8px;
+	padding: 32px;
+	width: calc((100% / var(--cols)) - (var(--spacing) * 2));
+	margin: var(--spacing);
 }
 
 .btn {
-    margin-bottom: 5px;
-    margin-left: 8px;
+	margin-bottom: 5px;
+	margin-left: 8px;
 }
 
 .detail-title {
-    color: #424242;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 22px;
+	color: #424242;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 22px;
 }
 
 .document-user-item {
-    --cols: 2;
-    --spacing: 8px;
-    display: flex;
-    flex-wrap: nowrap;
-    width: 100%;
+	--cols: 2;
+	--spacing: 8px;
+	display: flex;
+	flex-wrap: nowrap;
+	width: 100%;
 }
 
 .document-user-item-image-view {
-    display: flex;
-    width: calc((100% / var(--cols)) - (var(--spacing) * 2));
-    max-height: 400px;
-    margin: var(--spacing);
-    object-fit: contain;
-    image-rendering: auto;
-    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.2));
-    border-radius: 8px;
-    cursor: pointer;
+	display: flex;
+	width: calc((100% / var(--cols)) - (var(--spacing) * 2));
+	max-height: 400px;
+	margin: var(--spacing);
+	object-fit: fill;
+	image-rendering: auto;
+	filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.2));
+	border-radius: 8px;
+	cursor: pointer;
 }
 
 .document-user-title {
-    color: #424242;
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 22px;
+	color: #424242;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 22px;
 }
 
 .list-btn-container {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
 }
 
 /* MOBILE */
 @media (max-width: 46.25em) {
-    .buySellDetail-container {
-        --cols: 1;
-        flex-wrap: wrap;
-    }
+	.buySellDetail-container {
+		--cols: 1;
+		flex-wrap: wrap;
+	}
 
-    .detail-container {
-        padding: 8px;
-    }
+	.detail-container {
+		padding: 8px;
+	}
 
-    .btn {
-        width: 100% !important;
-        margin-left: 0;
-    }
+	.btn {
+		width: 100% !important;
+		margin-left: 0;
+	}
 
-    .btn+.btn {
-        margin-left: 0;
-    }
+	.btn + .btn {
+		margin-left: 0;
+	}
 }

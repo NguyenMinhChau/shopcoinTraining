@@ -115,8 +115,8 @@ function DepositsWithdrawDetail() {
 			});
 		}
 	}, [x?.method]);
-	const username = dataUser.find((item) => item?.payment.email === x.user)
-		?.payment.username;
+	const username = dataUser.find((item) => item?.payment?.email === x?.user)
+		?.payment?.username;
 	const URL_SERVER =
 		process.env.REACT_APP_TYPE === 'development'
 			? process.env.REACT_APP_URL_SERVER
@@ -149,12 +149,12 @@ function DepositsWithdrawDetail() {
 								<>
 									<span
 										className={`status fwb ${
-											x.status
+											x?.status
 												.toLowerCase()
 												.replace(' ', '') + 'bgc'
 										}`}
 									>
-										{textUtils.FirstUpc(x.status)}
+										{textUtils.FirstUpc(x?.status)}
 									</span>
 								</>
 							) : (
@@ -163,24 +163,24 @@ function DepositsWithdrawDetail() {
 						</div>
 					</div>
 					<ItemRender title="Username" info={username} />
-					<ItemRender title="Email" info={x && x.user} />
-					<ItemRender title="Code" info={x && x._id} />
+					<ItemRender title="Email" info={x && x?.user} />
+					<ItemRender title="Code" info={x && x?._id} />
 					<ItemRender
 						title="Created"
 						info={
 							x &&
-							moment(x.createdAt).format('DD/MM/YYYY HH:mm:ss')
+							moment(x?.createdAt).format('DD/MM/YYYY HH:mm:ss')
 						}
 					/>
 					<ItemRender
 						title="Amount USDT"
-						info={x && numberUtils.formatUSD(x.amount)}
+						info={x && numberUtils.formatUSD(x?.amount || 0)}
 					/>
 					<ItemRender
 						title="Amount VND"
-						info={x && numberUtils.formatVND(x.amount_vnd)}
+						info={x && numberUtils.formatVND(x?.amount_vnd || 0)}
 					/>
-					<ItemRender title="Symbol" info={x && x.symbol} />
+					<ItemRender title="Symbol" info={(x && x?.symbol) || 0} />
 					<ItemRender
 						title="Payment method"
 						bankInfo
@@ -232,7 +232,7 @@ function DepositsWithdrawDetail() {
 								<div className={`${cx('document-container')}`}>
 									<Image
 										src={`${URL_SERVER}/${x?.statement}`}
-										alt={x.statement.replace(
+										alt={x?.statement.replace(
 											'/images/',
 											'',
 										)}
