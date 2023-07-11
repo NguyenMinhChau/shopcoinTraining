@@ -170,15 +170,13 @@ export default function BuyCoin({navigation, route}) {
         color={isDisabled ? 'red' : ''}
         name="exclamation-triangle"
       />
-      {priceCoinSocket && (
+      {amountCoin && priceCoinSocket ? (
         <>
-          {amountCoin && (
-            <View style={[stylesGeneral.mb5]}>
-              <Text style={[stylesGeneral.text_black]}>Suggest amount</Text>
-              <Text style={[stylesStatus.cancel]}>Min: {suggestMin}</Text>
-              <Text style={[stylesStatus.cancel]}>Max: {suggestMax}</Text>
-            </View>
-          )}
+          <View style={[stylesGeneral.mb5]}>
+            <Text style={[stylesGeneral.text_black]}>Suggest amount</Text>
+            <Text style={[stylesStatus.cancel]}>Min: {suggestMin}</Text>
+            <Text style={[stylesStatus.cancel]}>Max: {suggestMax}</Text>
+          </View>
           <View style={[styles.amountUsdt, stylesStatus.completebgc]}>
             <Text
               style={[
@@ -190,16 +188,25 @@ export default function BuyCoin({navigation, route}) {
             </Text>
           </View>
         </>
+      ) : (
+        !priceCoinSocket && (
+          <View>
+            <Text style={[stylesGeneral.mt10, stylesStatus.black]}>
+              Please wait for pricing...
+            </Text>
+          </View>
+        )
       )}
       <TouchableOpacity
         activeOpacity={0.6}
         style={[
           styles.btn,
-          (!amountCoin || isDisabled || isProcess) && stylesGeneral.op6,
+          (!amountCoin || isDisabled || isProcess || !priceCoinSocket) &&
+            stylesGeneral.op6,
           stylesStatus.confirmbgcbold,
         ]}
         onPress={handleSubmit}
-        disabled={!amountCoin || isDisabled || isProcess}>
+        disabled={!amountCoin || isDisabled || isProcess || !priceCoinSocket}>
         <Text style={[styles.btn_text, stylesStatus.white]}>
           {isProcess ? <ActivityIndicator color="white" /> : 'Submit'}
         </Text>

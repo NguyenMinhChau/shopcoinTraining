@@ -40,6 +40,7 @@ export const userLogin = async (props = {}) => {
     navigation.navigate(routersMain.MainPage);
     toastShow(toast, resPost?.message || 'Login successfully!');
   } catch (err) {
+    console.log(err);
     toastShow(toast, err?.response?.data?.message || 'Something error!');
     setIsProcess(false);
   }

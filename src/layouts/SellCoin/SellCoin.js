@@ -162,15 +162,13 @@ export default function SellCoin({navigation, route}) {
             color={isDisabled ? 'red' : ''}
             name="exclamation-triangle"
           />
-          {priceCoinSocket && (
+          {amountSell && priceCoinSocket ? (
             <>
-              {amountSell && (
-                <View style={[stylesGeneral.mb5]}>
-                  <Text style={[stylesGeneral.text_black]}>Suggest amount</Text>
-                  <Text style={[stylesStatus.cancel]}>Min: 0.01</Text>
-                  <Text style={[stylesStatus.cancel]}>Max: {suggestMax}</Text>
-                </View>
-              )}
+              <View style={[stylesGeneral.mb5]}>
+                <Text style={[stylesGeneral.text_black]}>Suggest amount</Text>
+                <Text style={[stylesStatus.cancel]}>Min: 0.01</Text>
+                <Text style={[stylesStatus.cancel]}>Max: {suggestMax}</Text>
+              </View>
               {parseFloat(amountSell * priceCoinSocket) >= 0 && amountSell && (
                 <Text
                   style={[
@@ -184,6 +182,14 @@ export default function SellCoin({navigation, route}) {
                 </Text>
               )}
             </>
+          ) : (
+            !priceCoinSocket && (
+              <View>
+                <Text style={[stylesGeneral.mt10, stylesStatus.black]}>
+                  Please wait for pricing...
+                </Text>
+              </View>
+            )
           )}
         </View>
       </View>

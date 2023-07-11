@@ -2,6 +2,8 @@
 import axios from 'axios';
 import {URL_SERVER} from '@env';
 
+// console.log(URL_SERVER);
+
 // AUTHENTICATION
 export const authInstance = axios.create({
   baseURL: `${URL_SERVER}authentication/`,

@@ -87,6 +87,9 @@ const stylesStatus = StyleSheet.create({
     color: '#fff',
     backgroundColor: '#ffc000',
   },
+  black: {
+    color: '#000',
+  },
 });
 
 export default stylesStatus;
