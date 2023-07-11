@@ -63,7 +63,7 @@ export default function MyCoinUser() {
 							<td>{handleUtils.indexTable(page, show, index)}</td>
 							<td>
 								<TrObjectImage
-									item={`${URL_SERVER}${item?.coin?.logo?.replace(
+									item={`${URL_SERVER}${item?.logo?.replace(
 										'uploads/',
 										'',
 									)}`}
