@@ -91,7 +91,7 @@ export default function ChangePwd({navigation}) {
           <Text style={[stylesStatus.cancel, stylesGeneral.fz16]}>{error}</Text>
         </View>
       )}
-      {/* <FormInput
+      <FormInput
         label="Current Password"
         placeholder="Enter your current password"
         showPwd
@@ -99,7 +99,7 @@ export default function ChangePwd({navigation}) {
         secureTextEntry
         onChangeText={val => handleChangeInput('oldPwd', val)}
         nameSymbol="lock"
-      /> */}
+      />
       <FormInput
         label="New Password"
         placeholder="Enter your new password"

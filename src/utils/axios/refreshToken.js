@@ -21,8 +21,9 @@ const requestRefreshToken = async (
     const accessToken = currentUser?.token;
     if (accessToken) {
       const decodedToken = await jwt_decode(accessToken);
-      const date = new Date();
-      if (decodedToken.exp < date.getTime() / 1000) {
+      // const date = new Date();
+      const currentTimeInSeconds = Math.floor(Date.now() / 1000);
+      if (decodedToken.exp < currentTimeInSeconds) {
         const res = await refreshToken(`refreshToken/${currentUser?.id}`);
         if (res.status !== 200) {
           await setAsyncStore(null);
@@ -33,7 +34,12 @@ const requestRefreshToken = async (
               {
                 text: 'OK',
                 onPress: () => {
-                  userLogout({navigation, toast, id_user: currentUser?.id});
+                  userLogout({
+                    navigation,
+                    toast,
+                    id_user: currentUser?.id,
+                    dispatch,
+                  });
                 },
               },
             ],

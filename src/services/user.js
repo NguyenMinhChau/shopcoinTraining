@@ -27,11 +27,13 @@ export const SVgetUserById = async (props = {}) => {
       setAsyncStore({
         ...currentUser,
         balance: resGet?.metadata?.Wallet?.balance,
+        rank: resGet?.metadata?.rank,
       });
       dispatch(
         setCurrentUser({
           ...currentUser,
           balance: resGet?.metadata?.Wallet?.balance,
+          rank: resGet?.metadata?.rank,
         }),
       );
     }
@@ -58,6 +60,7 @@ export const SVchangePassword = async (props = {}) => {
   try {
     const resPut = await userPut(`password/${id}`, {
       password: newPWD,
+      oldPassword: oldPWD,
       token: token,
     });
     setLoading(true);

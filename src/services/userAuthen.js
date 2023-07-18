@@ -47,10 +47,11 @@ export const userLogin = async (props = {}) => {
 };
 // USER LOGOUT
 export const userLogout = async (props = {}) => {
-  const {toast, navigation, id_user} = props;
+  const {toast, navigation, id_user, dispatch} = props;
   try {
-    await removeAsyncStore();
     const resPost = await authPost(`logout/${id_user}`);
+    await removeAsyncStore();
+    await getAsyncStore(dispatch);
     navigation.navigate(routersMain.Login);
     toastShow(toast, resPost?.message || 'Logout successfully!');
   } catch (err) {

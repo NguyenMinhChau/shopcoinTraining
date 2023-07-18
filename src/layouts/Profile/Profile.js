@@ -21,7 +21,7 @@ import {useToast} from 'native-base';
 const Profile = ({navigation}) => {
   const toast = useToast();
   const [refreshing, setRefreshing] = useState(false);
-  const {state} = useAppContext();
+  const {state, dispatch} = useAppContext();
   const {currentUser} = state;
   const wait = timeout => {
     return new Promise(resolve => setTimeout(resolve, timeout));
@@ -31,7 +31,7 @@ const Profile = ({navigation}) => {
     wait(2000).then(() => setRefreshing(false));
   }, []);
   const handleLogout = () => {
-    userLogout({toast, navigation, id_user: currentUser?.id});
+    userLogout({toast, navigation, id_user: currentUser?.id, dispatch});
   };
   return (
     <ScrollView
