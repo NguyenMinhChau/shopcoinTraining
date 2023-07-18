@@ -2,21 +2,21 @@ import React from 'react';
 import { FormInput } from '../../components';
 
 export default function ChangePwdUser({
-	// nameCr,
+	nameCr,
 	nameNew,
 	nameConfirm,
 	onChange,
 }) {
 	return (
 		<>
-			{/* <FormInput
-                label='Current Password'
-                placeholder='Enter current password'
-                type='password'
-                showPwd
-                name={nameCr}
-                onChange={onChange}
-            /> */}
+			<FormInput
+				label="Current Password"
+				placeholder="Enter current password"
+				type="password"
+				showPwd
+				name={nameCr}
+				onChange={onChange}
+			/>
 			<FormInput
 				label="New Password"
 				placeholder="Enter new password"

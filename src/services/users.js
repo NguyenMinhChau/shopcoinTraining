@@ -548,7 +548,7 @@ export const changePassword = async (props = {}) => {
 	} = props;
 	try {
 		const resPut = await axiosUtils.userPut(`password/${id}`, {
-			// oldPWD: oldPWD,
+			oldPassword: oldPWD,
 			password: newPWD,
 			token: token,
 		});

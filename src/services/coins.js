@@ -441,14 +441,14 @@ export const handleCreateCoinInactive = async (props = {}) => {
 	} = props;
 	const objectBody = logo_sub
 		? {
-				statement_sub: logo_sub,
+				logo: logo_sub,
 				name: nameCoin,
 				symbol: symbolCoin,
 				fullName: fullName,
 				token: data?.token,
 		  }
 		: {
-				statement: logo[0],
+				logo: logo[0],
 				name: nameCoin,
 				symbol: symbolCoin,
 				fullName: fullName,
@@ -460,7 +460,7 @@ export const handleCreateCoinInactive = async (props = {}) => {
 			objectBody,
 			{
 				headers: {
-					'Content-Type': 'multipart/form-data',
+					// 'Content-Type': 'multipart/form-data',
 					token: data?.token,
 				},
 			},

@@ -418,7 +418,7 @@ export default function ProfileUser() {
 				>
 					<ChangePwdUser
 						onChange={handleChangeFormPwd}
-						// nameCr="currentPwd"
+						nameCr="currentPwd"
 						nameNew="newPwd"
 						nameConfirm="confirmPwd"
 					/>
