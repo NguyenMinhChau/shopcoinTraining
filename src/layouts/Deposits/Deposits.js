@@ -23,6 +23,7 @@ import stylesGeneral from '../../styles/General';
 import {useToast} from 'native-base';
 import requestRefreshToken from '../../utils/axios/refreshToken';
 import {setCurrentUser} from '../../app/payloads/user';
+import moment from 'moment';
 
 const Deposits = ({navigation}) => {
   const toast = useToast();
@@ -64,7 +65,13 @@ const Deposits = ({navigation}) => {
   };
   const data =
     (dataDeposits || [])?.sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      (a, b) => {
+        const momentA = moment(a.createdAt);
+  const momentB = moment(b.createdAt);
+
+  // Sort in descending order by subtracting b from a
+  return momentB.diff(momentA);
+      },
     ) || [];
   const wait = timeout => {
     return new Promise(resolve => setTimeout(resolve, timeout));

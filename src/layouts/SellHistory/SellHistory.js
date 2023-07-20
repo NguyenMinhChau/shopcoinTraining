@@ -13,6 +13,7 @@ import stylesGeneral from '../../styles/General';
 import {setCurrentUser} from '../../app/payloads/user';
 import {useToast} from 'native-base';
 import requestRefreshToken from '../../utils/axios/refreshToken';
+import moment from 'moment';
 
 export default function SellHistory({navigation}) {
   const toast = useToast();
@@ -60,6 +61,14 @@ export default function SellHistory({navigation}) {
   const renderItem = ({item}) => {
     return <BuySellHistoryDetail item={item} style={{borderColor: 'red'}} />;
   };
+  const DATA =
+    dataBuyHistory?.sells?.sort((a, b) => {
+      const momentA = moment(a.createdAt);
+      const momentB = moment(b.createdAt);
+
+      // Sort in descending order by subtracting b from a
+      return momentB.diff(momentA);
+    }) || [];
   return (
     <View style={[styles.container]}>
       <View style={[styles.btn_container, stylesGeneral.mb10]}>
@@ -101,13 +110,13 @@ export default function SellHistory({navigation}) {
         </View>
       </View>
       <View style={[styles.listItem]}>
-        {dataBuyHistory?.sells?.length > 0 ? (
+        {DATA?.length > 0 ? (
           <FlatList
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
-            data={dataBuyHistory?.sells}
+            data={DATA}
             keyExtractor={(item, index) => index.toString()}
             renderItem={renderItem}
           />
