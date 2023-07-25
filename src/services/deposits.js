@@ -8,6 +8,7 @@ import {
 	dispatchDelete,
 	validates,
 } from '../utils';
+import { FirstUpc } from '../utils/format/LetterFirstUpc';
 
 // GET DATA DEPOSITS
 export const getDeposits = async (props = {}) => {
@@ -104,7 +105,7 @@ export const handleEdit = async (props = {}) => {
 		const resPut = await axiosUtils.adminPut(
 			`handle/deposit/${id}`,
 			{
-				status: statusUpdate || statusCurrent,
+				status: FirstUpc(statusUpdate) || FirstUpc(statusCurrent),
 				note: note,
 				token: data?.token,
 				headers: { token: data?.token },

@@ -172,7 +172,7 @@ function Withdraw() {
 						send: {
 							icon: <Icons.SendIcon />,
 							title: 'Send',
-							number: numberUtils.formatUSD(item?.amount_usd),
+							number: numberUtils.formatUSD(item?.amount),
 						},
 						received: {
 							icon: <Icons.ReceivedIcon />,
